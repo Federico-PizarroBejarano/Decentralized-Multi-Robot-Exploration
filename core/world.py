@@ -1,0 +1,33 @@
+import numpy as np
+
+class World:
+    def __init__(self, map, robot, robot_position, robot_orientation):
+        self.__map = map
+        self.__robot = robot
+        self.__robot_pos = robot_position
+        self.__robot_orientation = robot_orientation
+    
+    # Getters
+    def get_position(self):
+        return self.__robot_pos
+    
+    def get_orientation(self):
+        return self.__robot_orientation
+    
+    # Robot moves
+    def move_robot(self, new_position, new_orientation):
+        # Check move is possible
+        # Check there is no collision
+
+        self.__robot_pos = new_position
+        self.__robot_orientation = new_orientation
+
+        return True
+
+    # Scans forward
+    def scan(self, range_finder):
+        # Check closest object from robot pose/orientation
+        # Return distance
+
+        return 255
+    
