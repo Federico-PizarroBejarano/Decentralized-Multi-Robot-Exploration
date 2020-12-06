@@ -14,8 +14,9 @@ class Robot:
 
     # Initialize pixel and hex maps
     def initialize_map(self, world_size):
+        hexagon_size = 8
         self.__internal_pixel_map = np.ones(world_size)
-        self.__internal_hex_map = hex.convert_image_to_grid(self.__internal_pixel_map)
+        self.__internal_hex_map = hex.convert_image_to_grid(self.__internal_pixel_map, hexagon_size)
     
     def update_map(self, distance):
         pass

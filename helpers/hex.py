@@ -2,6 +2,7 @@ import math
 import matplotlib.pyplot as plt
 from matplotlib.patches import RegularPolygon
 import numpy as np
+import networkx as nx
 
 class Point:
     def __init__(self, x, y):
@@ -13,9 +14,10 @@ class Hex:
     Tr = 0.5
 
     # Starting value for nOccupied should not be 0
-    def __init__(self, q, r, nUnknown = 0, nFree = 0, nOccupied = 0):
+    def __init__(self, q, r, node_id = -1, nUnknown = 0, nFree = 0, nOccupied = 0):
         self.q = q
         self.r = r
+        self.node_id = node_id
         self.nUnknown = nUnknown
         self.nFree = nFree
         self.nOccupied = nOccupied
@@ -24,6 +26,7 @@ class Hex:
     def s(self):
         return -(self.q + self.r)
     
+    @property
     def state(self):
         if self.nOccupied > 0:
             return 1
@@ -70,11 +73,15 @@ OrientationFlat = Orientation(
 
 
 class Grid():
-    def __init__(self, orientation, origin, size, allHexes = []):
+    def __init__(self, orientation, origin, size):
         self.orientation = orientation
         self.origin = origin
         self.size = size
-        self.allHexes = allHexes
+        self.graph = nx.Graph()
+    
+    @property
+    def allHexes(self):
+        return [self.graph.nodes()[node]['hex'] for node in list(self.graph.nodes())] 
 
     def find_hex(self, desired_hex):
         found_hex = [h for h in self.allHexes if h.q == desired_hex.q and h.r == desired_hex.r]
@@ -89,10 +96,20 @@ class Grid():
         found_hex = self.find_hex(new_hex)
         
         if found_hex:
-            return False
+            return found_hex.node_id
         else:
-            self.allHexes.append(new_hex)
-            return True
+            node_id = len(self.graph.nodes())
+            new_hex.node_id = node_id
+            self.graph.add_node(node_id, hex = new_hex)
+
+            if new_hex.state == 0:
+                neighbours = self.hex_neighbours(new_hex)
+
+                for neighbour in neighbours:
+                    if neighbour[1] == 0:
+                        self.graph.add_edge(node_id, neighbour[0])
+
+            return node_id
 
     def hex_at(self, point):
         # type: (Point) -> Hex
@@ -101,20 +118,7 @@ class Grid():
         q = self.orientation.b[0]*x + self.orientation.b[1] * y
         r = self.orientation.b[2]*x + self.orientation.b[3] * y
 
-        hex_position = FractionalHex(q, r).to_hex()
-        found_hex = self.find_hex(hex_position)
-
-        if found_hex:
-            return True, found_hex
-        else:
-            return False, hex_position
-
-    def hex_center(self, hex):
-        # type: (Hex) -> Point
-        f = self.orientation.f
-        x = (f[0] * hex.q + f[1]*hex.r)*self.size.x + self.origin.x
-        y = (f[2] * hex.q + f[3]*hex.r)*self.size.y + self.origin.y
-        return Point(x, y)
+        return FractionalHex(q, r).to_hex()
 
     def has_unexplored(self):
         unexplored_hexes = [h for h in self.allHexes if h.state == -1]
@@ -122,8 +126,43 @@ class Grid():
             return True
         else:
             return False
+    
+    def hex_neighbours(self, center_hex):
+        neighbours = []
 
-def convert_image_to_grid(I, size = 8):
+        for q in range(-1, 2):
+            for r in range(-1, +2):
+                if not (q==0 and r==0):
+                    neighbour = self.find_hex(Hex(center_hex.q + q, center_hex.r + r))
+                    if neighbour:
+                        neighbours.append([neighbour.node_id, neighbour.state])
+        
+        return neighbours
+    
+    def update_hex(self, node_id, nUnknown = 0, nFree = 0, nOccupied = 0):
+        old_hex = self.graph.nodes[node_id]['hex']
+        old_state = old_hex.state
+
+        old_hex.nUnknown += nUnknown
+        old_hex.nFree += nFree
+        old_hex.nOccupied += nOccupied
+
+        new_state = old_hex.state
+
+        if old_state != 0 and new_state == 0:
+            neighbours = hex_neighbours(new_hex)
+
+            for neighbour in neighbours:
+                if neighbour[1] == 0:
+                    self.graph.add_edge(node_id, neighbour[0])
+        
+        elif old_state == 0 and new_state != 0:
+            neighbours = list(self.graph.neighbors(node_id))
+            for neighbour in neighbours:
+                self.graph.remove_edge(node_id, neighbour)
+
+
+def convert_image_to_grid(I, size):
     center = Point(0, 0)
     size = Point(size, size)
 
@@ -131,15 +170,14 @@ def convert_image_to_grid(I, size = 8):
 
     for y in range(I.shape[0]):
         for x in range(I.shape[1]):
-            found, found_hex = grid.hex_at(Point(x, y))
+            found_hex = grid.hex_at(Point(x, y))
 
+            node_id = grid.add_hex(found_hex)
+            
             if I[y][x] == 0:
-                found_hex.nFree += 1
+                grid.update_hex(node_id, nFree = 1)
             elif I[y][x] == 1:
-                found_hex.nOccupied += 1
-
-            if not found:
-                grid.add_hex(found_hex)
+                grid.update_hex(node_id, nOccupied = 1)            
 
     return grid
 
@@ -148,7 +186,7 @@ def plot_grid(grid):
     allHexes = grid.allHexes
     colors_list = ['white', 'black']
     coord = [[h.q, h.r, h.s] for h in allHexes]
-    colors = [colors_list[h.state()] for h in allHexes]
+    colors = [colors_list[h.state] for h in allHexes]
 
     # Horizontal cartesian coords
     hcoord = [c[0] for c in coord]
@@ -167,12 +205,47 @@ def plot_grid(grid):
                             facecolor=color, alpha=0.2, edgecolor='k')
         ax.add_patch(hex)
 
+
+    plt.gca().invert_yaxis()
+    plt.axis([min(hcoord)-1, max(hcoord)+1, min(vcoord)-1, max(vcoord)+1])
+    plt.show()
+
+def plot_path(grid, start, end):
+    path = nx.shortest_path(grid.graph, source = start, target=end)
+
+    allHexes = grid.allHexes
+    colors_list = ['white', 'black']
+    coord = [[h.q, h.r, h.s] for h in allHexes]
+    colors = [colors_list[h.state] for h in allHexes]
+    labels = [h.node_id for h in allHexes]
+
+    # Horizontal cartesian coords
+    hcoord = [c[0] for c in coord]
+
+    # Vertical cartersian coords
+    vcoord = [2. * np.sin(np.radians(60)) * (c[1] - c[2]) /3. for c in coord]
+
+    fig, ax = plt.subplots(1)
+    ax.set_aspect('equal')
+
+    # Add some coloured hexagons
+    for x, y, c, l in zip(hcoord, vcoord, colors, labels):
+        color = c[0]
+        if l in path:
+            color = 'red'
+
+        hex = RegularPolygon((x, y), numVertices=6, radius=2./3., 
+                            orientation=np.radians(30), 
+                            facecolor=color, alpha=0.2, edgecolor='k')
+        ax.add_patch(hex)
+        ax.text(x, y+0.2, l, ha='center', va='center', size=5)
+
     # Also add scatter points in hexagon centres
-    ax.scatter(hcoord, vcoord, c=[c[0].lower() for c in colors], alpha=0.5)
+    plt.axis([min(hcoord)-1, max(hcoord)+1, min(vcoord)-1, max(vcoord)+1])
     plt.gca().invert_yaxis()
     plt.show()
 
 if __name__ == "__main__":
-    I = np.load('./maps/map_1.npy')
-    grid = convert_image_to_grid(I, 10)
-    plot_grid(grid)
+    I = np.load('./maps/map_1_small.npy')
+    grid = convert_image_to_grid(I, 7)
+    plot_path(grid, 88, 25)
