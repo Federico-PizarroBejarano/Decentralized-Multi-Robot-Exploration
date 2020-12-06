@@ -1,8 +1,9 @@
 import numpy as np
 
 class World:
-    def __init__(self, map, robot, robot_position, robot_orientation):
-        self.__map = map
+    def __init__(self, world_map, pixel_size, robot, robot_position, robot_orientation):
+        self.__map = world_map
+        self.__pixel_size = pixel_size
         self.__robot = robot
         self.__robot_pos = robot_position
         self.__robot_orientation = robot_orientation
