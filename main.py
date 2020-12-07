@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+
 from core import world, range_finder, robot
+from helpers import hex_grid
 
 world_map = np.load('./maps/map_1_small.npy')
 
@@ -12,3 +14,5 @@ final_map = small_robot.explore(world)
 
 plt.imshow(final_map, cmap = 'gray')
 plt.show()
+
+hex_grid.plot_grid(small_robot.get_hex_map())

@@ -4,11 +4,6 @@ from matplotlib.patches import RegularPolygon
 import numpy as np
 import networkx as nx
 
-class Point:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
 class Hex:
     # Tunable Parameter
     Tr = 0.5
@@ -112,8 +107,8 @@ class Grid():
             return node_id
 
     def hex_at(self, point):
-        x = (point.x - self.origin.x) / float(self.size.x)
-        y = (point.y - self.origin.y) / float(self.size.y)
+        x = (point[1] - self.origin[0]) / float(self.size)
+        y = (point[0] - self.origin[1]) / float(self.size)
         q = self.orientation.b[0]*x + self.orientation.b[1] * y
         r = self.orientation.b[2]*x + self.orientation.b[3] * y
 
@@ -149,7 +144,7 @@ class Grid():
         new_state = old_hex.state
 
         if old_state != 0 and new_state == 0:
-            neighbours = hex_neighbours(new_hex)
+            neighbours = self.hex_neighbours(old_hex)
 
             for neighbour in neighbours:
                 if neighbour[1] == 0:
@@ -162,20 +157,18 @@ class Grid():
     
     def hex_center(self, hex):
         f = self.orientation.f
-        x = (f[0] * hex.q + f[1]*hex.r)*self.size.x + self.origin.x
-        y = (f[2] * hex.q + f[3]*hex.r)*self.size.y + self.origin.y
-        return Point(x, y)
+        x = (f[0] * hex.q + f[1]*hex.r)*self.size + self.origin[0]
+        y = (f[2] * hex.q + f[3]*hex.r)*self.size + self.origin[1]
+        return [x, y]
 
 
 def convert_image_to_grid(I, size):
-    center = Point(0, 0)
-    size = Point(size, size)
-
+    center = [0, 0]
     grid = Grid(OrientationFlat, center, size)
 
     for y in range(I.shape[0]):
         for x in range(I.shape[1]):
-            found_hex = grid.hex_at(Point(x, y))
+            found_hex = grid.hex_at([y, x])
 
             node_id = grid.add_hex(found_hex)
             
@@ -191,9 +184,9 @@ def convert_image_to_grid(I, size):
 
 def plot_grid(grid):
     allHexes = grid.allHexes
-    colors_list = ['white', 'black']
+    colors_list = ['0.5', '1', '0']
     coord = [[h.q, h.r, h.s] for h in allHexes]
-    colors = [colors_list[h.state] for h in allHexes]
+    colors = [colors_list[h.state+1] for h in allHexes]
 
     # Horizontal cartesian coords
     hcoord = [c[0] for c in coord]
@@ -206,22 +199,20 @@ def plot_grid(grid):
 
     # Add some coloured hexagons
     for x, y, c in zip(hcoord, vcoord, colors):
-        color = c[0]
         hex = RegularPolygon((x, y), numVertices=6, radius=2./3., 
                             orientation=np.radians(30), 
-                            facecolor=color, alpha=0.2, edgecolor='k')
+                            facecolor=c, alpha=0.5, edgecolor='k')
         ax.add_patch(hex)
 
-
-    plt.gca().invert_yaxis()
     plt.axis([min(hcoord)-1, max(hcoord)+1, min(vcoord)-1, max(vcoord)+1])
+    plt.gca().invert_yaxis()
     plt.show()
 
 def plot_path(grid, start, end):
     path = nx.shortest_path(grid.graph, source = start, target=end)
 
     allHexes = grid.allHexes
-    colors_list = ['white', 'black']
+    colors_list = ['w', 'k']
     coord = [[h.q, h.r, h.s] for h in allHexes]
     colors = [colors_list[h.state] for h in allHexes]
     labels = [h.node_id for h in allHexes]
@@ -237,13 +228,12 @@ def plot_path(grid, start, end):
 
     # Add some coloured hexagons
     for x, y, c, l in zip(hcoord, vcoord, colors, labels):
-        color = c[0]
         if l in path:
-            color = 'red'
+            c = 'red'
 
         hex = RegularPolygon((x, y), numVertices=6, radius=2./3., 
                             orientation=np.radians(30), 
-                            facecolor=color, alpha=0.2, edgecolor='k')
+                            facecolor=c, alpha=0.2, edgecolor='k')
         ax.add_patch(hex)
         ax.text(x, y+0.2, l, ha='center', va='center', size=5)
 
@@ -255,4 +245,5 @@ def plot_path(grid, start, end):
 if __name__ == "__main__":
     I = np.load('./maps/map_1_small.npy')
     grid = convert_image_to_grid(I, 7)
+    plot_grid(grid)
     plot_path(grid, 88, 25)
