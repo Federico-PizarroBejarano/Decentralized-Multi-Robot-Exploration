@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class World:
     """
     A class used to represent a single robot
@@ -25,7 +26,7 @@ class World:
         self.__robot = robot
         self.__robot_pos = robot_position
         self.__robot_orientation = robot_orientation
-    
+
     @property
     def world_map(self):
         return self.__map
@@ -33,11 +34,10 @@ class World:
     @property
     def robot_position(self):
         return self.__robot_pos
-    
+
     @property
     def robot_orientation(self):
         return self.__robot_orientation
-    
 
     def move_robot(self, new_position, new_orientation):
         """
@@ -50,4 +50,4 @@ class World:
         """
 
         self.__robot_pos = new_position
-        self.__robot_orientation = new_orientation 
+        self.__robot_orientation = new_orientation

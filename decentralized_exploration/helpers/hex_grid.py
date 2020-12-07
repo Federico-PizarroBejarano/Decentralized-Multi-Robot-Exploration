@@ -2,6 +2,7 @@ import math
 import numpy as np
 import networkx as nx
 
+
 class Hex:
     """
     A class used to represent a hexagon in the hexagonal grid layer
@@ -27,7 +28,7 @@ class Hex:
     Tr = 0.5
 
     # Starting value for nOccupied should not be 0
-    def __init__(self, q, r, node_id = -1, nUnknown = 0, nFree = 0, nOccupied = 0):
+    def __init__(self, q, r, node_id=-1, nUnknown=0, nFree=0, nOccupied=0):
         self.q = q
         self.r = r
         self.node_id = node_id
@@ -38,7 +39,7 @@ class Hex:
     @property
     def s(self):
         return -(self.q + self.r)
-    
+
     @property
     def state(self):
         if self.nOccupied > 0:
@@ -116,15 +117,15 @@ class Grid():
     origin (list) : a 2-element list of coordinates for the origin of the grid
     size (float) : the size of the hexagons
     graph(networkx.classes.graph.Graph): a networkx Graph object 
-    allHexes(list): the list of all decentralized_exploration.helpers.hex_grid.Hex objects in the graph
+    all_hexes(list): the list of all decentralized_exploration.helpers.hex_grid.Hex objects in the graph
 
     Public Methods
     -------
-    find_hex(desired_hex): if there is a hex in allHexes with the given axial coordinates, returns it. 
+    find_hex(desired_hex): if there is a hex in all_hexes with the given axial coordinates, returns it. 
         Otherwise, returns None
     add_hex(new_hex): adds a given Hex object to graph. If that Hex already exists, does nothing. Returns node_id
     hex_at(point): returns Hex with axial coordinates of Hex covering given pixel coordinate
-    has_unexplored(): returns true if there are unexplored Hexs in allHexes
+    has_unexplored(): returns true if there are unexplored Hexs in all_hexes
     hex_neighbours(center_hex): returns list of node_ids of adjacent neighbours of given Hex
     update_hex(node_id, nUnknown = 0, nFree = 0, nOccupied = 0): updates the number of unknown, free, 
         and occupied pixels of a given Hex
@@ -136,10 +137,10 @@ class Grid():
         self.origin = origin
         self.size = size
         self.graph = nx.Graph()
-    
+
     @property
-    def allHexes(self):
-        return [self.graph.nodes()[node]['hex'] for node in list(self.graph.nodes())] 
+    def all_hexes(self):
+        return [self.graph.nodes()[node]['hex'] for node in list(self.graph.nodes())]
 
     # Public Methods
     def find_hex(self, desired_hex):
@@ -155,12 +156,12 @@ class Grid():
         decentralized_exploration.helpers.hex_grid.Hex: the desired hex in Grid, or None if there is none
         """
 
-        found_hex = [h for h in self.allHexes if h.q == desired_hex.q and h.r == desired_hex.r]
+        found_hex = [h for h in self.all_hexes if h.q == desired_hex.q and h.r == desired_hex.r]
         if len(found_hex) == 1:
             return found_hex[0]
         else:
             return None
-    
+
     def add_hex(self, new_hex):
         """
         Adds a Hex with given axial coordinates into the graph. If there is already a Hex at 
@@ -177,13 +178,13 @@ class Grid():
         """
 
         found_hex = self.find_hex(new_hex)
-        
+
         if found_hex:
             return found_hex.node_id
         else:
             node_id = len(self.graph.nodes())
             new_hex.node_id = node_id
-            self.graph.add_node(node_id, hex = new_hex)
+            self.graph.add_node(node_id, hex=new_hex)
 
             if new_hex.state == 0:
                 neighbours = self.hex_neighbours(new_hex)
@@ -220,15 +221,15 @@ class Grid():
 
         Returns
         ----------
-        boolean: True if there are unexplored hexes in allHexes, False otherwise
+        boolean: True if there are unexplored hexes in all_hexes, False otherwise
         """
 
-        unexplored_hexes = sum([h.state == -1 for h in self.allHexes])
+        unexplored_hexes = sum([h.state == -1 for h in self.all_hexes])
         if unexplored_hexes > 0:
             return True
         else:
             return False
-    
+
     def hex_neighbours(self, center_hex):
         """
         Returns list of directly adjacent neighbours of a given Hex
@@ -250,10 +251,10 @@ class Grid():
                     neighbour = self.find_hex(Hex(center_hex.q + q, center_hex.r + r))
                     if neighbour:
                         neighbours.append(neighbour.node_id)
-        
+
         return neighbours
-    
-    def update_hex(self, node_id, dUnknown = 0, dFree = 0, dOccupied = 0):
+
+    def update_hex(self, node_id, dUnknown=0, dFree=0, dOccupied=0):
         """
         Updates a Hex with changes to the number of unknown, free, and occupied pixels
 
@@ -280,12 +281,12 @@ class Grid():
             for neighbour in neighbours:
                 if self.graph.nodes[neighbour]['hex'].state == 0:
                     self.graph.add_edge(node_id, neighbour)
-        
+
         elif old_state == 0 and new_state != 0:
             neighbours = list(self.graph.neighbors(node_id))
             for neighbour in neighbours:
                 self.graph.remove_edge(node_id, neighbour)
-    
+
     def hex_center(self, hexagon):
         """
         Returns the sub-pixel coordinates of the center of the hexagon
@@ -330,12 +331,12 @@ def convert_pixelmap_to_grid(pixel_map, size):
             found_hex = grid.hex_at([y, x])
 
             node_id = grid.add_hex(found_hex)
-            
+
             if pixel_map[y][x] == 0:
-                grid.update_hex(node_id = node_id, dFree = 1)
+                grid.update_hex(node_id=node_id, dFree=1)
             elif pixel_map[y][x] == 1:
-                grid.update_hex(node_id = node_id, dOccupied = 1)   
+                grid.update_hex(node_id=node_id, dOccupied=1)
             elif pixel_map[y][x] == -1:
-                grid.update_hex(node_id = node_id, dUnknown = 1)         
+                grid.update_hex(node_id=node_id, dUnknown=1)
 
     return grid

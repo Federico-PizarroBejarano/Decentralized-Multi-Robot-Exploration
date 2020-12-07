@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def field_of_view(world_map, robot_pos):
     """
     Given a world map and the position of the robot, returns all free and occupied pixels in its field of view
@@ -23,29 +24,29 @@ def field_of_view(world_map, robot_pos):
     for y in range(world_size[1]):
         x = 0
 
-        all_points = bresenham(world_map, start = robot_pos, end = (x, y))
+        all_points = bresenham(world_map, start=robot_pos, end=(x, y))
         all_free_points = all_free_points.union(set(all_points[:-1]))
         all_occupied_points.add(all_points[-1])
 
         x = world_size[0]-1
 
-        all_points = bresenham(world_map, start = robot_pos, end = (x, y))
+        all_points = bresenham(world_map, start=robot_pos, end=(x, y))
         all_free_points = all_free_points.union(set(all_points[:-1]))
         all_occupied_points.add(all_points[-1])
 
     for x in range(world_size[0]):
         y = 0
 
-        all_points = bresenham(world_map, start = robot_pos, end = (x, y))
+        all_points = bresenham(world_map, start=robot_pos, end=(x, y))
         all_free_points = all_free_points.union(set(all_points[:-1]))
         all_occupied_points.add(all_points[-1])
 
         y = world_size[1]-1
 
-        all_points = bresenham(world_map, start = robot_pos, end = (x, y))
+        all_points = bresenham(world_map, start=robot_pos, end=(x, y))
         all_free_points = all_free_points.union(set(all_points[:-1]))
         all_occupied_points.add(all_points[-1])
-    
+
     return all_occupied_points, all_free_points
 
 
@@ -117,4 +118,3 @@ def bresenham(world_map, start, end):
         if world_map[point[0]][point[1]] == 1:
             return points[:p] + [points[p]]
     return points
-

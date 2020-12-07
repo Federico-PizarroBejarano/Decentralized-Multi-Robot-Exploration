@@ -1,6 +1,7 @@
 import numpy as np
 from decentralized_exploration.helpers.field_of_view import field_of_view
 
+
 class RangeFinder:
     """
     A class used to represent a range_finder of any kind
@@ -22,11 +23,11 @@ class RangeFinder:
     @property
     def full_range(self):
         return self.__full_range
-    
+
     @property
     def frequency(self):
         return self.__frequency
-    
+
     # Public Methods
     def scan(self, world):
         """
