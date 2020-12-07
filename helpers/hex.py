@@ -33,7 +33,7 @@ class Hex:
         elif self.nUnknown == 0:
             return 0
         else:
-            if self.nFree/self.nUnknown > Tr:
+            if self.nFree/self.nUnknown > Hex.Tr:
                 return 0
             else:
                 return -1
@@ -112,7 +112,6 @@ class Grid():
             return node_id
 
     def hex_at(self, point):
-        # type: (Point) -> Hex
         x = (point.x - self.origin.x) / float(self.size.x)
         y = (point.y - self.origin.y) / float(self.size.y)
         q = self.orientation.b[0]*x + self.orientation.b[1] * y
@@ -121,8 +120,8 @@ class Grid():
         return FractionalHex(q, r).to_hex()
 
     def has_unexplored(self):
-        unexplored_hexes = [h for h in self.allHexes if h.state == -1]
-        if len(unexplored_hexes) > 0:
+        unexplored_hexes = sum([h.state == -1 for h in self.allHexes])
+        if unexplored_hexes > 0:
             return True
         else:
             return False
@@ -160,6 +159,12 @@ class Grid():
             neighbours = list(self.graph.neighbors(node_id))
             for neighbour in neighbours:
                 self.graph.remove_edge(node_id, neighbour)
+    
+    def hex_center(self, hex):
+        f = self.orientation.f
+        x = (f[0] * hex.q + f[1]*hex.r)*self.size.x + self.origin.x
+        y = (f[2] * hex.q + f[3]*hex.r)*self.size.y + self.origin.y
+        return Point(x, y)
 
 
 def convert_image_to_grid(I, size):
@@ -177,7 +182,9 @@ def convert_image_to_grid(I, size):
             if I[y][x] == 0:
                 grid.update_hex(node_id, nFree = 1)
             elif I[y][x] == 1:
-                grid.update_hex(node_id, nOccupied = 1)            
+                grid.update_hex(node_id, nOccupied = 1)   
+            elif I[y][x] == -1:
+                grid.update_hex(node_id, nUnknown = 1)         
 
     return grid
 

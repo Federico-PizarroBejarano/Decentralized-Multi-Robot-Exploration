@@ -1,4 +1,5 @@
 import numpy as np
+from helpers import field_of_view
 
 class World:
     def __init__(self, world_map, pixel_size, robot, robot_position, robot_orientation):
@@ -27,8 +28,5 @@ class World:
 
     # Scans forward
     def scan(self, range_finder):
-        # Check closest object from robot pose/orientation
-        # Return distance
-
-        return 255
+        return field_of_view.field_of_view(self.__map, self.__robot_pos, self.__map.shape)
     
