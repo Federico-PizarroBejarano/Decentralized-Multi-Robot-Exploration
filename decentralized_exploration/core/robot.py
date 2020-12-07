@@ -2,32 +2,72 @@ import numpy as np
 import networkx as nx
 
 from decentralized_exploration.helpers.plotting import plot_map, plot_grid
-from decentralized_exploration.helpers.hex_grid import convert_image_to_grid
+from decentralized_exploration.helpers.hex_grid import convert_pixelmap_to_grid
 
 class Robot:
+    """
+    A class used to represent a single robot
+
+    Instance Attributes
+    ----------
+    range_finder (decentralized_exploration.core.range_finder.RangeFinder): a RangeFinder object representing the sensor
+    width (float) : the width of the robot in meters
+    length (float) : the length of the robot in meters
+    pixel_map (numpy.ndarry): numpy array of pixels representing the map. 
+        -1 == unexplored
+        0  == free
+        1  == occupied
+    hex_map (decentralized_exploration.helpers.hex_grid.Grid): A Grid object holding the hex layer
+
+    Public Methods
+    -------
+    explore(world): Starts the process of the robot exploring the world. Returns fully explored pixel map
+    """
+
     def __init__(self, range_finder, width, length, world_size):
         self.__range_finder = range_finder
         self.__width = width
         self.__length = length
-        self.initialize_map(world_size)
+        self.__initialize_map(world_size)
 
-    # Getters
-    def get_size(self):
+    @property
+    def size(self):
         return [self.__width, self.__length]
     
-    def get_pixel_map(self):
+    @property
+    def pixel_map(self):
         return self.__pixel_map
     
-    def get_hex_map(self):
+    @property
+    def hex_map(self):
         return self.__hex_map
 
-    # Initialize pixel and hex maps
-    def initialize_map(self, world_size):
-        hexagon_size = 5
+
+    # Private methods
+    def __initialize_map(self, world_size):
+        """
+        Initialized both the internal pixel and hex maps given the size of the world
+
+        Parameters
+        ----------
+        world_size (tuple): the size of the world map in pixels
+        """
+
+        hexagon_size = 4
         self.__pixel_map = -np.ones(world_size)
-        self.__hex_map = convert_image_to_grid(self.__pixel_map, hexagon_size)
+        self.__hex_map = convert_pixelmap_to_grid(self.__pixel_map, hexagon_size)
     
-    def update_map(self, occupied_points, free_points):
+
+    def __update_map(self, occupied_points, free_points):
+        """
+        Updates both the internal pixel and hex maps given arrays of occupied and free pixels
+
+        Parameters
+        ----------
+        occupied_points (array of [x, y] points): array of occupied points
+        free_points (array of [x, y] points): array of free points
+        """
+
         occupied_points = [p for p in occupied_points if self.__pixel_map[p[0], p[1]] == -1]
         free_points = [p for p in free_points if self.__pixel_map[p[0], p[1]] == -1]
 
@@ -39,20 +79,33 @@ class Robot:
 
         for occ_point in occupied_points:
             node_id = self.__hex_map.find_hex(self.__hex_map.hex_at(occ_point)).node_id
-            self.__hex_map.update_hex(node_id, nOccupied = 1, nUnknown = -1)
+            self.__hex_map.update_hex(node_id = node_id, dOccupied = 1, dUnknown = -1)
         
         for free_point in free_points:
             node_id = self.__hex_map.find_hex(self.__hex_map.hex_at(free_point)).node_id
-            self.__hex_map.update_hex(node_id, nFree = 1, nUnknown = -1)
+            self.__hex_map.update_hex(node_id = node_id, dFree = 1, dUnknown = -1)
 
-    def choose_next_pose(self, current_pose):
+
+    def __choose_next_pose(self, current_pose):
+        """
+        Given the current pose, decides on the next best position for the robot
+
+        Parameters
+        ----------
+        current_pose (tuple): tuple of integer pixel coordinates
+        
+        Returns
+        ----------
+        list: 2-element list of pixel coordinates
+        """
+
         unexplored_hexes = [h for h in self.__hex_map.allHexes if h.state == -1]
         interesting_free_hexes = set()
 
         for h in unexplored_hexes:
             neighbours =  self.__hex_map.hex_neighbours(h)
             if neighbours:
-                free_neighbours = [n[0] for n in neighbours if n[1] == 0]
+                free_neighbours = [n for n in neighbours if self.__hex_map.graph.nodes[n]['hex'].state == 0]
                 if len(free_neighbours) > 0:
                     interesting_free_hexes = interesting_free_hexes.union(set(free_neighbours))
 
@@ -64,8 +117,8 @@ class Robot:
         shortest_path = float('inf')
 
         for h in interesting_free_hexes:
-            if nx.has_path(self.__hex_map.graph, current_hex_id, h):
-                path = nx.shortest_path_length(self.__hex_map.graph, current_hex_id, h)
+            if nx.has_path(self.__hex_map.graph, source=current_hex_id, target=h):
+                path = nx.shortest_path_length(self.__hex_map.graph, source=current_hex_id, target=h)
 
                 if path < shortest_path: 
                     shortest_path = path
@@ -77,20 +130,31 @@ class Robot:
         return np.round(robot_pose).astype(int)
 
 
+    # Public Methods
     def explore(self, world):
+        """
+        Given the world the robot is exploring, iteratively explores the area
+
+        Parameters
+        ----------
+        world (decentralized_exploration.core.world.World): a World object that the robot will explore
+        
+        Returns
+        ----------
+        numpy.ndarry: numpy array of pixels representing the fully explored map. 
+        """
+
         while self.__hex_map.has_unexplored():
             occupied_points, free_points = self.__range_finder.scan(world)
-            self.update_map(occupied_points, free_points)
+            self.__update_map(occupied_points, free_points)
 
-            plot_map(self.__pixel_map, world.get_position())
-            plot_grid(self.__hex_map, world.get_position())
+            plot_map(self.__pixel_map, world.robot_position)
+            plot_grid(self.__hex_map, world.robot_position)
 
-            new_position = self.choose_next_pose(world.get_position())
+            new_position = self.__choose_next_pose(world.robot_position)
             if len(new_position) == 0:
                 break
 
             world.move_robot(new_position, new_orientation = 1)
         
-        occupied_points, free_points = self.__range_finder.scan(world)
-        self.update_map(occupied_points, free_points)
         return self.__pixel_map

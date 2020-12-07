@@ -1,6 +1,21 @@
 import numpy as np
 
 def field_of_view(world_map, robot_pos):
+    """
+    Given a world map and the position of the robot, returns all free and occupied pixels in its field of view
+
+    Parameters
+    ----------
+    world_map(numpy.ndarray): numpy array of pixels representing the map. 
+        0  == free
+        1  == occupied
+    robot_pos(array): a 2-element array of pixel coordinates 
+
+    Returns
+    ----------
+    list, list: two lists of pixel coordinates representing occupied and free points
+    """
+
     world_size = world_map.shape
     all_free_points = set()
     all_occupied_points = set()
@@ -35,6 +50,24 @@ def field_of_view(world_map, robot_pos):
 
 
 def bresenham(world_map, start, end):
+    """
+    Given a world map, a starting pixel coordinate, and an end pixel coordinate returns all pixels 
+    in line of sight using bresenham's algorithm
+
+    Parameters
+    ----------
+    world_map(numpy.ndarray): numpy array of pixels representing the map. 
+        0  == free
+        1  == occupied
+    start(array): a 2-element array of pixel coordinates representing starting pixel
+    end(array): a 2-element array of pixel coordinates representing ending pixel
+
+    Returns
+    ----------
+    list: a list of pixel coordinates representing line of sight, with the last pixel being 
+        occupied and all others being free
+    """
+
     # Setup initial conditions
     x1, y1 = start
     x2, y2 = end

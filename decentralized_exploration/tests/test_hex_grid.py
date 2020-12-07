@@ -1,10 +1,10 @@
 import numpy as np
 
 from ..helpers.plotting import plot_grid, plot_path
-from ..helpers.hex_grid import convert_image_to_grid
+from ..helpers.hex_grid import convert_pixelmap_to_grid
 
 def test_grid_creation(I):
-    grid = convert_image_to_grid(I, 7)
+    grid = convert_pixelmap_to_grid(I, 7)
     plot_grid(grid)
     return grid
 

@@ -4,6 +4,15 @@ from matplotlib.patches import RegularPolygon
 import networkx as nx
 
 def plot_grid(grid, robot_pos = []):
+    """
+    Plots a given Grid. If a robot_pos is given, will highlight the hexagon the robot is in in red
+
+    Parameters
+    ----------
+    grid (decentralized_exploration.helpers.hex_grid.Grid): the grid to be plotted
+    robot_pos (list, optional): an optional 2-element array of pixel coordinates
+    """
+
     allHexes = grid.allHexes
     colors_list = ['0.5', '1', '0']
     coord = [[h.q, h.r, h.s] for h in allHexes]
@@ -43,7 +52,17 @@ def plot_grid(grid, robot_pos = []):
 
 
 def plot_path(grid, start, end):
-    path = nx.shortest_path(grid.graph, start, end)
+    """
+    Plots a given Grid as well as the path from a starting Hex to an end Hex in red
+
+    Parameters
+    ----------
+    grid (decentralized_exploration.helpers.hex_grid.Grid): the grid to be plotted
+    start (int): the node_id of the starting Hex
+    end (int): the node_id of the end Hex
+    """
+
+    path = nx.shortest_path(grid.graph, source=start, target=end)
 
     allHexes = grid.allHexes
     colors_list = ['0.5', '1', '0']
@@ -71,15 +90,26 @@ def plot_path(grid, start, end):
         ax.add_patch(hex)
         ax.text(x, y+0.2, l, ha='center', va='center', size=5)
 
-    # Also add scatter points in hexagon centres
     plt.axis([min(hcoord)-1, max(hcoord)+1, min(vcoord)-1, max(vcoord)+1])
     plt.gca().invert_yaxis()
     plt.show()
 
 
-def plot_map(I, robot_pos = []):
-    shaded_I = -I - (I == -1).astype(int)*1.5
-    plt.imshow(shaded_I, cmap = 'gray')
+def plot_map(pixel_map, robot_pos = []):
+    """
+    Converts an image (represented as a numpy.ndarray) into a grid
+
+    Parameters
+    ----------
+    pixel_map (numpy.ndarry): numpy array of pixels representing the map. 
+        -1 == unexplored
+        0  == free
+        1  == occupied
+    robot_pos (list, optional): an optional 2-element array of pixel coordinates
+    """
+
+    shaded_map = -pixel_map - (pixel_map == -1).astype(int)*1.5
+    plt.imshow(shaded_map, cmap = 'gray')
 
     if len(robot_pos) == 2:
         plt.plot(robot_pos[1], robot_pos[0], 'ro')
