@@ -1,8 +1,8 @@
 import math
-import matplotlib.pyplot as plt
-from matplotlib.patches import RegularPolygon
 import numpy as np
 import networkx as nx
+
+from .plotting import plot_grid, plot_path
 
 class Hex:
     # Tunable Parameter
@@ -126,7 +126,7 @@ class Grid():
 
         for q in range(-1, 2):
             for r in range(-1, +2):
-                if not (q==0 and r==0):
+                if q != r:
                     neighbour = self.find_hex(Hex(center_hex.q + q, center_hex.r + r))
                     if neighbour:
                         neighbours.append([neighbour.node_id, neighbour.state])
@@ -159,7 +159,7 @@ class Grid():
         f = self.orientation.f
         x = (f[0] * hex.q + f[1]*hex.r)*self.size + self.origin[0]
         y = (f[2] * hex.q + f[3]*hex.r)*self.size + self.origin[1]
-        return [x, y]
+        return [y, x]
 
 
 def convert_image_to_grid(I, size):
@@ -182,65 +182,6 @@ def convert_image_to_grid(I, size):
     return grid
 
 
-def plot_grid(grid):
-    allHexes = grid.allHexes
-    colors_list = ['0.5', '1', '0']
-    coord = [[h.q, h.r, h.s] for h in allHexes]
-    colors = [colors_list[h.state+1] for h in allHexes]
-
-    # Horizontal cartesian coords
-    hcoord = [c[0] for c in coord]
-
-    # Vertical cartersian coords
-    vcoord = [2. * np.sin(np.radians(60)) * (c[1] - c[2]) /3. for c in coord]
-
-    fig, ax = plt.subplots(1)
-    ax.set_aspect('equal')
-
-    # Add some coloured hexagons
-    for x, y, c in zip(hcoord, vcoord, colors):
-        hex = RegularPolygon((x, y), numVertices=6, radius=2./3., 
-                            orientation=np.radians(30), 
-                            facecolor=c, alpha=0.5, edgecolor='k')
-        ax.add_patch(hex)
-
-    plt.axis([min(hcoord)-1, max(hcoord)+1, min(vcoord)-1, max(vcoord)+1])
-    plt.gca().invert_yaxis()
-    plt.show()
-
-def plot_path(grid, start, end):
-    path = nx.shortest_path(grid.graph, source = start, target=end)
-
-    allHexes = grid.allHexes
-    colors_list = ['w', 'k']
-    coord = [[h.q, h.r, h.s] for h in allHexes]
-    colors = [colors_list[h.state] for h in allHexes]
-    labels = [h.node_id for h in allHexes]
-
-    # Horizontal cartesian coords
-    hcoord = [c[0] for c in coord]
-
-    # Vertical cartersian coords
-    vcoord = [2. * np.sin(np.radians(60)) * (c[1] - c[2]) /3. for c in coord]
-
-    fig, ax = plt.subplots(1)
-    ax.set_aspect('equal')
-
-    # Add some coloured hexagons
-    for x, y, c, l in zip(hcoord, vcoord, colors, labels):
-        if l in path:
-            c = 'red'
-
-        hex = RegularPolygon((x, y), numVertices=6, radius=2./3., 
-                            orientation=np.radians(30), 
-                            facecolor=c, alpha=0.2, edgecolor='k')
-        ax.add_patch(hex)
-        ax.text(x, y+0.2, l, ha='center', va='center', size=5)
-
-    # Also add scatter points in hexagon centres
-    plt.axis([min(hcoord)-1, max(hcoord)+1, min(vcoord)-1, max(vcoord)+1])
-    plt.gca().invert_yaxis()
-    plt.show()
 
 if __name__ == "__main__":
     I = np.load('./maps/map_1_small.npy')
