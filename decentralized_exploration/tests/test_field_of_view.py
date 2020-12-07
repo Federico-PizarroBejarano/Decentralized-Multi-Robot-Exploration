@@ -4,7 +4,7 @@ from ..helpers.plotting import plot_map
 from ..helpers.field_of_view import field_of_view
 
 def test_field_of_view(I, robot_pos):
-    occupied_points, free_points = field_of_view(I, robot_pos, I.shape)
+    occupied_points, free_points = field_of_view(I, robot_pos)
     unknown_I = -np.ones(I.shape)
 
     occ_rows, occ_cols = [p[0] for p in occupied_points], [p[1] for p in occupied_points] 

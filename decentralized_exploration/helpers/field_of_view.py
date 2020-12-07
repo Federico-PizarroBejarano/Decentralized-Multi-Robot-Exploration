@@ -1,6 +1,7 @@
 import numpy as np
 
-def field_of_view(world_map, robot_pos, world_size):
+def field_of_view(world_map, robot_pos):
+    world_size = world_map.shape
     all_free_points = set()
     all_occupied_points = set()
 

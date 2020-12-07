@@ -28,5 +28,5 @@ class World:
 
     # Scans forward
     def scan(self, range_finder):
-        return field_of_view(self.__map, self.__robot_pos, self.__map.shape)
+        return field_of_view(self.__map, self.__robot_pos)
     
