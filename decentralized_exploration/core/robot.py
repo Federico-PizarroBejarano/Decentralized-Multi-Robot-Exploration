@@ -1,8 +1,8 @@
 import numpy as np
 import networkx as nx
 
-from helpers.plotting import plot_map, plot_grid
-from helpers.hex_grid import convert_image_to_grid
+from decentralized_exploration.helpers.plotting import plot_map, plot_grid
+from decentralized_exploration.helpers.hex_grid import convert_image_to_grid
 
 class Robot:
     def __init__(self, range_finder, width, length, world_size):
@@ -13,7 +13,7 @@ class Robot:
 
     # Getters
     def get_size(self):
-        return [self.__width, self.__height]
+        return [self.__width, self.__length]
     
     def get_pixel_map(self):
         return self.__pixel_map

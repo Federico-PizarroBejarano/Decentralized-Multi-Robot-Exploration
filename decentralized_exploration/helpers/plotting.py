@@ -43,7 +43,7 @@ def plot_grid(grid, robot_pos = []):
 
 
 def plot_path(grid, start, end):
-    path = nx.shortest_path(grid.graph, source = start, target=end)
+    path = nx.shortest_path(grid.graph, start, end)
 
     allHexes = grid.allHexes
     colors_list = ['0.5', '1', '0']

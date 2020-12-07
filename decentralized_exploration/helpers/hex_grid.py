@@ -2,8 +2,6 @@ import math
 import numpy as np
 import networkx as nx
 
-from .plotting import plot_grid, plot_path
-
 class Hex:
     # Tunable Parameter
     Tr = 0.5
@@ -83,7 +81,7 @@ class Grid():
         if len(found_hex) == 1:
             return found_hex[0]
         elif len(found_hex) > 1:
-            raise ValueError('More than 1 hex at spot q:%d r:%d', q, r)
+            raise ValueError('More than 1 hex at spot q:%d r:%d', desired_hex.q, desired_hex.r)
         else:
             return False
     
@@ -180,11 +178,3 @@ def convert_image_to_grid(I, size):
                 grid.update_hex(node_id, nUnknown = 1)         
 
     return grid
-
-
-
-if __name__ == "__main__":
-    I = np.load('./maps/map_1_small.npy')
-    grid = convert_image_to_grid(I, 7)
-    plot_grid(grid)
-    plot_path(grid, 88, 25)

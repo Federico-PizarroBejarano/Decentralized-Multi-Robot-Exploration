@@ -1,5 +1,5 @@
 import numpy as np
-from helpers.field_of_view import field_of_view
+from decentralized_exploration.helpers.field_of_view import field_of_view
 
 class World:
     def __init__(self, world_map, pixel_size, robot, robot_position, robot_orientation):
