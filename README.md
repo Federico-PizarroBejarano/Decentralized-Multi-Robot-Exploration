@@ -16,3 +16,12 @@ This project aims to create an algorithm for decentralized multi-robot explorati
 1. Run the code using
 
     `python -m decentralized_exploration`
+
+### Run Tests
+1. Run all tests using 
+
+    `python -m decentralized_exploration.tests`
+
+2. Run individual tests using
+
+    `python -m decentralized_exploration.tests.SPECIFIC_TEST_FILE`
