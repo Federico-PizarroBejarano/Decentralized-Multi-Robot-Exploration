@@ -3,8 +3,8 @@ from imageio import imread
 
 def convert_image_to_pixelmap(file_path):
     """
-    Converts an image file into a numpy array of pixel intensities representing free and occupied space. 
-    Saves the map as a .npy file and returns it
+    Converts an image file into a numpy array of pixel intensities representing free 
+    and occupied space returns it
 
     Parameters
     ----------
@@ -20,7 +20,5 @@ def convert_image_to_pixelmap(file_path):
     map = imread(file_path, as_gray = True)
     map[map < 128] = 1
     map[map >= 128] = 0
-
-    np.save(file_path.split('.')[:-1], map)
 
     return map
