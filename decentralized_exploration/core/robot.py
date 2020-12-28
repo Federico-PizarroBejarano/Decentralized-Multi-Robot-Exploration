@@ -85,6 +85,8 @@ class Robot:
         for free_point in free_points:
             node_id = self.__hex_map.find_hex(self.__hex_map.hex_at(free_point)).node_id
             self.__hex_map.update_hex(node_id=node_id, dFree=1, dUnknown=-1)
+        
+        self.__hex_map.propagate_rewards()
 
     def __choose_next_pose(self, current_pose):
         """
@@ -99,15 +101,7 @@ class Robot:
         list: 2-element list of pixel coordinates
         """
 
-        unexplored_hexes = [h for h in self.__hex_map.all_hexes if h.state == -1]
-        interesting_free_hexes = set()
-
-        for h in unexplored_hexes:
-            neighbours = self.__hex_map.hex_neighbours(h)
-            if neighbours:
-                free_neighbours = [n for n in neighbours if self.__hex_map.graph.nodes[n]['hex'].state == 0]
-                if len(free_neighbours) > 0:
-                    interesting_free_hexes = interesting_free_hexes.union(set(free_neighbours))
+        interesting_free_hexes = [h.node_id for h in self.__hex_map.all_hexes if h.reward > 0]
 
         if len(interesting_free_hexes) == 0:
             return []

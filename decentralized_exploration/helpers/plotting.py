@@ -19,6 +19,12 @@ def plot_grid(grid, robot_pos=[]):
     coord = [[h.q, h.r, h.s] for h in all_hexes]
     colors = [colors_list[h.state+1] for h in all_hexes]
     labels = [h.node_id for h in all_hexes]
+    
+    rewards = {}
+    for node in all_hexes:
+        if node.reward > 0:
+            y = 2. * np.sin(np.radians(60)) * (node.r - node.s) / 3.
+            rewards[(node.q, y)] = node.reward
 
     # Horizontal cartesian coords
     hcoord = [c[0] for c in coord]
@@ -38,12 +44,19 @@ def plot_grid(grid, robot_pos=[]):
 
     # Add some coloured hexagons
     for x, y, c, l in zip(hcoord, vcoord, colors, labels):
+        alpha = 0.5
+        reward = 0
         if rx == x and ry == y:
             c = 'red'
+        
+        if (x, y) in rewards:
+            c = 'blue'
+            alpha = 1/(1+np.exp(-rewards[(x, y)]/7))
+            ax.text(x, y+0.2, rewards[(x, y)], ha='center', va='center', size=5)
 
         hexagon = RegularPolygon((x, y), numVertices=6, radius=2./3.,
                                  orientation=np.radians(30),
-                                 facecolor=c, alpha=0.5, edgecolor='k')
+                                 facecolor=c, alpha=alpha, edgecolor='k')
         ax.add_patch(hexagon)
         ax.text(x, y-0.2, l, ha='center', va='center', size=5)
 
@@ -91,7 +104,7 @@ def plot_path(grid, start_node, end_node):
                                  orientation=np.radians(30),
                                  facecolor=c, alpha=0.5, edgecolor='k')
         ax.add_patch(hexagon)
-        ax.text(x, y+0.2, l, ha='center', va='center', size=5)
+        ax.text(x, y-0.2, l, ha='center', va='center', size=5)
 
     plt.axis([min(hcoord)-1, max(hcoord)+1, min(vcoord)-1, max(vcoord)+1])
     plt.gca().invert_yaxis()

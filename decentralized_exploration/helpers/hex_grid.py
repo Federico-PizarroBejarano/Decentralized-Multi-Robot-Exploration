@@ -21,6 +21,7 @@ class Hex:
     nUnknown(int): number of unknown pixels in this hexagon
     nFreeint): number of free pixels in this hexagon
     nOccupied(int): number of occupied pixels in this hexagon
+    reward(int): the reward associated with this hex
     state(int): the state of this hexagon as unknown (-1), free (0), or occupied (1)
     """
 
@@ -28,13 +29,14 @@ class Hex:
     Tr = 0.5
 
     # Starting value for nOccupied should not be 0
-    def __init__(self, q, r, node_id=-1, nUnknown=0, nFree=0, nOccupied=0):
+    def __init__(self, q, r, node_id=-1, nUnknown=0, nFree=0, nOccupied=0, reward=0):
         self.q = q
         self.r = r
         self.node_id = node_id
         self.nUnknown = nUnknown
         self.nFree = nFree
         self.nOccupied = nOccupied
+        self.reward = reward
 
     @property
     def s(self):
@@ -75,7 +77,7 @@ class FractionalHex(Hex):
             q = -(r + s)
         elif(dr > ds):
             r = -(q + s)
-        return Hex(int(q), int(r), self.node_id, self.nUnknown, self.nFree, self.nOccupied)
+        return Hex(int(q), int(r), self.node_id, self.nUnknown, self.nFree, self.nOccupied, self.reward)
 
 
 class Orientation():
@@ -230,7 +232,7 @@ class Grid():
         else:
             return False
 
-    def hex_neighbours(self, center_hex):
+    def hex_neighbours(self, center_hex, radius=1):
         """
         Returns list of directly adjacent neighbours of a given Hex
 
@@ -245,9 +247,9 @@ class Grid():
 
         neighbours = []
 
-        for q in range(-1, 2):
-            for r in range(-1, +2):
-                if q != r:
+        for q in range(-radius, radius+1):
+            for r in range(-radius, radius+1):
+                if (abs(q+r) <= radius) and ((q != r) or (q <= radius - 1 and q != 0)):
                     neighbour = self.find_hex(Hex(center_hex.q + q, center_hex.r + r))
                     if neighbour:
                         neighbours.append(neighbour.node_id)
@@ -304,6 +306,50 @@ class Grid():
         x = (f[0] * hexagon.q + f[1]*hexagon.r)*self.size + self.origin[0]
         y = (f[2] * hexagon.q + f[3]*hexagon.r)*self.size + self.origin[1]
         return [y, x]
+    
+    def propagate_rewards(self):
+        """
+        Clears the reward from all hexes and then re-calculates the reward  at every
+        hex. Does not accept any arguments and does not return anything
+        """
+        radius = 2 # Tunable parameter
+
+        all_nodes = self.graph.nodes()
+
+        for node in self.all_hexes:
+            node.reward = 0
+        
+        for node in self.all_hexes:
+            if node.state == -1:
+                neighbours = self.hex_neighbours(node, radius)
+
+                for neighbour in neighbours:
+                    if self.clear_path(node, all_nodes[neighbour]['hex']):
+                        all_nodes[neighbour]['hex'].reward += 1
+    
+    def hex_distance(self, start_hex, end_hex):
+        s_q, s_r = start_hex.q, start_hex.r
+        e_q, e_r = end_hex.q, end_hex.r
+
+        distance = (abs(s_q - e_q) + abs(s_q + s_r - e_q - e_r) + abs(s_r - e_r)) / 2
+        return int(distance)
+
+    def clear_path(self, start_hex, end_hex):
+        distance = self.hex_distance(start_hex, end_hex)
+        s_x, s_y = self.hex_center(start_hex)
+        e_x, e_y = self.hex_center(end_hex)
+
+        for i in range(1, distance+1):
+            x = s_x + (e_x - s_x) * (1/distance) * i
+            y = s_y + (e_y - s_y) * (1/distance) * i
+
+            intermediate_hex = self.hex_at([x, y])
+            intermediate_hex = self.find_hex(intermediate_hex)
+
+            if not intermediate_hex or intermediate_hex.state != 0:
+                return False
+        
+        return True
 
 
 def convert_pixelmap_to_grid(pixel_map, size):
