@@ -1,24 +1,25 @@
 import numpy as np
 
 
-def field_of_view(world_map, robot_pos, start_orientation, end_orientation):
+def field_of_view(world_map, robot_pos, start_orientation, end_orientation, is_clockwise):
     """
     Given a world map and the position of the robot, returns all free and occupied pixels in its field of view
 
     Parameters
     ----------
-    world_map(numpy.ndarray): numpy array of pixels representing the map. 
+    world_map (numpy.ndarray): numpy array of pixels representing the map. 
         0  == free
         1  == occupied
-    robot_pos(array): a 2-element array of pixel coordinates 
-    start_orientation(int): an int 1-6 representing the orientation of the robot
+    robot_pos (array): a 2-element array of pixel coordinates 
+    start_orientation (int): an int 1-6 representing the orientation of the robot. Note y axis is inverted
         1 == facing directly towards y==0 line
-        2 == rotate 1 by 60 degrees clockwise
-        3 == rotate 2 by 60 degrees clockwise
-        4 == rotate 3 by 60 degrees clockwise s.t. it faces the y=inf line
-        5 == rotate 4 by 60 degrees clockwise
-        6 == rotate 5 by 60 degrees clockwise
-    end_orientation(int): an int 1-6 representing the desired orientation
+        2 == rotate 1 by 60 degrees counter-clockwise
+        3 == rotate 2 by 60 degrees counter-clockwise
+        4 == rotate 3 by 60 degrees counter-clockwise s.t. it faces the y=inf line
+        5 == rotate 4 by 60 degrees counter-clockwise
+        6 == rotate 5 by 60 degrees counter-clockwise
+    end_orientation (int): an int 1-6 representing the desired orientation
+    is_clockwise (bool): whether the robot is rotating clockwise (True) or counter-clockwise (False)
 
     Returns
     ----------
@@ -34,27 +35,22 @@ def field_of_view(world_map, robot_pos, start_orientation, end_orientation):
 
     curr_point = start_edge
 
-    if (start_orientation < end_orientation and not (start_orientation == 1 and end_orientation == 6)) or (start_orientation == 6 and end_orientation == 1):
-        clockwise = False
-    else:
-        clockwise = True
-
     while curr_point != end_edge:
-        if (curr_point == [0, 0] and clockwise) or (curr_point == [world_size[0] - 1, 0] and not clockwise):
+        if (curr_point == [0, 0] and is_clockwise) or (curr_point == [world_size[0] - 1, 0] and not is_clockwise):
             curr_point[1] += 1
-        elif (curr_point == [0, 0] and not clockwise) or (curr_point == [0, world_size[1] - 1] and clockwise):
+        elif (curr_point == [0, 0] and not is_clockwise) or (curr_point == [0, world_size[1] - 1] and is_clockwise):
             curr_point[0] += 1
-        elif (curr_point == [world_size[0] - 1, 0] and clockwise) or (curr_point == [world_size[0] - 1, world_size[1] - 1] and not clockwise):
+        elif (curr_point == [world_size[0] - 1, 0] and is_clockwise) or (curr_point == [world_size[0] - 1, world_size[1] - 1] and not is_clockwise):
             curr_point[0] -= 1
-        elif (curr_point == [0, world_size[1] - 1] and not clockwise) or (curr_point == [world_size[0] - 1, world_size[1] - 1] and clockwise):
+        elif (curr_point == [0, world_size[1] - 1] and not is_clockwise) or (curr_point == [world_size[0] - 1, world_size[1] - 1] and is_clockwise):
             curr_point[1] -= 1
         elif curr_point[0] != 0 and curr_point[0] != world_size[0] - 1:
-            if (clockwise and curr_point[1] == 0) or (not clockwise and curr_point[1] == world_size[1]-1):
+            if (is_clockwise and curr_point[1] == 0) or (not is_clockwise and curr_point[1] == world_size[1]-1):
                 curr_point[0] -= 1
             else:
                 curr_point[0] += 1
         elif curr_point[1] != 0 and curr_point[1] != world_size[1] - 1:
-            if (clockwise and curr_point[0] == 0) or (not clockwise and curr_point[0] == world_size[0]-1):
+            if (is_clockwise and curr_point[0] == 0) or (not is_clockwise and curr_point[0] == world_size[0]-1):
                 curr_point[1] += 1
             else:
                 curr_point[1] -= 1

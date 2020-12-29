@@ -29,7 +29,7 @@ class RangeFinder:
         return self.__frequency
 
     # Public Methods
-    def scan(self, world, new_orientation):
+    def scan(self, world, new_orientation, is_clockwise):
         """
         Scans the given world
 
@@ -37,10 +37,11 @@ class RangeFinder:
         ----------
         world (decentralized_exploration.core.world.World): a World object that the RangeFinder will scan
         new_orientation (int): an int 1-6 representing the new orientation of the robot
+        is_clockwise (bool): True if the rotation is clockwise, False if counter_clockwise
 
         Returns
         ----------
         list, list: two lists of pixel coordinates representing occupied and free points
         """
 
-        return field_of_view(world.world_map, world.robot_position, world.robot_orientation, new_orientation)
+        return field_of_view(world.world_map, world.robot_position, world.robot_orientation, new_orientation, is_clockwise)

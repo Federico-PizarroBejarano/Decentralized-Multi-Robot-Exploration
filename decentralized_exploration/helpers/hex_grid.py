@@ -57,12 +57,12 @@ class Hex:
 
 class FractionalHex(Hex):
     """
-    A subclass of decentralized_exploration.helpers.hex_grid.Hex with float axial coordinates. 
+    A subclass of Hex with float axial coordinates. 
         Used to convert to nearest integer hex
 
     Public Methods
     ----------
-    to_hex(): returns decentralized_exploration.helpers.hex_grid.Hex object that is 
+    to_hex(): returns Hex object that is 
         nearest in axial coordinates
     """
 
@@ -114,12 +114,12 @@ class Grid():
 
     Instance Attributes
     ----------
-    orientation (decentralized_exploration.helpers.hex_grid.Orientation): an Orientation object whether 
+    orientation (Orientation): an Orientation object whether 
         the grid is flat-topped or pointy-topped
     origin (list) : a 2-element list of coordinates for the origin of the grid
     size (float) : the size of the hexagons
     graph(networkx.classes.graph.Graph): a networkx Graph object 
-    all_hexes(list): the list of all decentralized_exploration.helpers.hex_grid.Hex objects in the graph
+    all_hexes(list): the list of all Hex objects in the graph
 
     Public Methods
     -------
@@ -134,6 +134,9 @@ class Grid():
     hex_center(hexagon): returns the sub-pixel coordinates of the center of a given Hex
     """
 
+    # Tunable Parameter
+    radius = 2
+
     def __init__(self, orientation, origin, size):
         self.orientation = orientation
         self.origin = origin
@@ -141,8 +144,12 @@ class Grid():
         self.graph = nx.Graph()
 
     @property
+    def all_nodes(self):
+        return self.graph.nodes()
+
+    @property
     def all_hexes(self):
-        return [self.graph.nodes()[node]['hex'] for node in list(self.graph.nodes())]
+        return [self.all_nodes[node]['hex'] for node in list(self.all_nodes)]
 
     # Public Methods
     def find_hex(self, desired_hex):
@@ -151,11 +158,11 @@ class Grid():
 
         Parameters
         ----------
-        desired_hex (decentralized_exploration.helpers.hex_grid.Hex): a Hex object with desired axial coordinates
+        desired_hex (Hex): a Hex object with desired axial coordinates
 
         Returns
         ----------
-        decentralized_exploration.helpers.hex_grid.Hex: the desired hex in Grid, or None if there is none
+        Hex: the desired hex in Grid, or None if there is none
         """
 
         found_hex = [h for h in self.all_hexes if h.q == desired_hex.q and h.r == desired_hex.r]
@@ -172,7 +179,7 @@ class Grid():
 
         Parameters
         ----------
-        new_hex (decentralized_exploration.helpers.hex_grid.Hex): a Hex object with axial coordinates
+        new_hex (Hex): a Hex object with axial coordinates
 
         Returns
         ----------
@@ -184,7 +191,7 @@ class Grid():
         if found_hex:
             return found_hex.node_id
         else:
-            node_id = len(self.graph.nodes())
+            node_id = len(self.all_nodes)
             new_hex.node_id = node_id
             self.graph.add_node(node_id, hex=new_hex)
 
@@ -192,7 +199,7 @@ class Grid():
                 neighbours = self.hex_neighbours(new_hex)
 
                 for neighbour in neighbours:
-                    if self.graph.nodes[neighbour]['hex'].state == 0:
+                    if self.all_nodes[neighbour]['hex'].state == 0:
                         self.graph.add_edge(node_id, neighbour)
 
             return node_id
@@ -207,7 +214,7 @@ class Grid():
 
         Returns
         ----------
-        decentralized_exploration.helpers.hex_grid.Hex: the Hex axial coordinates covering that point
+        Hex: the Hex axial coordinates covering that point
         """
 
         x = (point[1] - self.origin[0]) / float(self.size)
@@ -226,11 +233,11 @@ class Grid():
         boolean: True if there are unexplored hexes in all_hexes, False otherwise
         """
 
-        unexplored_hexes = sum([h.state == -1 for h in self.all_hexes])
-        if unexplored_hexes > 0:
-            return True
-        else:
-            return False
+        for h in self.all_hexes:
+            if h.state == -1:
+                return True
+        
+        return False
 
     def hex_neighbours(self, center_hex, radius=1):
         """
@@ -238,7 +245,7 @@ class Grid():
 
         Parameters
         ----------
-        center_hex (decentralized_exploration.helpers.hex_grid.Hex): a Hex object
+        center_hex (Hex): a Hex object
 
         Returns
         ----------
@@ -268,7 +275,7 @@ class Grid():
         dOccupied (int): the difference in occupied pixels 
         """
 
-        old_hex = self.graph.nodes[node_id]['hex']
+        old_hex = self.all_nodes[node_id]['hex']
         old_state = old_hex.state
 
         old_hex.nUnknown += dUnknown
@@ -281,7 +288,7 @@ class Grid():
             neighbours = self.hex_neighbours(old_hex)
 
             for neighbour in neighbours:
-                if self.graph.nodes[neighbour]['hex'].state == 0:
+                if self.all_nodes[neighbour]['hex'].state == 0:
                     self.graph.add_edge(node_id, neighbour)
 
         elif old_state == 0 and new_state != 0:
@@ -295,7 +302,7 @@ class Grid():
 
         Parameters
         ----------
-        hexagon (decentralized_exploration.helpers.hex_grid.Hex): the Hex with axial coordinates
+        hexagon (Hex): the Hex with axial coordinates
 
         Returns
         ----------
@@ -312,22 +319,32 @@ class Grid():
         Clears the reward from all hexes and then re-calculates the reward  at every
         hex. Does not accept any arguments and does not return anything
         """
-        radius = 2 # Tunable parameter
-
-        all_nodes = self.graph.nodes()
 
         for node in self.all_hexes:
             node.reward = 0
         
         for node in self.all_hexes:
             if node.state == -1:
-                neighbours = self.hex_neighbours(node, radius)
+                neighbours = self.hex_neighbours(node, self.radius)
 
                 for neighbour in neighbours:
-                    if self.clear_path(node, all_nodes[neighbour]['hex']):
-                        all_nodes[neighbour]['hex'].reward += 1
+                    if self.all_nodes[neighbour]['hex'].state == 0 and self.clear_path(node, self.all_nodes[neighbour]['hex']):
+                        self.all_nodes[neighbour]['hex'].reward += 1
     
     def hex_distance(self, start_hex, end_hex):
+        """
+        Takes two hexes and returns the hex distance between them as an integer
+
+        Parameters
+        ----------
+        start_hex (Hex): a Hex object representing the starting hex
+        end_hex (Hex): a Hex object representing the ending hex
+
+        Returns
+        ----------
+        distance (int): a integer representing the Hex distance between two hexes
+        """
+
         s_q, s_r = start_hex.q, start_hex.r
         e_q, e_r = end_hex.q, end_hex.r
 
@@ -335,11 +352,24 @@ class Grid():
         return int(distance)
 
     def clear_path(self, start_hex, end_hex):
+        """
+        Determines if the direct linear path between two hexes is completely clear (all free hexes)
+
+        Parameters
+        ----------
+        start_hex (Hex): a Hex object representing the starting hex
+        end_hex (Hex): a Hex object representing the ending hex
+
+        Returns
+        ----------
+        clear (bool): True if clear, False otherwise
+        """
+
         distance = self.hex_distance(start_hex, end_hex)
         s_x, s_y = self.hex_center(start_hex)
         e_x, e_y = self.hex_center(end_hex)
 
-        for i in range(1, distance+1):
+        for i in range(1, distance):
             x = s_x + (e_x - s_x) * (1/distance) * i
             y = s_y + (e_y - s_y) * (1/distance) * i
 
@@ -350,6 +380,29 @@ class Grid():
                 return False
         
         return True
+    
+    def find_closest_unknown(self, center_hex):
+        """
+        If the given hex has a reward, returns one of the unknown hexes providing the reward
+
+        Parameters
+        ----------
+        center_hex (Hex): a Hex object representing the ending hex
+
+        Returns
+        ----------
+        unknown_hex (Hex): a Hex representing the neighbouring unknown hex
+        """
+
+        if center_hex.reward == 0:
+            return None
+        else:
+            neighbours = self.hex_neighbours(center_hex, self.radius)
+
+            for neighbour in neighbours:
+                if self.all_nodes[neighbour]['hex'].state == -1 and self.clear_path(center_hex, self.all_nodes[neighbour]['hex']):
+                    return neighbour
+
 
 
 def convert_pixelmap_to_grid(pixel_map, size):
@@ -366,7 +419,7 @@ def convert_pixelmap_to_grid(pixel_map, size):
 
     Returns
     ----------
-    decentralized_exploration.helpers.hex_grid.Grid: a Grid object representing the map
+    Grid: a Grid object representing the map
     """
 
     center = [0, 0]
