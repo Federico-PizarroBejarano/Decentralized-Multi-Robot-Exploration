@@ -12,14 +12,14 @@ def convert_image_to_pixelmap(file_path):
     file_path (str): the path to the desired file
 
     Returns
-    ----------
-    numpy.ndarray: numpy array of pixels representing the map. 
+    -------
+    pixel_map (numpy.ndarray): numpy array of pixels representing the map. 
         0  == free
         1  == occupied
     """
 
-    map = imread(file_path, as_gray=True)
-    map[map < 128] = 1
-    map[map >= 128] = 0
+    pixel_map = imread(file_path, as_gray=True)
+    pixel_map[pixel_map < 128] = 1
+    pixel_map[pixel_map >= 128] = 0
 
-    return map
+    return pixel_map

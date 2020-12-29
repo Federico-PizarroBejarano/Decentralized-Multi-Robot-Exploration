@@ -12,18 +12,18 @@ class Robot:
     A class used to represent a single robot
 
     Instance Attributes
-    ----------
-    range_finder (decentralized_exploration.core.range_finder.RangeFinder): a RangeFinder object representing the sensor
+    -------------------
+    range_finder (RangeFinder): a RangeFinder object representing the sensor
     width (float) : the width of the robot in meters
     length (float) : the length of the robot in meters
     pixel_map (numpy.ndarry): numpy array of pixels representing the map. 
         -1 == unexplored
         0  == free
         1  == occupied
-    hex_map (decentralized_exploration.helpers.hex_grid.Grid): A Grid object holding the hex layer
+    hex_map (Grid): A Grid object holding the hex layer
 
     Public Methods
-    -------
+    --------------
     explore(world): Starts the process of the robot exploring the world. Returns fully explored pixel map
     """
 
@@ -99,7 +99,7 @@ class Robot:
         current_pos (tuple): tuple of integer pixel coordinates
 
         Returns
-        ----------
+        -------
         desired_hex (Hex): the Hex object representing the desired hex position
         """
 
@@ -136,7 +136,7 @@ class Robot:
         desired_hex (Hex): the Hex object of the desired hex in the current trajectory
 
         Returns
-        ----------
+        -------
         new_pos (tuple): tuple of integer pixel coordinates of the new position
         new_orientation (int): an int representing the new orientation
         """
@@ -170,11 +170,11 @@ class Robot:
 
         Parameters
         ----------
-        world (decentralized_exploration.core.world.World): a World object that the robot will explore
+        world (World): a World object that the robot will explore
 
         Returns
-        ----------
-        numpy.ndarry: numpy array of pixels representing the fully explored map. 
+        -------
+        pixel_map (numpy.ndarry): numpy array of pixels representing the fully explored map. 
         """
 
         fig = plt.figure()

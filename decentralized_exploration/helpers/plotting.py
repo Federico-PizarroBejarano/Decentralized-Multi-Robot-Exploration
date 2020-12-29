@@ -10,7 +10,7 @@ def plot_grid(grid, plot, robot_pos=[], robot_orientation=0):
 
     Parameters
     ----------
-    grid (decentralized_exploration.helpers.hex_grid.Grid): the grid to be plotted
+    grid (Grid): the grid to be plotted
     plot (matplotlib.axes): a matplotlib axes object to be plotted on
     robot_pos (list, optional): an optional 2-element array of pixel coordinates
     """
@@ -87,7 +87,7 @@ def plot_path(grid, start_node, end_node, plot):
 
     Parameters
     ----------
-    grid (decentralized_exploration.helpers.hex_grid.Grid): the grid to be plotted
+    grid (Grid): the grid to be plotted
     plot (matplotlib.axes): a matplotlib axes object to be plotted on
     start_node (int): the node_id of the starting Hex
     end_node (int): the node_id of the end Hex

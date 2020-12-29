@@ -22,8 +22,9 @@ def field_of_view(world_map, robot_pos, start_orientation, end_orientation, is_c
     is_clockwise (bool): whether the robot is rotating clockwise (True) or counter-clockwise (False)
 
     Returns
-    ----------
-    list, list: two lists of pixel coordinates representing occupied and free points
+    -------
+    all_free_points (list): a list of pixel coordinates representing free points
+    all_occupied_points (list): a list of pixel coordinates representing occupied points
     """
 
     world_size = world_map.shape
@@ -76,8 +77,8 @@ def bresenham(world_map, start, end):
     end(array): a 2-element array of pixel coordinates representing ending pixel
 
     Returns
-    ----------
-    list: a list of pixel coordinates representing line of sight, with the last pixel being 
+    -------
+    points (list): a list of pixel coordinates representing line of sight, with the last pixel being 
         occupied and all others being free
     """
 
@@ -144,7 +145,7 @@ def get_edge_point(robot_pos, orientation, world_size):
     world_size (tuple): a tuple of the size of the world_map
 
     Returns
-    ----------
+    -------
     edge_point (tuple): tuple of integer pixel coordinates of the edge
     """
 

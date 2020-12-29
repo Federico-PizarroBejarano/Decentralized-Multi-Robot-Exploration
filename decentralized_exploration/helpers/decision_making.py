@@ -11,7 +11,7 @@ def find_new_orientation(current_hex, current_orientation, next_hex):
         trying to look at
 
     Returns
-    ----------
+    -------
     new_orientation (int): an int from 1-6 representing the new orientation
     is_clockwise (bool): True if the rotation is clockwise, False if counter-clockwise
     """
@@ -83,7 +83,7 @@ def distance_between_orientations(start_orientation, end_orientation):
     end_orientation (int): an int from 1-6 representing the ending orientation
 
     Returns
-    ----------
+    -------
     orientation_distance (int): an int representing the orientation distance
     """
 

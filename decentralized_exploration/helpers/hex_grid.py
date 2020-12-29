@@ -8,21 +8,21 @@ class Hex:
     A class used to represent a hexagon in the hexagonal grid layer
 
     Class Attributes
-    ----------
-    Tr(int): the ratio between free and unknown pixels required for the hexagon
+    ----------------
+    Tr (int): the ratio between free and unknown pixels required for the hexagon
         to be considered free. A tunable parameter
 
     Instance Attributes
-    ----------
-    q(int): the first axial coordinate
-    r(int): the second axial coordinate
-    s(int): the third axial coordinate satisfying (q + r + s = 0)
-    node_id(int): the id of this hexagon in the graph
-    nUnknown(int): number of unknown pixels in this hexagon
-    nFreeint): number of free pixels in this hexagon
-    nOccupied(int): number of occupied pixels in this hexagon
-    reward(int): the reward associated with this hex
-    state(int): the state of this hexagon as unknown (-1), free (0), or occupied (1)
+    -------------------
+    q (int): the first axial coordinate
+    r (int): the second axial coordinate
+    s (int): the third axial coordinate satisfying (q + r + s = 0)
+    node_id (int): the id of this hexagon in the graph
+    nUnknown (int): number of unknown pixels in this hexagon
+    nFree (int): number of free pixels in this hexagon
+    nOccupied (int): number of occupied pixels in this hexagon
+    reward (int): the reward associated with this hex
+    state (int): the state of this hexagon as unknown (-1), free (0), or occupied (1)
     """
 
     # Tunable Parameter
@@ -61,7 +61,7 @@ class FractionalHex(Hex):
         Used to convert to nearest integer hex
 
     Public Methods
-    ----------
+    --------------
     to_hex(): returns Hex object that is 
         nearest in axial coordinates
     """
@@ -85,10 +85,10 @@ class Orientation():
     A class used to define different orientations of hex grids, such as flat on top or pointy on top
 
     Instance Attributes
-    ----------
-    f(list): list of floats representing flatted conversion matrix
-    b(list): list of floats representing flatted inverse conversion matrix
-    start_angle(float): the starting angle before rotation
+    -------------------
+    f (list): list of floats representing flatted conversion matrix
+    b (list): list of floats representing flatted inverse conversion matrix
+    start_angle (float): the starting angle before rotation
     """
 
     def __init__(self, f, b, start_angle):
@@ -112,17 +112,21 @@ class Grid():
     """
     A class used to represent a hexagonal grid (represented as a graph)
 
+    Class Attributes
+    ----------------
+    radius (int): the radius for which rewards are propagated. A tunable parameter
+
     Instance Attributes
-    ----------
+    -------------------
     orientation (Orientation): an Orientation object whether 
         the grid is flat-topped or pointy-topped
     origin (list) : a 2-element list of coordinates for the origin of the grid
     size (float) : the size of the hexagons
-    graph(networkx.classes.graph.Graph): a networkx Graph object 
-    all_hexes(list): the list of all Hex objects in the graph
+    graph (networkx.classes.graph.Graph): a networkx Graph object 
+    all_hexes (list): the list of all Hex objects in the graph
 
     Public Methods
-    -------
+    --------------
     find_hex(desired_hex): if there is a hex in all_hexes with the given axial coordinates, returns it. 
         Otherwise, returns None
     add_hex(new_hex): adds a given Hex object to graph. If that Hex already exists, does nothing. Returns node_id
@@ -161,8 +165,8 @@ class Grid():
         desired_hex (Hex): a Hex object with desired axial coordinates
 
         Returns
-        ----------
-        Hex: the desired hex in Grid, or None if there is none
+        -------
+        found_hex (Hex): the desired hex in Grid, or None if there is none
         """
 
         found_hex = [h for h in self.all_hexes if h.q == desired_hex.q and h.r == desired_hex.r]
@@ -182,8 +186,8 @@ class Grid():
         new_hex (Hex): a Hex object with axial coordinates
 
         Returns
-        ----------
-        int: the node_id of the added Hex
+        -------
+        node_id (int): the node_id of the added Hex
         """
 
         found_hex = self.find_hex(new_hex)
@@ -213,8 +217,8 @@ class Grid():
         point (list): a 2-element list of pixel coordinates
 
         Returns
-        ----------
-        Hex: the Hex axial coordinates covering that point
+        -------
+        hex_at_point (Hex): the Hex axial coordinates covering that point
         """
 
         x = (point[1] - self.origin[0]) / float(self.size)
@@ -222,15 +226,16 @@ class Grid():
         q = self.orientation.b[0]*x + self.orientation.b[1] * y
         r = self.orientation.b[2]*x + self.orientation.b[3] * y
 
-        return FractionalHex(q, r).to_hex()
+        hex_at_point = FractionalHex(q, r).to_hex()
+        return hex_at_point
 
     def has_unexplored(self):
         """
         Checks whether there are hexes left to explore 
 
         Returns
-        ----------
-        boolean: True if there are unexplored hexes in all_hexes, False otherwise
+        -------
+        has_unexplored (bool): True if there are unexplored hexes in all_hexes, False otherwise
         """
 
         for h in self.all_hexes:
@@ -248,8 +253,8 @@ class Grid():
         center_hex (Hex): a Hex object
 
         Returns
-        ----------
-        list: a list of node_ids for every hex neighbour
+        -------
+        neighbours (list): a list of node_ids for every hex neighbour
         """
 
         neighbours = []
@@ -305,14 +310,16 @@ class Grid():
         hexagon (Hex): the Hex with axial coordinates
 
         Returns
-        ----------
-        list: a 2-element array of sub-pixel coordinates
+        -------
+        center_coords (list): a 2-element array of sub-pixel coordinates
         """
 
         f = self.orientation.f
         x = (f[0] * hexagon.q + f[1]*hexagon.r)*self.size + self.origin[0]
         y = (f[2] * hexagon.q + f[3]*hexagon.r)*self.size + self.origin[1]
-        return [y, x]
+
+        center_coords = [y, x]
+        return center_coords
     
     def propagate_rewards(self):
         """
@@ -341,7 +348,7 @@ class Grid():
         end_hex (Hex): a Hex object representing the ending hex
 
         Returns
-        ----------
+        -------
         distance (int): a integer representing the Hex distance between two hexes
         """
 
@@ -361,7 +368,7 @@ class Grid():
         end_hex (Hex): a Hex object representing the ending hex
 
         Returns
-        ----------
+        -------
         clear (bool): True if clear, False otherwise
         """
 
@@ -390,7 +397,7 @@ class Grid():
         center_hex (Hex): a Hex object representing the ending hex
 
         Returns
-        ----------
+        -------
         unknown_hex (Hex): a Hex representing the neighbouring unknown hex
         """
 
@@ -418,8 +425,8 @@ def convert_pixelmap_to_grid(pixel_map, size):
     size (float): the size of the hexagons compared to the pixels in pixel_map
 
     Returns
-    ----------
-    Grid: a Grid object representing the map
+    -------
+    grid (Grid): a Grid object representing the map
     """
 
     center = [0, 0]
