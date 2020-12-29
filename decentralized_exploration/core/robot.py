@@ -1,5 +1,6 @@
 import numpy as np
 import networkx as nx
+import matplotlib.pyplot as plt
 
 from decentralized_exploration.helpers.plotting import plot_map, plot_grid
 from decentralized_exploration.helpers.hex_grid import convert_pixelmap_to_grid
@@ -88,26 +89,26 @@ class Robot:
         
         self.__hex_map.propagate_rewards()
 
-    def __choose_next_pose(self, current_pose):
+    def __choose_next_pose(self, current_pos):
         """
-        Given the current pose, decides on the next best position for the robot
+        Given the current pos, decides on the next best position for the robot
 
         Parameters
         ----------
-        current_pose (tuple): tuple of integer pixel coordinates
+        current_pos (tuple): tuple of integer pixel coordinates
 
         Returns
         ----------
-        list: 2-element list of pixel coordinates
+        desired_hex (Hex): the Hex object representing the desired hex position
         """
 
-        interesting_free_hexes = [h.node_id for h in self.__hex_map.all_hexes if h.reward > 0]
+        current_hex_id = self.__hex_map.find_hex(self.__hex_map.hex_at(current_pos)).node_id
+        interesting_free_hexes = [h.node_id for h in self.__hex_map.all_hexes if h.reward > 0 and h.node_id != current_hex_id]
 
         if len(interesting_free_hexes) == 0:
-            return []
+            return None
 
-        closest_hex_id = None
-        current_hex_id = self.__hex_map.find_hex(self.__hex_map.hex_at(current_pose)).node_id
+        desired_hex_id = None
         shortest_path = float('inf')
 
         for h in interesting_free_hexes:
@@ -116,15 +117,74 @@ class Robot:
 
                 if path < shortest_path:
                     shortest_path = path
-                    closest_hex_id = h
+                    desired_hex_id = h
 
-        closest_hex = self.__hex_map.graph.nodes[closest_hex_id]['hex']
-        robot_pose = self.__hex_map.hex_center(closest_hex)
+        desired_hex = self.__hex_map.graph.nodes[desired_hex_id]['hex']
 
-        return np.round(robot_pose).astype(int)
+        return desired_hex
+    
+    def __incremental_pose(self, current_pos, current_orientation, desired_hex):
+        """
+        Returns the new position and orientation of the robot one increment towards the desired hex.
+        If the robot is neighbouring an unknown hex it rotates to see that unknown area. 
+
+        Parameters
+        ----------
+        current_pos (tuple): tuple of integer pixel coordinates
+        current_orientation (int): an int representing the current orientation
+        desired_hex (Hex): the Hex object of the desired hex in the current trajectory
+
+        Returns
+        ----------
+        new_pos (tuple): tuple of integer pixel coordinates of the new position
+        new_orientation (int): an int representing the new orientation
+        """
+
+        current_hex = self.__hex_map.find_hex(self.__hex_map.hex_at(current_pos))
+        current_hex_id = current_hex.node_id
+
+        neighbours = self.__hex_map.hex_neighbours(current_hex)
+        unknown_neighbour = False
+        for neighbour in neighbours:
+            if self.__hex_map.graph.nodes[neighbour]['hex'].state == -1:
+                unknown_neighbour = True
+                break
+        
+        if unknown_neighbour:
+            next_hex_id = neighbour
+        else:
+            next_hex_id = nx.shortest_path(self.__hex_map.graph, source=current_hex_id, target=desired_hex.node_id)[1]
+
+        next_hex = self.__hex_map.graph.nodes[next_hex_id]['hex']
+
+        curr_q, curr_r = current_hex.q, current_hex.r
+        next_q, next_r = next_hex.q, next_hex.r
+
+        if curr_q == next_q:
+            if next_r < curr_r:
+                new_orientation = 1
+            else:
+                new_orientation = 4
+        elif curr_r == next_r:
+            if next_q < curr_q:
+                new_orientation = 2
+            else:
+                new_orientation = 5
+        else:
+            if next_q > curr_q:
+                new_orientation = 6
+            else:
+                new_orientation = 3
+        
+        if unknown_neighbour:
+            new_pos = current_pos
+        else:
+            new_pos = self.__hex_map.hex_center(next_hex)
+            new_pos = np.round(new_pos).astype(int)
+        
+        return new_pos, new_orientation
 
     # Public Methods
-
     def explore(self, world):
         """
         Given the world the robot is exploring, iteratively explores the area
@@ -138,17 +198,38 @@ class Robot:
         numpy.ndarry: numpy array of pixels representing the fully explored map. 
         """
 
-        while self.__hex_map.has_unexplored():
-            occupied_points, free_points = self.__range_finder.scan(world)
+        # Do a 360 scan
+        world.move_robot(world.robot_position, new_orientation=6)
+        for i in range(1, 6+1):
+            occupied_points, free_points = self.__range_finder.scan(world, new_orientation=i)
             self.__update_map(occupied_points, free_points)
 
-            plot_map(self.__pixel_map, world.robot_position)
-            plot_grid(self.__hex_map, world.robot_position)
+            world.move_robot(world.robot_position, new_orientation=i)
+        
+        fig = plt.figure()
+        ax1 = fig.add_subplot(121)
+        ax2 = fig.add_subplot(122)
 
-            new_position = self.__choose_next_pose(world.robot_position)
-            if len(new_position) == 0:
+        plot_map(self.__pixel_map, plot=ax1, robot_pos=world.robot_position)
+        plot_grid(self.__hex_map, plot=ax2, robot_pos=world.robot_position)
+        plt.pause(1)
+
+        while self.__hex_map.has_unexplored():
+            desired_hex = self.__choose_next_pose(world.robot_position)
+
+            if not desired_hex:
                 break
 
-            world.move_robot(new_position, new_orientation=1)
+            new_position, new_orientation = self.__incremental_pose(world.robot_position, world.robot_orientation, desired_hex)
+            print(new_position, new_orientation, world.robot_orientation)
+
+            occupied_points, free_points = self.__range_finder.scan(world, new_orientation)
+
+            self.__update_map(occupied_points, free_points)
+            world.move_robot(new_position, new_orientation)
+
+            plot_map(self.__pixel_map, plot=ax1, robot_pos=world.robot_position)
+            plot_grid(self.__hex_map, plot=ax2, robot_pos=world.robot_position)
+            plt.pause(1)
 
         return self.__pixel_map

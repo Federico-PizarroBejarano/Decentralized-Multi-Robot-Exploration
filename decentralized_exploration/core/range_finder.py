@@ -13,7 +13,7 @@ class RangeFinder:
 
     Public Methods
     -------
-    scan(world): object to scans the given world
+    scan(world, new_orientation): object to scans the given world
     """
 
     def __init__(self, full_range, frequency):
@@ -29,17 +29,18 @@ class RangeFinder:
         return self.__frequency
 
     # Public Methods
-    def scan(self, world):
+    def scan(self, world, new_orientation):
         """
         Scans the given world
 
         Parameters
         ----------
         world (decentralized_exploration.core.world.World): a World object that the RangeFinder will scan
+        new_orientation (int): an int 1-6 representing the new orientation of the robot
 
         Returns
         ----------
         list, list: two lists of pixel coordinates representing occupied and free points
         """
 
-        return field_of_view(world.world_map, world.robot_position)
+        return field_of_view(world.world_map, world.robot_position, world.robot_orientation, new_orientation)
