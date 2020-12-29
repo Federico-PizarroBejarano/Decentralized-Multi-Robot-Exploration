@@ -207,11 +207,11 @@ class Robot:
             world.move_robot(world.robot_position, new_orientation=i)
         
         fig = plt.figure()
-        ax1 = fig.add_subplot(121)
-        ax2 = fig.add_subplot(122)
+        # ax1 = fig.add_subplot(121)
+        ax2 = fig.add_subplot(111)
 
-        plot_map(self.__pixel_map, plot=ax1, robot_pos=world.robot_position)
-        plot_grid(self.__hex_map, plot=ax2, robot_pos=world.robot_position)
+        # plot_map(self.__pixel_map, plot=ax1, robot_pos=world.robot_position)
+        plot_grid(self.__hex_map, plot=ax2, robot_pos=world.robot_position, robot_orientation=world.robot_orientation)
         plt.pause(1)
 
         while self.__hex_map.has_unexplored():
@@ -228,8 +228,8 @@ class Robot:
             self.__update_map(occupied_points, free_points)
             world.move_robot(new_position, new_orientation)
 
-            plot_map(self.__pixel_map, plot=ax1, robot_pos=world.robot_position)
-            plot_grid(self.__hex_map, plot=ax2, robot_pos=world.robot_position)
+            # plot_map(self.__pixel_map, plot=ax1, robot_pos=world.robot_position)
+            plot_grid(self.__hex_map, plot=ax2, robot_pos=world.robot_position, robot_orientation=world.robot_orientation)
             plt.pause(1)
 
         return self.__pixel_map

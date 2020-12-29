@@ -56,6 +56,20 @@ def plot_grid(grid, plot, robot_pos=[], robot_orientation=0):
             c = 'red'
             alpha = 0.5
 
+            if robot_orientation == 1:
+                plot.plot(x, y-0.3, 'mo')
+            if robot_orientation == 2:
+                plot.plot(x-0.2, y-0.2, 'mo')
+            if robot_orientation == 3:
+                plot.plot(x-0.2, y+0.2, 'mo')
+            if robot_orientation == 4:
+                plot.plot(x, y+0.3, 'mo')
+            if robot_orientation == 5:
+                plot.plot(x+0.2, y+0.2, 'mo')
+            if robot_orientation == 6:
+                plot.plot(x+0.2, y-0.2, 'mo')
+
+
         hexagon = RegularPolygon((x, y), numVertices=6, radius=2./3.,
                                  orientation=np.radians(30),
                                  facecolor=c, alpha=alpha, edgecolor='k')
