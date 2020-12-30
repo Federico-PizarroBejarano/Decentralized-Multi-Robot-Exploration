@@ -31,7 +31,7 @@ class Robot:
         self.__range_finder = range_finder
         self.__width = width
         self.__length = length
-        self.__initialize_map(world_size)
+        self.__initialize_map(world_size=world_size)
 
     @property
     def size(self):
@@ -58,8 +58,7 @@ class Robot:
 
         hexagon_size = 4
         self.__pixel_map = -np.ones(world_size)
-        self.__hex_map = convert_pixelmap_to_grid(
-            self.__pixel_map, hexagon_size)
+        self.__hex_map = convert_pixelmap_to_grid(pixel_map=self.__pixel_map, size=hexagon_size)
 
     def __update_map(self, occupied_points, free_points):
         """
@@ -81,11 +80,13 @@ class Robot:
         self.__pixel_map[free_rows, free_cols] = 0
 
         for occ_point in occupied_points:
-            node_id = self.__hex_map.find_hex(self.__hex_map.hex_at(occ_point)).node_id
+            desired_hex = self.__hex_map.hex_at(point=occ_point)
+            node_id = self.__hex_map.find_hex(desired_hex=desired_hex).node_id
             self.__hex_map.update_hex(node_id=node_id, dOccupied=1, dUnknown=-1)
 
         for free_point in free_points:
-            node_id = self.__hex_map.find_hex(self.__hex_map.hex_at(free_point)).node_id
+            desired_hex = self.__hex_map.hex_at(point=free_point)
+            node_id = self.__hex_map.find_hex(desired_hex=desired_hex).node_id
             self.__hex_map.update_hex(node_id=node_id, dFree=1, dUnknown=-1)
         
         self.__hex_map.propagate_rewards()
@@ -103,7 +104,8 @@ class Robot:
         desired_hex (Hex): the Hex object representing the desired hex position
         """
 
-        current_hex_id = self.__hex_map.find_hex(self.__hex_map.hex_at(current_pos)).node_id
+        current_hex_pos = self.__hex_map.hex_at(point=current_pos)
+        current_hex_id = self.__hex_map.find_hex(desired_hex=current_hex_pos).node_id
         interesting_free_hexes = [h.node_id for h in self.__hex_map.all_hexes if h.reward > 0 and h.node_id != current_hex_id]
 
         if len(interesting_free_hexes) == 0:
@@ -113,14 +115,14 @@ class Robot:
         shortest_path = float('inf')
 
         for h in interesting_free_hexes:
-            if nx.has_path(self.__hex_map.graph, source=current_hex_id, target=h):
-                path = nx.shortest_path_length(self.__hex_map.graph, source=current_hex_id, target=h)
+            if nx.has_path(G=self.__hex_map.graph, source=current_hex_id, target=h):
+                path = nx.shortest_path_length(G=self.__hex_map.graph, source=current_hex_id, target=h)
 
                 if path < shortest_path:
                     shortest_path = path
                     desired_hex_id = h
 
-        desired_hex = self.__hex_map.graph.nodes[desired_hex_id]['hex']
+        desired_hex = self.__hex_map.all_nodes[desired_hex_id]['hex']
 
         return desired_hex
     
@@ -141,24 +143,25 @@ class Robot:
         new_orientation (int): an int representing the new orientation
         """
 
-        current_hex = self.__hex_map.find_hex(self.__hex_map.hex_at(current_pos))
+        current_hex_pos = self.__hex_map.hex_at(point=current_pos)
+        current_hex = self.__hex_map.find_hex(desired_hex=current_hex_pos)
         current_hex_id = current_hex.node_id
 
         on_reward_hex = current_hex.reward > 0
         
         if on_reward_hex:
-            next_hex_id = self.__hex_map.find_closest_unknown(current_hex)
+            next_hex_id = self.__hex_map.find_closest_unknown(center_hex=current_hex)
         else:
-            next_hex_id = nx.shortest_path(self.__hex_map.graph, source=current_hex_id, target=desired_hex.node_id)[1]
+            next_hex_id = nx.shortest_path(G=self.__hex_map.graph, source=current_hex_id, target=desired_hex.node_id)[1]
 
-        next_hex = self.__hex_map.graph.nodes[next_hex_id]['hex']
+        next_hex = self.__hex_map.all_nodes[next_hex_id]['hex']
 
-        new_orientation, is_clockwise = find_new_orientation(current_hex, current_orientation, next_hex)
+        new_orientation, is_clockwise = find_new_orientation(current_hex=current_hex, current_orientation=current_orientation, next_hex=next_hex)
         
         if on_reward_hex:
             new_pos = current_pos
         else:
-            new_pos = self.__hex_map.hex_center(next_hex)
+            new_pos = self.__hex_map.hex_center(hexagon=next_hex)
             new_pos = np.round(new_pos).astype(int)
         
         return new_pos, new_orientation, is_clockwise
@@ -182,32 +185,31 @@ class Robot:
         ax2 = fig.add_subplot(111)
 
         # Do a 360 scan
-        world.move_robot(world.robot_position, new_orientation=6)
-        for i in range(1, 6+1):
-            occupied_points, free_points = self.__range_finder.scan(world, new_orientation=i, is_clockwise=False)
-            self.__update_map(occupied_points, free_points)
+        world.move_robot(new_position=world.robot_position, new_orientation=6)
+        for orientation in range(1, 6+1):
+            occupied_points, free_points = self.__range_finder.scan(world=world, new_orientation=orientation, is_clockwise=False)
+            self.__update_map(occupied_points=occupied_points, free_points=free_points)
 
-            world.move_robot(world.robot_position, new_orientation=i)
+            world.move_robot(new_position=world.robot_position, new_orientation=orientation)
             # plot_map(self.__pixel_map, plot=ax1, robot_pos=world.robot_position)
-            plot_grid(self.__hex_map, plot=ax2, robot_pos=world.robot_position, robot_orientation=world.robot_orientation)
+            plot_grid(grid=self.__hex_map, plot=ax2, robot_pos=world.robot_position, robot_orientation=world.robot_orientation)
             plt.pause(0.05)
 
         while self.__hex_map.has_unexplored():
-            desired_hex = self.__choose_next_pose(world.robot_position)
+            desired_hex = self.__choose_next_pose(current_pos=world.robot_position)
 
             if not desired_hex:
                 break
 
-            new_position, new_orientation, is_clockwise = self.__incremental_pose(world.robot_position, world.robot_orientation, desired_hex)
-            print(new_position, new_orientation, world.robot_orientation)
+            new_position, new_orientation, is_clockwise = self.__incremental_pose(current_pos=world.robot_position, current_orientation=world.robot_orientation, desired_hex=desired_hex)
 
-            occupied_points, free_points = self.__range_finder.scan(world, new_orientation, is_clockwise)
+            occupied_points, free_points = self.__range_finder.scan(world=world, new_orientation=new_orientation, is_clockwise=is_clockwise)
 
-            self.__update_map(occupied_points, free_points)
-            world.move_robot(new_position, new_orientation)
+            self.__update_map(occupied_points=occupied_points, free_points=free_points)
+            world.move_robot(new_position=new_position, new_orientation=new_orientation)
 
             # plot_map(self.__pixel_map, plot=ax1, robot_pos=world.robot_position)
-            plot_grid(self.__hex_map, plot=ax2, robot_pos=world.robot_position, robot_orientation=world.robot_orientation)
+            plot_grid(grid=self.__hex_map, plot=ax2, robot_pos=world.robot_position, robot_orientation=world.robot_orientation)
             plt.pause(0.05)
 
         return self.__pixel_map

@@ -52,8 +52,8 @@ def find_new_orientation(current_hex, current_orientation, next_hex):
         elif delta_q < 0 and delta_r > 0 and delta_s < 0:
             poss_orientations = [3, 4]
 
-        dist_1 = distance_between_orientations(current_orientation, poss_orientations[0])
-        dist_2 = distance_between_orientations(current_orientation, poss_orientations[1])
+        dist_1 = distance_between_orientations(start_orientation=current_orientation, end_orientation=poss_orientations[0])
+        dist_2 = distance_between_orientations(start_orientation=current_orientation, end_orientation=poss_orientations[1])
 
         if dist_1 > dist_2:
             new_orientation = poss_orientations[0]

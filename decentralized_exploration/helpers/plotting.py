@@ -74,7 +74,7 @@ def plot_grid(grid, plot, robot_pos=[], robot_orientation=0):
                                  orientation=np.radians(30),
                                  facecolor=c, alpha=alpha, edgecolor='k')
         plot.add_patch(hexagon)
-        plot.text(x, y-0.2, l, ha='center', va='center', size=5)
+        # plot.text(x, y-0.2, l, ha='center', va='center', size=5)
 
     plot.set_xlim([min(hcoord)-1, max(hcoord)+1])
     plot.set_ylim([min(vcoord)-1, max(vcoord)+1])
@@ -96,7 +96,7 @@ def plot_path(grid, start_node, end_node, plot):
     plot.cla()
 
     # pylint:disable-msg=too-many-function-args
-    path = nx.shortest_path(grid.graph, start_node, end_node)
+    path = nx.shortest_path(G=grid.graph, source=start_node, target=end_node)
 
     all_hexes = grid.all_hexes
     colors_list = ['0.5', '1', '0']

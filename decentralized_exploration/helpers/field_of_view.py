@@ -31,8 +31,8 @@ def field_of_view(world_map, robot_pos, start_orientation, end_orientation, is_c
     all_free_points = set()
     all_occupied_points = set()
 
-    start_edge = get_edge_point(robot_pos, start_orientation, world_size)
-    end_edge = get_edge_point(robot_pos, end_orientation, world_size)
+    start_edge = get_edge_point(robot_pos=robot_pos, orientation=start_orientation, world_size=world_size)
+    end_edge = get_edge_point(robot_pos=robot_pos, orientation=end_orientation, world_size=world_size)
 
     curr_point = start_edge
 
@@ -56,7 +56,7 @@ def field_of_view(world_map, robot_pos, start_orientation, end_orientation, is_c
             else:
                 curr_point[1] -= 1
 
-        all_points = bresenham(world_map, start=robot_pos, end=curr_point)
+        all_points = bresenham(world_map=world_map, start=robot_pos, end=curr_point)
         all_free_points = all_free_points.union(set(all_points[:-1]))
         all_occupied_points.add(all_points[-1])
 

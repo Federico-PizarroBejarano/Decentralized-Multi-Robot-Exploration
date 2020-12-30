@@ -45,4 +45,5 @@ class RangeFinder:
         all_occupied_points (list): a list of pixel coordinates representing occupied points
         """
 
-        return field_of_view(world.world_map, world.robot_position, world.robot_orientation, new_orientation, is_clockwise)
+        return field_of_view(world_map=world.world_map, robot_pos=world.robot_position, 
+            start_orientation=world.robot_orientation, end_orientation=new_orientation, is_clockwise=is_clockwise)

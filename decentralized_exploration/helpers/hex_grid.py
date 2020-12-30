@@ -77,7 +77,7 @@ class FractionalHex(Hex):
             q = -(r + s)
         elif(dr > ds):
             r = -(q + s)
-        return Hex(int(q), int(r), self.node_id, self.nUnknown, self.nFree, self.nOccupied, self.reward)
+        return Hex(q=int(q), r=int(r))
 
 
 class Orientation():
@@ -190,17 +190,17 @@ class Grid():
         node_id (int): the node_id of the added Hex
         """
 
-        found_hex = self.find_hex(new_hex)
+        found_hex = self.find_hex(desired_hex=new_hex)
 
         if found_hex:
             return found_hex.node_id
         else:
             node_id = len(self.all_nodes)
             new_hex.node_id = node_id
-            self.graph.add_node(node_id, hex=new_hex)
+            self.graph.add_node(node_for_adding=node_id, hex=new_hex)
 
             if new_hex.state == 0:
-                neighbours = self.hex_neighbours(new_hex)
+                neighbours = self.hex_neighbours(center_hex=new_hex)
 
                 for neighbour in neighbours:
                     if self.all_nodes[neighbour]['hex'].state == 0:
@@ -226,7 +226,7 @@ class Grid():
         q = self.orientation.b[0]*x + self.orientation.b[1] * y
         r = self.orientation.b[2]*x + self.orientation.b[3] * y
 
-        hex_at_point = FractionalHex(q, r).to_hex()
+        hex_at_point = FractionalHex(q=q, r=r).to_hex()
         return hex_at_point
 
     def has_unexplored(self):
@@ -262,7 +262,7 @@ class Grid():
         for q in range(-radius, radius+1):
             for r in range(-radius, radius+1):
                 if (abs(q+r) <= radius) and ((q != r) or (q <= radius - 1 and q != 0)):
-                    neighbour = self.find_hex(Hex(center_hex.q + q, center_hex.r + r))
+                    neighbour = self.find_hex(desired_hex=Hex(center_hex.q + q, center_hex.r + r))
                     if neighbour:
                         neighbours.append(neighbour.node_id)
 
@@ -290,7 +290,7 @@ class Grid():
         new_state = old_hex.state
 
         if old_state != 0 and new_state == 0:
-            neighbours = self.hex_neighbours(old_hex)
+            neighbours = self.hex_neighbours(center_hex=old_hex)
 
             for neighbour in neighbours:
                 if self.all_nodes[neighbour]['hex'].state == 0:
@@ -332,10 +332,10 @@ class Grid():
         
         for node in self.all_hexes:
             if node.state == -1:
-                neighbours = self.hex_neighbours(node, self.radius)
+                neighbours = self.hex_neighbours(center_hex=node, radius=self.radius)
 
                 for neighbour in neighbours:
-                    if self.all_nodes[neighbour]['hex'].state == 0 and self.clear_path(node, self.all_nodes[neighbour]['hex']):
+                    if self.all_nodes[neighbour]['hex'].state == 0 and self.clear_path(start_hex=node, end_hex=self.all_nodes[neighbour]['hex']):
                         self.all_nodes[neighbour]['hex'].reward += 1
     
     def hex_distance(self, start_hex, end_hex):
@@ -372,16 +372,16 @@ class Grid():
         clear (bool): True if clear, False otherwise
         """
 
-        distance = self.hex_distance(start_hex, end_hex)
-        s_x, s_y = self.hex_center(start_hex)
-        e_x, e_y = self.hex_center(end_hex)
+        distance = self.hex_distance(start_hex=start_hex, end_hex=end_hex)
+        s_x, s_y = self.hex_center(hexagon=start_hex)
+        e_x, e_y = self.hex_center(hexagon=end_hex)
 
         for i in range(1, distance):
             x = s_x + (e_x - s_x) * (1/distance) * i
             y = s_y + (e_y - s_y) * (1/distance) * i
 
-            intermediate_hex = self.hex_at([x, y])
-            intermediate_hex = self.find_hex(intermediate_hex)
+            intermediate_hex = self.hex_at(point=[x, y])
+            intermediate_hex = self.find_hex(desired_hex=intermediate_hex)
 
             if not intermediate_hex or intermediate_hex.state != 0:
                 return False
@@ -404,10 +404,10 @@ class Grid():
         if center_hex.reward == 0:
             return None
         else:
-            neighbours = self.hex_neighbours(center_hex, self.radius)
+            neighbours = self.hex_neighbours(center_hex=center_hex, radius=self.radius)
 
             for neighbour in neighbours:
-                if self.all_nodes[neighbour]['hex'].state == -1 and self.clear_path(center_hex, self.all_nodes[neighbour]['hex']):
+                if self.all_nodes[neighbour]['hex'].state == -1 and self.clear_path(start_hex=center_hex, end_hex=self.all_nodes[neighbour]['hex']):
                     return neighbour
 
 
@@ -430,13 +430,13 @@ def convert_pixelmap_to_grid(pixel_map, size):
     """
 
     center = [0, 0]
-    grid = Grid(OrientationFlat, center, size)
+    grid = Grid(orientation=OrientationFlat, origin=center, size=size)
 
     for y in range(pixel_map.shape[0]):
         for x in range(pixel_map.shape[1]):
-            found_hex = grid.hex_at([y, x])
+            found_hex = grid.hex_at(point=[y, x])
 
-            node_id = grid.add_hex(found_hex)
+            node_id = grid.add_hex(new_hex=found_hex)
 
             if pixel_map[y][x] == 0:
                 grid.update_hex(node_id=node_id, dFree=1)
