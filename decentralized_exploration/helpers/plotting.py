@@ -43,35 +43,31 @@ def plot_grid(grid, plot, robot_pos=[], robot_orientation=0):
         ry = 2.*np.sin(np.radians(60)) * (robot_hex.r - robot_hex.s)/3.
 
     # Add some coloured hexagons
-    for x, y, c in zip(hcoord, vcoord, colors):
-        alpha = 0.5
-        
+    for x, y, c in zip(hcoord, vcoord, colors):        
         if (x, y) in rewards:
-            c = 'blue'
-            alpha = 1/(1+np.exp(-rewards[(x, y)]/7))
+            c = 'green'
             plot.text(x, y, rewards[(x, y)], ha='center', va='center', size=8)
 
         if rx == x and ry == y:
             c = 'red'
-            alpha = 0.5
 
             if robot_orientation == 1:
-                plot.plot(x, y-0.3, 'mo')
+                plot.plot(x, y-0.3, 'bo')
             if robot_orientation == 2:
-                plot.plot(x-0.25, y-0.15, 'mo')
+                plot.plot(x-0.25, y-0.15, 'bo')
             if robot_orientation == 3:
-                plot.plot(x-0.25, y+0.15, 'mo')
+                plot.plot(x-0.25, y+0.15, 'bo')
             if robot_orientation == 4:
-                plot.plot(x, y+0.3, 'mo')
+                plot.plot(x, y+0.3, 'bo')
             if robot_orientation == 5:
-                plot.plot(x+0.25, y+0.15, 'mo')
+                plot.plot(x+0.25, y+0.15, 'bo')
             if robot_orientation == 6:
-                plot.plot(x+0.25, y-0.15, 'mo')
+                plot.plot(x+0.25, y-0.15, 'bo')
 
 
         hexagon = RegularPolygon((x, y), numVertices=6, radius=2./3.,
                                  orientation=np.radians(30),
-                                 facecolor=c, alpha=alpha, edgecolor='k')
+                                 facecolor=c, alpha=0.5, edgecolor='k')
         plot.add_patch(hexagon)
 
     plot.set_xlim([min(hcoord)-1, max(hcoord)+1])
