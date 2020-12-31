@@ -16,3 +16,5 @@ This is a list of tasks that need to be done as well as possible enhancements
 
 - [ ] Add comprehensive unit testing
 - [ ] Add comprehensive integration testing
+- [ ] Make dynamically growing map i.e. no previous knowledge of map size
+- [ ] Improve efficiency
