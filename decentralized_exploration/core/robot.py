@@ -11,6 +11,10 @@ class Robot:
     """
     A class used to represent a single robot
 
+    Class Attributes
+    ----------------
+    hexagon_size (int): the size of the hexagons compared to each pixel. A tunable parameter
+
     Instance Attributes
     -------------------
     range_finder (RangeFinder): a RangeFinder object representing the sensor
@@ -26,6 +30,8 @@ class Robot:
     --------------
     explore(world): Starts the process of the robot exploring the world. Returns fully explored pixel map
     """
+    # Tunable Parameter
+    hexagon_size = 4
 
     def __init__(self, range_finder, width, length, world_size):
         self.__range_finder = range_finder
@@ -56,9 +62,8 @@ class Robot:
         world_size (tuple): the size of the world map in pixels
         """
 
-        hexagon_size = 4
         self.__pixel_map = -np.ones(world_size)
-        self.__hex_map = convert_pixelmap_to_grid(pixel_map=self.__pixel_map, size=hexagon_size)
+        self.__hex_map = convert_pixelmap_to_grid(pixel_map=self.__pixel_map, size=self.hexagon_size)
 
     def __update_map(self, occupied_points, free_points):
         """
@@ -152,7 +157,7 @@ class Robot:
         if on_reward_hex:
             next_hex_id = self.__hex_map.find_closest_unknown(center_hex=current_hex)
         else:
-            next_hex_id = nx.shortest_path(G=self.__hex_map.graph, source=current_hex_id, target=desired_hex.node_id)[1]
+            next_hex_id = nx.shortest_path(G=self.__hex_map.graph, source=current_hex_id, target=desired_hex.node_id)[1] # pylint: disable-msg=unexpected-keyword-arg, no-value-for-parameter
 
         next_hex = self.__hex_map.all_nodes[next_hex_id]['hex']
 

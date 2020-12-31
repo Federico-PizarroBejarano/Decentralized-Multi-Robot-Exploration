@@ -19,7 +19,6 @@ def find_new_orientation(current_hex, current_orientation, next_hex):
     curr_q, curr_r, curr_s = current_hex.q, current_hex.r, current_hex.s
     next_q, next_r, next_s = next_hex.q, next_hex.r, next_hex.s
 
-    diagonal = False
     if curr_q == next_q:
         if next_r < curr_r:
             new_orientation = 1
@@ -36,8 +35,6 @@ def find_new_orientation(current_hex, current_orientation, next_hex):
         else:
             new_orientation = 6
     else:
-        diagonal = True
-
         delta_q, delta_r, delta_s = next_q - curr_q, next_r - curr_r, next_s - curr_s
         if delta_q > 0 and delta_r > 0 and delta_s < 0:
             poss_orientations = [4, 5]
