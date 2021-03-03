@@ -6,7 +6,7 @@ from ..helpers.hex_grid import convert_pixelmap_to_grid
 
 
 def test_grid_creation(I, ax1):
-    grid = convert_pixelmap_to_grid(I, 7)
+    grid = convert_pixelmap_to_grid(I, 3)
     plot_grid(grid, plot=ax1)
     return grid
 

@@ -1,5 +1,4 @@
 import numpy as np
-import networkx as nx
 import matplotlib.pyplot as plt
 
 from decentralized_exploration.helpers.decision_making import find_new_orientation
@@ -86,13 +85,13 @@ class Robot:
 
         for occ_point in occupied_points:
             desired_hex = self.__hex_map.hex_at(point=occ_point)
-            node_id = self.__hex_map.find_hex(desired_hex=desired_hex).node_id
-            self.__hex_map.update_hex(node_id=node_id, dOccupied=1, dUnknown=-1)
+            found_hex = self.__hex_map.find_hex(desired_hex=desired_hex)
+            self.__hex_map.update_hex(hex_to_update=found_hex, dOccupied=1, dUnknown=-1)
 
         for free_point in free_points:
             desired_hex = self.__hex_map.hex_at(point=free_point)
-            node_id = self.__hex_map.find_hex(desired_hex=desired_hex).node_id
-            self.__hex_map.update_hex(node_id=node_id, dFree=1, dUnknown=-1)
+            found_hex = self.__hex_map.find_hex(desired_hex=desired_hex)
+            self.__hex_map.update_hex(hex_to_update=found_hex, dFree=1, dUnknown=-1)
         
         self.__hex_map.propagate_rewards()
 
@@ -106,70 +105,14 @@ class Robot:
 
         Returns
         -------
-        desired_hex (Hex): the Hex object representing the desired hex position
-        """
-
-        current_hex_pos = self.__hex_map.hex_at(point=current_pos)
-        current_hex_id = self.__hex_map.find_hex(desired_hex=current_hex_pos).node_id
-        interesting_free_hexes = [h.node_id for h in self.__hex_map.all_hexes if h.reward > 0 and h.node_id != current_hex_id]
-
-        if len(interesting_free_hexes) == 0:
-            return None
-
-        desired_hex_id = None
-        shortest_path = float('inf')
-
-        for h in interesting_free_hexes:
-            if nx.has_path(G=self.__hex_map.graph, source=current_hex_id, target=h):
-                path = nx.shortest_path_length(G=self.__hex_map.graph, source=current_hex_id, target=h)
-
-                if path < shortest_path:
-                    shortest_path = path
-                    desired_hex_id = h
-
-        desired_hex = self.__hex_map.all_nodes[desired_hex_id]['hex']
-
-        return desired_hex
-    
-    def __incremental_pose(self, current_pos, current_orientation, desired_hex):
-        """
-        Returns the new position and orientation of the robot one increment towards the desired hex.
-        If the robot is neighbouring an unknown hex it rotates to see that unknown area. 
-
-        Parameters
-        ----------
-        current_pos (tuple): tuple of integer pixel coordinates
-        current_orientation (int): an int representing the current orientation
-        desired_hex (Hex): the Hex object of the desired hex in the current trajectory
-
-        Returns
-        -------
         new_pos (tuple): tuple of integer pixel coordinates of the new position
         new_orientation (int): an int representing the new orientation
+        is_clockwise (bool): a bool representing whether the rotation is clockwise
         """
 
-        current_hex_pos = self.__hex_map.hex_at(point=current_pos)
-        current_hex = self.__hex_map.find_hex(desired_hex=current_hex_pos)
-        current_hex_id = current_hex.node_id
+        # TBD
 
-        on_reward_hex = current_hex.reward > 0
-        
-        if on_reward_hex:
-            next_hex_id = self.__hex_map.find_closest_unknown(center_hex=current_hex)
-        else:
-            next_hex_id = nx.shortest_path(G=self.__hex_map.graph, source=current_hex_id, target=desired_hex.node_id)[1] # pylint: disable-msg=unexpected-keyword-arg, no-value-for-parameter
-
-        next_hex = self.__hex_map.all_nodes[next_hex_id]['hex']
-
-        new_orientation, is_clockwise = find_new_orientation(current_hex=current_hex, current_orientation=current_orientation, next_hex=next_hex)
-        
-        if on_reward_hex:
-            new_pos = current_pos
-        else:
-            new_pos = self.__hex_map.hex_center(hexagon=next_hex)
-            new_pos = np.round(new_pos).astype(int)
-        
-        return new_pos, new_orientation, is_clockwise
+        return (0, 0), 1, True
 
     # Public Methods
     def explore(self, world):
@@ -201,12 +144,7 @@ class Robot:
             plt.pause(0.05)
 
         while self.__hex_map.has_unexplored():
-            desired_hex = self.__choose_next_pose(current_pos=world.robot_position)
-
-            if not desired_hex:
-                break
-
-            new_position, new_orientation, is_clockwise = self.__incremental_pose(current_pos=world.robot_position, current_orientation=world.robot_orientation, desired_hex=desired_hex)
+            new_position, new_orientation, is_clockwise = self.__choose_next_pose(current_pos=world.robot_position)
 
             occupied_points, free_points = self.__range_finder.scan(world=world, new_orientation=new_orientation, is_clockwise=is_clockwise)
 

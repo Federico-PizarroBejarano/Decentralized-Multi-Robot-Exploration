@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import RegularPolygon
-import networkx as nx
 
 
 def plot_grid(grid, plot, robot_pos=[], robot_orientation=0):

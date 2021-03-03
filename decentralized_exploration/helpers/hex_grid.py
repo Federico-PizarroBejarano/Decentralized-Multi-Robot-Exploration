@@ -1,7 +1,5 @@
 import math
 import numpy as np
-import networkx as nx
-
 
 class Hex:
     """
@@ -17,7 +15,6 @@ class Hex:
     q (int): the first axial coordinate
     r (int): the second axial coordinate
     s (int): the third axial coordinate satisfying (q + r + s = 0)
-    node_id (int): the id of this hexagon in the graph
     nUnknown (int): number of unknown pixels in this hexagon
     nFree (int): number of free pixels in this hexagon
     nOccupied (int): number of occupied pixels in this hexagon
@@ -29,10 +26,9 @@ class Hex:
     Tr = 0.5
 
     # Starting value for nOccupied should not be 0
-    def __init__(self, q, r, node_id=-1, nUnknown=0, nFree=0, nOccupied=0, reward=0):
+    def __init__(self, q, r, nUnknown=0, nFree=0, nOccupied=0, reward=0):
         self.q = q
         self.r = r
-        self.node_id = node_id
         self.nUnknown = nUnknown
         self.nFree = nFree
         self.nOccupied = nOccupied
@@ -110,7 +106,7 @@ OrientationFlat = Orientation(
 
 class Grid():
     """
-    A class used to represent a hexagonal grid (represented as a graph)
+    A class used to represent a hexagonal grid (represented as an array of Hex objects)
 
     Class Attributes
     ----------------
@@ -122,18 +118,17 @@ class Grid():
         the grid is flat-topped or pointy-topped
     origin (list) : a 2-element list of coordinates for the origin of the grid
     size (float) : the size of the hexagons
-    graph (networkx.classes.graph.Graph): a networkx Graph object 
-    all_hexes (list): the list of all Hex objects in the graph
+    all_hexes (list): the list of all Hex objects in the grid
 
     Public Methods
     --------------
     find_hex(desired_hex): if there is a hex in all_hexes with the given axial coordinates, returns it. 
         Otherwise, returns None
-    add_hex(new_hex): adds a given Hex object to graph. If that Hex already exists, does nothing. Returns node_id
+    add_hex(new_hex): adds a given Hex object to the grid. If that Hex already exists, does nothing. Returns Hex.
     hex_at(point): returns Hex with axial coordinates of Hex covering given pixel coordinate
-    has_unexplored(): returns true if there are unexplored Hexs in all_hexes
-    hex_neighbours(center_hex): returns list of node_ids of adjacent neighbours of given Hex
-    update_hex(node_id, nUnknown = 0, nFree = 0, nOccupied = 0): updates the number of unknown, free, 
+    has_unexplored(): returns True if there are unexplored Hexs in all_hexes
+    hex_neighbours(center_hex): returns list of the adjacent neighbours of given Hex
+    update_hex(hex_to_update, nUnknown = 0, nFree = 0, nOccupied = 0): updates the number of unknown, free, 
         and occupied pixels of a given Hex
     hex_center(hexagon): returns the sub-pixel coordinates of the center of a given Hex
     """
@@ -145,15 +140,7 @@ class Grid():
         self.orientation = orientation
         self.origin = origin
         self.size = size
-        self.graph = nx.Graph()
-
-    @property
-    def all_nodes(self):
-        return self.graph.nodes()
-
-    @property
-    def all_hexes(self):
-        return [self.all_nodes[node]['hex'] for node in list(self.all_nodes)]
+        self.all_hexes = []
 
     # Public Methods
     def find_hex(self, desired_hex):
@@ -166,7 +153,7 @@ class Grid():
 
         Returns
         -------
-        found_hex (Hex): the desired hex in Grid, or None if there is none
+        found_hex (Hex): the desired hex in the grid, or None if there is none
         """
 
         found_hex = [h for h in self.all_hexes if h.q == desired_hex.q and h.r == desired_hex.r]
@@ -177,9 +164,7 @@ class Grid():
 
     def add_hex(self, new_hex):
         """
-        Adds a Hex with given axial coordinates into the graph. If there is already a Hex at 
-            that position, simply returns that Hex's node_id. Otherwise, returns new node_id
-            of the added Hex
+        Adds a Hex with given axial coordinates into all_hexes.
 
         Parameters
         ----------
@@ -187,26 +172,17 @@ class Grid():
 
         Returns
         -------
-        node_id (int): the node_id of the added Hex
+        new_hex (Hex): either the found_hex (if found) or the passed in Hex object (if newly added)
         """
 
         found_hex = self.find_hex(desired_hex=new_hex)
 
-        if found_hex:
-            return found_hex.node_id
+        if not found_hex:
+            self.all_hexes.append(new_hex)
+            return new_hex
         else:
-            node_id = len(self.all_nodes)
-            new_hex.node_id = node_id
-            self.graph.add_node(node_for_adding=node_id, hex=new_hex)
-
-            if new_hex.state == 0:
-                neighbours = self.hex_neighbours(center_hex=new_hex)
-
-                for neighbour in neighbours:
-                    if self.all_nodes[neighbour]['hex'].state == 0:
-                        self.graph.add_edge(node_id, neighbour)
-
-            return node_id
+            return found_hex
+        
 
     def hex_at(self, point):
         """
@@ -254,7 +230,7 @@ class Grid():
 
         Returns
         -------
-        neighbours (list): a list of node_ids for every hex neighbour
+        neighbours (list): a list of Hex objects
         """
 
         neighbours = []
@@ -264,42 +240,25 @@ class Grid():
                 if (abs(q+r) <= radius) and ((q != r) or (q <= radius - 1 and q != 0)):
                     neighbour = self.find_hex(desired_hex=Hex(center_hex.q + q, center_hex.r + r))
                     if neighbour:
-                        neighbours.append(neighbour.node_id)
+                        neighbours.append(neighbour)
 
         return neighbours
 
-    def update_hex(self, node_id, dUnknown=0, dFree=0, dOccupied=0):
+    def update_hex(self, hex_to_update, dUnknown=0, dFree=0, dOccupied=0):
         """
         Updates a Hex with changes to the number of unknown, free, and occupied pixels
 
         Parameters
         ----------
-        node_id (int): the node_id of the Hex to be updated
+        hex_to_update (Hex): the Hex to be updated
         dUnknown (int): the difference in unknown pixels 
         dFree (int): the difference in free pixels 
         dOccupied (int): the difference in occupied pixels 
         """
 
-        old_hex = self.all_nodes[node_id]['hex']
-        old_state = old_hex.state
-
-        old_hex.nUnknown += dUnknown
-        old_hex.nFree += dFree
-        old_hex.nOccupied += dOccupied
-
-        new_state = old_hex.state
-
-        if old_state != 0 and new_state == 0:
-            neighbours = self.hex_neighbours(center_hex=old_hex)
-
-            for neighbour in neighbours:
-                if self.all_nodes[neighbour]['hex'].state == 0:
-                    self.graph.add_edge(node_id, neighbour)
-
-        elif old_state == 0 and new_state != 0:
-            neighbours = list(self.graph.neighbors(node_id))
-            for neighbour in neighbours:
-                self.graph.remove_edge(node_id, neighbour)
+        hex_to_update.nUnknown += dUnknown
+        hex_to_update.nFree += dFree
+        hex_to_update.nOccupied += dOccupied
 
     def hex_center(self, hexagon):
         """
@@ -327,16 +286,16 @@ class Grid():
         hex. Does not accept any arguments and does not return anything
         """
 
-        for node in self.all_hexes:
-            node.reward = 0
+        for hexagon in self.all_hexes:
+            hexagon.reward = 0
         
-        for node in self.all_hexes:
-            if node.state == -1:
-                neighbours = self.hex_neighbours(center_hex=node, radius=self.radius)
+        for hexagon in self.all_hexes:
+            if hexagon.state == -1:
+                neighbours = self.hex_neighbours(center_hex=hexagon, radius=self.radius)
 
                 for neighbour in neighbours:
-                    if self.all_nodes[neighbour]['hex'].state == 0 and self.clear_path(start_hex=node, end_hex=self.all_nodes[neighbour]['hex']):
-                        self.all_nodes[neighbour]['hex'].reward += 1
+                    if neighbour.state == 0 and self.clear_path(start_hex=hexagon, end_hex=neighbour):
+                        neighbour.reward += 1
     
     def hex_distance(self, start_hex, end_hex):
         """
@@ -407,7 +366,7 @@ class Grid():
             neighbours = self.hex_neighbours(center_hex=center_hex, radius=self.radius)
 
             for neighbour in neighbours:
-                if self.all_nodes[neighbour]['hex'].state == -1 and self.clear_path(start_hex=center_hex, end_hex=self.all_nodes[neighbour]['hex']):
+                if neighbour.state == -1 and self.clear_path(start_hex=center_hex, end_hex=neighbour):
                     return neighbour
 
 
@@ -436,13 +395,13 @@ def convert_pixelmap_to_grid(pixel_map, size):
         for x in range(pixel_map.shape[1]):
             found_hex = grid.hex_at(point=[y, x])
 
-            node_id = grid.add_hex(new_hex=found_hex)
+            new_hex = grid.add_hex(new_hex=found_hex)
 
             if pixel_map[y][x] == 0:
-                grid.update_hex(node_id=node_id, dFree=1)
+                grid.update_hex(hex_to_update=new_hex, dFree=1)
             elif pixel_map[y][x] == 1:
-                grid.update_hex(node_id=node_id, dOccupied=1)
+                grid.update_hex(hex_to_update=new_hex, dOccupied=1)
             elif pixel_map[y][x] == -1:
-                grid.update_hex(node_id=node_id, dUnknown=1)
+                grid.update_hex(hex_to_update=new_hex, dUnknown=1)
 
     return grid
