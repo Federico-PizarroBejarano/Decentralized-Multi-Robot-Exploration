@@ -16,16 +16,16 @@ def plot_grid(grid, plot, robot_pos=[], robot_orientation=0):
 
     plot.cla()
 
-    all_hexes = grid.all_hexes
+    all_hexes = grid.all_hexes.values()
     colors_list = ['0.5', '1', '0']
     coord = [[h.q, h.r, h.s] for h in all_hexes]
     colors = [colors_list[h.state+1] for h in all_hexes]
 
     rewards = {}
-    for node in all_hexes:
-        if node.reward > 0:
-            y = 2. * np.sin(np.radians(60)) * (node.r - node.s) / 3.
-            rewards[(node.q, y)] = node.reward
+    for hexagon in all_hexes:
+        if hexagon.reward > 0:
+            y = 2. * np.sin(np.radians(60)) * (hexagon.r - hexagon.s) / 3.
+            rewards[(hexagon.q, y)] = hexagon.reward
 
     # Horizontal cartesian coords
     hcoord = [c[0] for c in coord]

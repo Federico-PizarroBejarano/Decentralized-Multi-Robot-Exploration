@@ -118,7 +118,7 @@ class Grid():
         the grid is flat-topped or pointy-topped
     origin (list) : a 2-element list of coordinates for the origin of the grid
     size (float) : the size of the hexagons
-    all_hexes (list): the list of all Hex objects in the grid
+    all_hexes (dictionary): the dictionary of all Hex objects in the grid, indexed by (q, r)
 
     Public Methods
     --------------
@@ -140,7 +140,7 @@ class Grid():
         self.orientation = orientation
         self.origin = origin
         self.size = size
-        self.all_hexes = []
+        self.all_hexes = {}
 
     # Public Methods
     def find_hex(self, desired_hex):
@@ -156,9 +156,8 @@ class Grid():
         found_hex (Hex): the desired hex in the grid, or None if there is none
         """
 
-        found_hex = [h for h in self.all_hexes if h.q == desired_hex.q and h.r == desired_hex.r]
-        if len(found_hex) == 1:
-            return found_hex[0]
+        if (desired_hex.q, desired_hex.r) in self.all_hexes:
+            return self.all_hexes[(desired_hex.q, desired_hex.r)]
         else:
             return None
 
@@ -178,7 +177,7 @@ class Grid():
         found_hex = self.find_hex(desired_hex=new_hex)
 
         if not found_hex:
-            self.all_hexes.append(new_hex)
+            self.all_hexes[(new_hex.q, new_hex.r)] = new_hex
             return new_hex
         else:
             return found_hex
@@ -214,8 +213,8 @@ class Grid():
         has_unexplored (bool): True if there are unexplored hexes in all_hexes, False otherwise
         """
 
-        for h in self.all_hexes:
-            if h.state == -1:
+        for hexagon in self.all_hexes.values():
+            if hexagon.state == -1:
                 return True
         
         return False
@@ -286,10 +285,10 @@ class Grid():
         hex. Does not accept any arguments and does not return anything
         """
 
-        for hexagon in self.all_hexes:
+        for hexagon in self.all_hexes.values():
             hexagon.reward = 0
         
-        for hexagon in self.all_hexes:
+        for hexagon in self.all_hexes.values():
             if hexagon.state == -1:
                 neighbours = self.hex_neighbours(center_hex=hexagon, radius=self.radius)
 
