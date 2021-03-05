@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from decentralized_exploration.helpers.decision_making import find_new_orientation
-from decentralized_exploration.helpers.hex_grid import convert_pixelmap_to_grid
+from decentralized_exploration.core.constants import Actions
+from decentralized_exploration.helpers.decision_making import find_new_orientation, possible_actions, get_new_state
+from decentralized_exploration.helpers.hex_grid import Hex, convert_pixelmap_to_grid
 from decentralized_exploration.helpers.plotting import plot_map, plot_grid
 
 
@@ -29,8 +30,14 @@ class Robot:
     --------------
     explore(world): Starts the process of the robot exploring the world. Returns fully explored pixel map
     """
-    # Tunable Parameter
+    # Tunable Parameters
     hexagon_size = 4
+    discount_factor = 0.9
+    noise = 0.1
+    minimum_change = 1
+
+    all_states = set()
+    V = {}
 
     def __init__(self, range_finder, width, length, world_size):
         self.__range_finder = range_finder
@@ -51,7 +58,6 @@ class Robot:
         return self.__hex_map
 
     # Private methods
-
     def __initialize_map(self, world_size):
         """
         Initialized both the internal pixel and hex maps given the size of the world
@@ -63,6 +69,14 @@ class Robot:
 
         self.__pixel_map = -np.ones(world_size)
         self.__hex_map = convert_pixelmap_to_grid(pixel_map=self.__pixel_map, size=self.hexagon_size)
+        
+        all_positions = set(self.__hex_map.all_hexes.keys())
+        
+        for orientation in [1, 2, 3, 4, 5, 6]:
+            new_states = set([(position[0], position[1], orientation) for position in all_positions])
+            self.all_states.update(new_states)
+        
+        self.V = {state : self.__hex_map.all_hexes[(state[0], state[1])].reward for state in self.all_states}
 
     def __update_map(self, occupied_points, free_points):
         """
@@ -95,13 +109,14 @@ class Robot:
         
         self.__hex_map.propagate_rewards()
 
-    def __choose_next_pose(self, current_pos):
+    def __choose_next_pose(self, current_pos, current_orientation):
         """
         Given the current pos, decides on the next best position for the robot
 
         Parameters
         ----------
         current_pos (tuple): tuple of integer pixel coordinates
+        current_orientation (int): int representing current orientation of robot
 
         Returns
         -------
@@ -110,9 +125,58 @@ class Robot:
         is_clockwise (bool): a bool representing whether the rotation is clockwise
         """
 
-        # TBD
+        current_hex_pos = self.__hex_map.hex_at(point=current_pos)
+        current_hex = self.__hex_map.find_hex(desired_hex=current_hex_pos)
+        current_state = (current_hex.q, current_hex.r, current_orientation)
+        
+        # Checking if on reward hexagon
+        on_reward_hex = current_hex.reward > 0
+        
+        if on_reward_hex:
+            next_hex = self.__hex_map.find_closest_unknown(center_hex=current_hex)
+            is_clockwise = find_new_orientation(current_hex=current_hex, current_orientation=current_orientation, next_hex=next_hex)
+            action = Actions.CLOCKWISE if is_clockwise else Actions.COUNTER_CLOCKWISE
+            next_state = get_new_state(current_state, action)
+            return next_state
 
-        return (0, 0), 1, True
+        # Initial policy
+        rewards = { key:hexagon.reward for (key, hexagon) in self.__hex_map.all_hexes.items() }
+
+        policy = {}
+
+        biggest_change = float('inf')
+
+        while biggest_change >= self.minimum_change:
+            biggest_change = 0
+            
+            for state in self.all_states:
+                if self.__hex_map.all_hexes[(state[0], state[1])].state != 0:
+                    continue
+
+                old_value = self.V[state]
+                new_value = 0
+                
+                for action in possible_actions(state, self.__hex_map):
+                    next_state = get_new_state(state, action)
+
+                    # Choose a random action to do with probability self.noise
+                    random_action = np.random.choice([rand_act for rand_act in possible_actions(state, self.__hex_map) if rand_act != action])
+                    random_state = get_new_state(state, random_action)
+
+                    value = rewards[(state[0], state[1])] + self.discount_factor * ((1 - self.noise)* self.V[next_state] + (self.noise * self.V[random_state]))
+                    
+                    # Keep best action so far
+                    if value > new_value:
+                        new_value = value
+                        policy[state] = action
+
+                # Save best value                         
+                self.V[state] = new_value
+                biggest_change = max(biggest_change, np.abs(old_value - self.V[state]))
+
+        next_state = get_new_state(state=current_state, action=policy[current_state])
+
+        return next_state
 
     # Public Methods
     def explore(self, world):
@@ -144,9 +208,12 @@ class Robot:
             plt.pause(0.05)
 
         while self.__hex_map.has_unexplored():
-            new_position, new_orientation, is_clockwise = self.__choose_next_pose(current_pos=world.robot_position)
+            new_state = self.__choose_next_pose(current_pos=world.robot_position, current_orientation=world.robot_orientation)
+            new_position = self.__hex_map.hex_center(Hex(new_state[0], new_state[1]))
+            new_position = [int(coord) for coord in new_position]
+            new_orientation = new_state[2]
 
-            occupied_points, free_points = self.__range_finder.scan(world=world, new_orientation=new_orientation, is_clockwise=is_clockwise)
+            occupied_points, free_points = self.__range_finder.scan(world=world, new_orientation=new_orientation)
 
             self.__update_map(occupied_points=occupied_points, free_points=free_points)
             world.move_robot(new_position=new_position, new_orientation=new_orientation)

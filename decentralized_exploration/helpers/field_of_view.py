@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def field_of_view(world_map, robot_pos, start_orientation, end_orientation, is_clockwise):
+def field_of_view(world_map, robot_pos, start_orientation, end_orientation, is_clockwise = None):
     """
     Given a world map and the position of the robot, returns all free and occupied pixels in its field of view
 
@@ -19,7 +19,8 @@ def field_of_view(world_map, robot_pos, start_orientation, end_orientation, is_c
         5 == rotate 4 by 60 degrees counter-clockwise
         6 == rotate 5 by 60 degrees counter-clockwise
     end_orientation (int): an int 1-6 representing the desired orientation
-    is_clockwise (bool): whether the robot is rotating clockwise (True) or counter-clockwise (False)
+    is_clockwise (bool): whether the robot is rotating clockwise (True) or counter-clockwise (False). Defaults to None 
+        and is then set to the most efficient direction
 
     Returns
     -------
@@ -35,6 +36,15 @@ def field_of_view(world_map, robot_pos, start_orientation, end_orientation, is_c
     end_edge = get_edge_point(robot_pos=robot_pos, orientation=end_orientation, world_size=world_size)
 
     curr_point = start_edge
+
+    if is_clockwise == None:
+        clockwise_distance = (start_orientation - end_orientation) % 6
+        counter_clockwise_distance = (end_orientation - start_orientation) % 6
+
+        if clockwise_distance > counter_clockwise_distance:
+            is_clockwise = False
+        else:
+            is_clockwise = True
 
     while curr_point != end_edge:
         if (curr_point == [0, 0] and is_clockwise) or (curr_point == [world_size[0] - 1, 0] and not is_clockwise):

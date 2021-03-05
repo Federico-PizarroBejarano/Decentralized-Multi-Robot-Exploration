@@ -1,3 +1,5 @@
+from ..core.constants import Actions
+
 def find_new_orientation(current_hex, current_orientation, next_hex):
     """
     Given the current hex and orientation, as well as the new hex, determines the new orientation of 
@@ -66,7 +68,7 @@ def find_new_orientation(current_hex, current_orientation, next_hex):
     else:
         is_clockwise = True
     
-    return new_orientation, is_clockwise
+    return is_clockwise
 
 
 def distance_between_orientations(start_orientation, end_orientation):
@@ -90,4 +92,52 @@ def distance_between_orientations(start_orientation, end_orientation):
     orientation_distance = min(one_way, another_way)
     return orientation_distance
 
+
+def possible_actions(state, hex_map):
+    poss_actions = [Actions.COUNTER_CLOCKWISE, Actions.CLOCKWISE]
+
+    orientation = state[2]
+    
+    if orientation == 1:
+        next_position = (state[0], state[1] - 1)
+    elif orientation == 2:
+        next_position = (state[0] - 1, state[1])
+    elif orientation == 3:
+        next_position = (state[0] - 1, state[1] + 1)
+    elif orientation == 4:
+        next_position = (state[0], state[1] + 1)
+    elif orientation == 5:
+        next_position = (state[0] + 1, state[1])
+    elif orientation == 6:
+        next_position = (state[0] + 1, state[1] - 1)
+    
+    if (next_position in hex_map.all_hexes) and (hex_map.all_hexes[next_position].state == 0):
+        poss_actions.append(Actions.FORWARD)
+    
+    return poss_actions
+
+
+def get_new_state(state, action):
+    if action == Actions.FORWARD:
+        orientation = state[2]
         
+        if orientation == 1:
+            next_state = (state[0], state[1] - 1, orientation)
+        elif orientation == 2:
+            next_state = (state[0] - 1, state[1], orientation)
+        elif orientation == 3:
+            next_state = (state[0] - 1, state[1] + 1, orientation)
+        elif orientation == 4:
+            next_state = (state[0], state[1] + 1, orientation)
+        elif orientation == 5:
+            next_state = (state[0] + 1, state[1], orientation)
+        elif orientation == 6:
+            next_state = (state[0] + 1, state[1] - 1, orientation)
+    elif action == Actions.COUNTER_CLOCKWISE:
+        new_orientation = state[2] + 1 if state[2] + 1 <= 6 else 1 
+        next_state = (state[0], state[1], new_orientation)
+    elif action == Actions.CLOCKWISE:
+        new_orientation = state[2] - 1 if (state[2] - 1 >= 1) else 6 
+        next_state = (state[0], state[1], new_orientation)
+    
+    return next_state
