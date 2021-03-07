@@ -11,7 +11,8 @@ def plot_grid(grid, plot, robot_pos=[], robot_orientation=0):
     ----------
     grid (Grid): the grid to be plotted
     plot (matplotlib.axes): a matplotlib axes object to be plotted on
-    robot_pos (list, optional): an optional 2-element array of pixel coordinates
+    robot_pos (list): an optional 2-element list of pixel coordinates
+    robot_orientation (int): an int representing the orientation of the robot
     """
 
     plot.cla()
@@ -85,7 +86,7 @@ def plot_map(pixel_map, plot, robot_pos=[]):
         0  == free
         1  == occupied
     plot (matplotlib.axes): a matplotlib axes object to be plotted on
-    robot_pos (list, optional): an optional 2-element array of pixel coordinates
+    robot_pos (list): an optional 2-element array of pixel coordinates
     """
 
     plot.cla()

@@ -106,7 +106,7 @@ OrientationFlat = Orientation(
 
 class Grid():
     """
-    A class used to represent a hexagonal grid (represented as an array of Hex objects)
+    A class used to represent a hexagonal grid (represented as an dictionary of Hex objects)
 
     Class Attributes
     ----------------

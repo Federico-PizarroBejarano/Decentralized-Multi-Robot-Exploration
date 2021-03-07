@@ -10,7 +10,7 @@ def field_of_view(world_map, robot_pos, start_orientation, end_orientation, is_c
     world_map (numpy.ndarray): numpy array of pixels representing the map. 
         0  == free
         1  == occupied
-    robot_pos (array): a 2-element array of pixel coordinates 
+    robot_pos (list): a 2-element list of pixel coordinates 
     start_orientation (int): an int 1-6 representing the orientation of the robot. Note y axis is inverted
         1 == facing directly towards y==0 line
         2 == rotate 1 by 60 degrees counter-clockwise
@@ -83,8 +83,8 @@ def bresenham(world_map, start, end):
     world_map(numpy.ndarray): numpy array of pixels representing the map. 
         0  == free
         1  == occupied
-    start(array): a 2-element array of pixel coordinates representing starting pixel
-    end(array): a 2-element array of pixel coordinates representing ending pixel
+    start(list): a 2-element list of pixel coordinates representing starting pixel
+    end(list): a 2-element list of pixel coordinates representing ending pixel
 
     Returns
     -------
