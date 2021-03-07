@@ -137,8 +137,8 @@ class Robot:
         other_map (numpy.ndarry): numpy array of pixels representing the map to be merged in 
         """
 
-        for y in self.__pixel_map.shape[0]:
-            for x in self.__pixel_map.shape[1]:
+        for y in range(self.__pixel_map.shape[0]):
+            for x in range(self.__pixel_map.shape[1]):
                 if self.__pixel_map[y, x] == -1:
                     self.__pixel_map[y, x] = other_map[y, x]
                     desired_hex = self.__hex_map.hex_at(point=[y, x])
@@ -254,10 +254,10 @@ class Robot:
         for robot_id in message:
             self.__known_robots[robot_id] = {
                 'last_updated': datetime.now(),
-                'last_known_position': message[robot_id].robot_position
+                'last_known_position': message[robot_id]['robot_position']
             }
 
-            self.__merge_map(other_map=message[robot_id].pixel_map)
+            self.__merge_map(other_map=message[robot_id]['pixel_map'])
 
 
     def explore_1_timestep(self, world):

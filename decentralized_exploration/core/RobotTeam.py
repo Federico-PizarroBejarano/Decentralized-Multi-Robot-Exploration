@@ -43,7 +43,7 @@ class RobotTeam:
         for robot in self.__robots.values():
             if (robot.robot_id != robot_id):
                 other_robot_position = np.array(world.get_position(robot.robot_id))
-                distance = np.linalg.norm(robot_position, other_robot_position) * world.pixel_size
+                distance = np.linalg.norm(robot_position - other_robot_position) * world.pixel_size
 
                 if distance < self.__communication_range:
                     message[robot.robot_id] = { 

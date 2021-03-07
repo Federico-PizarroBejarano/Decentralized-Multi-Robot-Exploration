@@ -15,7 +15,7 @@ This is a list of tasks that need to be done as well as possible enhancements
 ### Multi-Robot Exploration
 
 - [ ] Synchronously create multiple robots with perfect communication
-    - [ ] Design map merging technique
+    - [x] Design map merging technique
     - [ ] Design basic collision avoidance
     - [ ] Update Markov Decision Process for all robots to operate synchronously
 - [ ] Allow robots to operate asynchronously
