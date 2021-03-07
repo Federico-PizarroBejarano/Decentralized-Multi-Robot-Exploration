@@ -31,6 +31,10 @@ class World:
     @property
     def pixel_size(self):
         return self.__pixel_size
+    
+    @property
+    def robot_states(self):
+        return self.__robot_states
 
     # Public Methods
     def get_position(self, robot_id):

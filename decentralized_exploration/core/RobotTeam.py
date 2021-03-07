@@ -81,7 +81,7 @@ class RobotTeam:
 
         for robot in self.__robots.values():
             robot.complete_rotation(world=world)
-            plot_grid(grid=robot.hex_map, plot=ax, robot_pos=world.get_position(robot.robot_id), robot_orientation=world.get_orientation(robot.robot_id))
+            plot_grid(grid=robot.hex_map, plot=ax, robot_states=world.robot_states)
             plt.pause(0.05)
         
         while True:
@@ -91,6 +91,6 @@ class RobotTeam:
             for robot in self.__robots.values():
                 robot.explore_1_timestep(world=world)
             
-            plot_grid(grid=robot.hex_map, plot=ax, robot_pos=world.get_position(robot.robot_id), robot_orientation=world.get_orientation(robot.robot_id))
+            plot_grid(grid=robot.hex_map, plot=ax, robot_states=world.robot_states)
             plt.pause(0.05)
             
