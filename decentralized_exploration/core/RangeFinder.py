@@ -37,8 +37,8 @@ class RangeFinder:
         ----------
         world (World): a World object that the RangeFinder will scan
         position (list): a 2-element list of integer pixel coordinates
-        old_orientation (int): an int 1-6 representing the old orientation of the robot
-        new_orientation (int): an int 1-6 representing the new orientation of the robot
+        old_orientation (Orientation): an Orientation object representing the old orientation of the robot
+        new_orientation (Orientation): an Orientation object representing the new orientation of the robot
         is_clockwise (bool): True if the rotation is clockwise, False if counter_clockwise. Defaults to None
 
         Returns

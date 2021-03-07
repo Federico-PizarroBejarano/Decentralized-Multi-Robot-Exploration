@@ -76,7 +76,7 @@ class FractionalHex(Hex):
         return Hex(q=int(q), r=int(r))
 
 
-class Orientation():
+class HexOrientation():
     """
     A class used to define different orientations of hex grids, such as flat on top or pointy on top
 
@@ -93,12 +93,12 @@ class Orientation():
         self.start_angle = start_angle
 
 
-OrientationPointy = Orientation(
+OrientationPointy = HexOrientation(
     f=[math.sqrt(3.0), math.sqrt(3.0)/2.0, 0.0, 3.0/2.0],
     b=[math.sqrt(3.0)/3.0, -1.0/3.0, 0.0, 2.0/3.0],
     start_angle=0.5)
 
-OrientationFlat = Orientation(
+OrientationFlat = HexOrientation(
     f=[3.0/2.0, 0.0, math.sqrt(3.0)/2.0, math.sqrt(3.0)],
     b=[2.0/3.0, 0.0, -1.0/3.0, math.sqrt(3.0)/3.0],
     start_angle=0.0)
@@ -114,7 +114,7 @@ class Grid():
 
     Instance Attributes
     -------------------
-    orientation (Orientation): an Orientation object whether 
+    hex_orientation (HexOrientation): an Orientation object whether 
         the grid is flat-topped or pointy-topped
     origin (list) : a 2-element list of coordinates for the origin of the grid
     size (float) : the size of the hexagons
@@ -136,8 +136,8 @@ class Grid():
     # Tunable Parameter
     radius = 2
 
-    def __init__(self, orientation, origin, size):
-        self.orientation = orientation
+    def __init__(self, hex_orientation, origin, size):
+        self.hex_orientation = hex_orientation
         self.origin = origin
         self.size = size
         self.all_hexes = {}
@@ -198,8 +198,8 @@ class Grid():
 
         x = (point[1] - self.origin[0]) / float(self.size)
         y = (point[0] - self.origin[1]) / float(self.size)
-        q = self.orientation.b[0]*x + self.orientation.b[1] * y
-        r = self.orientation.b[2]*x + self.orientation.b[3] * y
+        q = self.hex_orientation.b[0]*x + self.hex_orientation.b[1] * y
+        r = self.hex_orientation.b[2]*x + self.hex_orientation.b[3] * y
 
         hex_at_point = FractionalHex(q=q, r=r).to_hex()
         return hex_at_point
@@ -272,7 +272,7 @@ class Grid():
         center_coords (list): a 2-element array of sub-pixel coordinates
         """
 
-        f = self.orientation.f
+        f = self.hex_orientation.f
         x = (f[0] * hexagon.q + f[1]*hexagon.r)*self.size + self.origin[0]
         y = (f[2] * hexagon.q + f[3]*hexagon.r)*self.size + self.origin[1]
 
@@ -388,7 +388,7 @@ def convert_pixelmap_to_grid(pixel_map, size):
     """
 
     center = [0, 0]
-    grid = Grid(orientation=OrientationFlat, origin=center, size=size)
+    grid = Grid(hex_orientation=OrientationFlat, origin=center, size=size)
 
     for y in range(pixel_map.shape[0]):
         for x in range(pixel_map.shape[1]):

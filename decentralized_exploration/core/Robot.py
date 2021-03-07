@@ -157,12 +157,12 @@ class Robot:
         Parameters
         ----------
         current_pos (tuple): tuple of integer pixel coordinates
-        current_orientation (int): int representing current orientation of robot
+        current_orientation (Orientation): an Orientation object representing current orientation of robot
 
         Returns
         -------
         new_pos (tuple): tuple of integer pixel coordinates of the new position
-        new_orientation (int): an int representing the new orientation
+        new_orientation (Orientation): an Orientation object representing the new orientation
         is_clockwise (bool): a bool representing whether the rotation is clockwise
         """
 
@@ -230,14 +230,14 @@ class Robot:
         """
 
         starting_orientation = world.get_orientation(self.__robot_id)
-        next_orientation = starting_orientation + 1 if (starting_orientation + 1 <= 6) else 1
+        next_orientation = starting_orientation.rotate_clockwise()
 
         while starting_orientation != next_orientation:
             occupied_points, free_points = self.__range_finder.scan(world=world, position=world.get_position(self.__robot_id), old_orientation=world.get_orientation(self.__robot_id), new_orientation=next_orientation, is_clockwise=False)
             self.__update_map(occupied_points=occupied_points, free_points=free_points)
 
             world.move_robot(robot_id=self.__robot_id, new_position=world.get_position(self.__robot_id), new_orientation=next_orientation)
-            next_orientation = next_orientation + 1 if (next_orientation + 1 <= 6) else 1
+            next_orientation.rotate_clockwise(in_place=True)
 
 
     def communicate(self, message):

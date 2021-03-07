@@ -59,7 +59,7 @@ class World:
 
         Returns
         -------
-        orientation (int): an int representing the orientation of the robot
+        orientation (Orientation): an Orientation object representing the orientation of the robot
         """
 
         return self.__robot_states[robot_id].orientation
@@ -73,7 +73,7 @@ class World:
         ----------
         robot_id (str): the id of the desired robot
         new_position (list): a 2-element list of integer pixel coordinates
-        new_orientation (int): an integer representing the orientation of the robot
+        new_orientation (Orientation): an Orientation object representing the orientation of the robot
         """
 
         self.__robot_states[robot_id].pixel_position = new_position

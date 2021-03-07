@@ -1,4 +1,5 @@
 from ..core.constants import Actions
+from decentralized_exploration.core.constants import Orientation
 
 def find_new_orientation(current_hex, current_orientation, next_hex):
     """
@@ -8,13 +9,13 @@ def find_new_orientation(current_hex, current_orientation, next_hex):
     Parameters
     ----------
     current_hex (Hex): the Hex object the robot is currently at
-    current_orientation (int): an int from 1-6 representing the current orientation
+    current_orientation (Orientation): an Orientation object representing the current orientation
     next_hex (Hex): the hex object representing the next hex the robot will be or the hex the robot is 
         trying to look at
 
     Returns
     -------
-    new_orientation (int): an int from 1-6 representing the new orientation
+    new_orientation (Orientation): an Orientation object from 1-6 representing the new orientation
     is_clockwise (bool): True if the rotation is clockwise, False if counter-clockwise
     """
 
@@ -51,8 +52,8 @@ def find_new_orientation(current_hex, current_orientation, next_hex):
         elif delta_q < 0 and delta_r > 0 and delta_s < 0:
             poss_orientations = [3, 4]
 
-        dist_1 = distance_between_orientations(start_orientation=current_orientation, end_orientation=poss_orientations[0])
-        dist_2 = distance_between_orientations(start_orientation=current_orientation, end_orientation=poss_orientations[1])
+        dist_1 = current_orientation.distance_to_orientation(other_orientation=Orientation(poss_orientations[0]))
+        dist_2 = current_orientation.distance_to_orientation(other_orientation=Orientation(poss_orientations[1]))
 
         if dist_1 > dist_2:
             new_orientation = poss_orientations[0]
@@ -69,28 +70,6 @@ def find_new_orientation(current_hex, current_orientation, next_hex):
         is_clockwise = True
     
     return is_clockwise
-
-
-def distance_between_orientations(start_orientation, end_orientation):
-    """
-    Given two orientations, determines the minimum number of 60 degree rotations necessary to get
-    from one orientation to the other, called orientation distance
-
-    Parameters
-    ----------
-    start_orientation (int): an int from 1-6 representing the starting orientation
-    end_orientation (int): an int from 1-6 representing the ending orientation
-
-    Returns
-    -------
-    orientation_distance (int): an int representing the orientation distance
-    """
-
-    one_way = (start_orientation - end_orientation) % 6
-    another_way = (end_orientation - start_orientation) % 6
-
-    orientation_distance = min(one_way, another_way)
-    return orientation_distance
 
 
 def possible_actions(state, hex_map):

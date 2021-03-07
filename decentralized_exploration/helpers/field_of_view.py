@@ -11,13 +11,7 @@ def field_of_view(world_map, robot_pos, start_orientation, end_orientation, is_c
         0  == free
         1  == occupied
     robot_pos (list): a 2-element list of pixel coordinates 
-    start_orientation (int): an int 1-6 representing the orientation of the robot. Note y axis is inverted
-        1 == facing directly towards y==0 line
-        2 == rotate 1 by 60 degrees counter-clockwise
-        3 == rotate 2 by 60 degrees counter-clockwise
-        4 == rotate 3 by 60 degrees counter-clockwise s.t. it faces the y=inf line
-        5 == rotate 4 by 60 degrees counter-clockwise
-        6 == rotate 5 by 60 degrees counter-clockwise
+    start_orientation (Orientation): an Orientation object representing the orientation of the robot
     end_orientation (int): an int 1-6 representing the desired orientation
     is_clockwise (bool): whether the robot is rotating clockwise (True) or counter-clockwise (False). Defaults to None 
         and is then set to the most efficient direction
