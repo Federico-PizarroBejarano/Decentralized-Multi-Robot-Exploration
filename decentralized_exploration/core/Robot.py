@@ -21,6 +21,7 @@ class Robot:
     minimum_change (float): the MDP exits when the largest change in Value is less than this
     minimum_change_repulsive (float): the repulsive MDP exits when the largest change in Value is less than this
     max_iterations (int): the maximum number of iterations before the MDP returns
+    horizon (int): how near a state is from the current state to be considered in the MDP
 
     Instance Attributes
     -------------------
@@ -51,6 +52,7 @@ class Robot:
     minimum_change_repulsive = 1
     max_iterations = 20
     rho = 0.1
+    horizon = 15
 
     def __init__(self, robot_id, range_finder, width, length, world_size):
         self.__robot_id = robot_id
@@ -156,28 +158,35 @@ class Robot:
                         self.__hex_map.update_hex(hex_to_update=found_hex, dOccupied=1, dUnknown=-1)
 
 
-    def __update_repulsive_value(self):
+    def __update_repulsive_value(self, current_position):
         """
         Updates the repulsive value at each state. This is then used in __choose_next_pose to avoid other robots
+
+        Parameters
+        ----------
+        current_position (tuple): tuple of integer pixel coordinates
         """
 
         if (len(self.__known_robots.keys()) > 0):
+            current_hex_pos = self.__hex_map.hex_at(point=current_position)
+            current_hex = self.__hex_map.find_hex(desired_hex=current_hex_pos)
+
             known_robot_positions = [robot['last_known_position'] for robot in self.__known_robots.values()]
             known_robot_states = [self.__hex_map.hex_at(point=position) for position in known_robot_positions]
             known_robot_states = [(hex_position.q, hex_position.r) for hex_position in known_robot_states]
 
             repulsive_rewards = { key: self.rho if key in known_robot_states else 0 for key in self.__hex_map.all_hexes.keys() }
 
-            solve_MDP(self.__hex_map, self.__repulsive_V, self.__all_states, repulsive_rewards, self.noise, self.discount_factor, self.minimum_change_repulsive, self.max_iterations)
+            solve_MDP(self.__hex_map, self.__repulsive_V, self.__all_states, repulsive_rewards, self.noise, self.discount_factor, self.minimum_change_repulsive, self.max_iterations, self.horizon, current_hex)
 
 
-    def __choose_next_pose(self, current_pos, current_orientation):
+    def __choose_next_pose(self, current_position, current_orientation):
         """
         Given the current pos, decides on the next best position for the robot
 
         Parameters
         ----------
-        current_pos (tuple): tuple of integer pixel coordinates
+        current_position (tuple): tuple of integer pixel coordinates
         current_orientation (int): int representing current orientation of robot
 
         Returns
@@ -185,7 +194,7 @@ class Robot:
         next_state (tuple): tuple of q and r coordinates of the new position, with orientation at the end
         """
 
-        current_hex_pos = self.__hex_map.hex_at(point=current_pos)
+        current_hex_pos = self.__hex_map.hex_at(point=current_position)
         current_hex = self.__hex_map.find_hex(desired_hex=current_hex_pos)
         current_state = (current_hex.q, current_hex.r, current_orientation)
         
@@ -199,7 +208,7 @@ class Robot:
             next_state = get_new_state(current_state, action)
             return next_state
 
-        self.__update_repulsive_value()
+        self.__update_repulsive_value(current_position)
         repulsive_reward = { key:0 for key in self.__hex_map.all_hexes.keys() }
         
         for state in self.__repulsive_V.keys():
@@ -207,7 +216,7 @@ class Robot:
         
         rewards = { key:hexagon.reward - repulsive_reward[key] for (key, hexagon) in self.__hex_map.all_hexes.items() }
 
-        policy = solve_MDP(self.__hex_map, self.__V, self.__all_states, rewards, self.noise, self.discount_factor, self.minimum_change, self.max_iterations)
+        policy = solve_MDP(self.__hex_map, self.__V, self.__all_states, rewards, self.noise, self.discount_factor, self.minimum_change, self.max_iterations, self.horizon, current_hex)
 
         next_state = get_new_state(state=current_state, action=policy[current_state])
 
@@ -264,7 +273,7 @@ class Robot:
         world (World): a World object that the robot will explore
         """
 
-        new_state = self.__choose_next_pose(current_pos=world.get_position(self.__robot_id), current_orientation=world.get_orientation(self.__robot_id))
+        new_state = self.__choose_next_pose(current_position=world.get_position(self.__robot_id), current_orientation=world.get_orientation(self.__robot_id))
         new_position = self.__hex_map.hex_center(Hex(new_state[0], new_state[1]))
         new_position = [int(coord) for coord in new_position]
         new_orientation = new_state[2]

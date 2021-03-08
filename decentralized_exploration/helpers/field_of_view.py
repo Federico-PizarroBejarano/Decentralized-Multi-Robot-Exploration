@@ -215,4 +215,4 @@ def get_edge_point(robot_pos, orientation, world_size):
             x = (y - y_intercept)/slope
             edge_point = [x, y]
     
-    return [round(edge_point[1]), round(edge_point[0])]
+    return [int(round(edge_point[1])), int(round(edge_point[0]))]

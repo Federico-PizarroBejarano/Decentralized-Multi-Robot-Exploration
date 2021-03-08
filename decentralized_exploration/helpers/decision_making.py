@@ -1,6 +1,7 @@
 import numpy as np
 
-from ..core.constants import Actions
+from decentralized_exploration.core.constants import Actions
+from decentralized_exploration.helpers.hex_grid import Hex
 
 def find_new_orientation(current_hex, current_orientation, next_hex):
     """
@@ -145,7 +146,7 @@ def get_new_state(state, action):
     return next_state
 
 
-def solve_MDP(hex_map, V, all_states, rewards, noise, discount_factor, minimum_change, max_iterations):
+def solve_MDP(hex_map, V, all_states, rewards, noise, discount_factor, minimum_change, max_iterations, horizon, current_hex):
     """
     Solves an MDP given the states, rewards, transition function, and actions. 
 
@@ -160,6 +161,8 @@ def solve_MDP(hex_map, V, all_states, rewards, noise, discount_factor, minimum_c
     discount_factor (float): a float less than or equal to 1 that discounts distant values in the MDP
     minimum_change (float): the MDP exits when the largest change in Value is less than this
     max_iterations (int): the maximum number of iterations before the MDP returns
+    horizon (int): how near a state is from the current state to be considered in the MD
+    current_hex (Hex): the hex of where the robot currently is
 
     Returns
     -------
@@ -175,7 +178,7 @@ def solve_MDP(hex_map, V, all_states, rewards, noise, discount_factor, minimum_c
         iterations += 1
         
         for state in all_states:
-            if hex_map.all_hexes[(state[0], state[1])].state != 0:
+            if (hex_map.all_hexes[(state[0], state[1])].state != 0) or (hex_map.hex_distance(current_hex, Hex(state[0], state[1])) > horizon):
                 continue
 
             old_value = V[state]
