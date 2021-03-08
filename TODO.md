@@ -9,15 +9,14 @@ This is a list of tasks that need to be done as well as possible enhancements
     - [x] Define list of robot actions
     - [x] Change Robot.choose_next_pose to choose based on rewards 
 - [ ] Allow for robots of varying sizes
-- [ ] Add RangeFinder that works more realistically
 - [ ] Asynchronously scan and update map while choosing actions in another thread
 
 ### Multi-Robot Exploration
 
-- [ ] Synchronously create multiple robots with perfect communication
+- [x] Synchronously create multiple robots with perfect communication
     - [x] Design map merging technique
-    - [ ] Design basic collision avoidance
-    - [ ] Update Markov Decision Process for all robots to operate synchronously
+    - [x] Design basic collision avoidance
+    - [x] Update Markov Decision Process for all robots to operate synchronously
 - [ ] Allow robots to operate asynchronously
 - [ ] Modify MDP to allow for imperfect communication
     - [ ] Create Voronoi diagram of map
@@ -25,6 +24,7 @@ This is a list of tasks that need to be done as well as possible enhancements
 
 ### Enhancements
 
+- [ ] Add RangeFinder that works more realistically
 - [ ] Add comprehensive unit testing
 - [ ] Add comprehensive integration testing
 - [ ] Make dynamically growing map i.e. no previous knowledge of map size
