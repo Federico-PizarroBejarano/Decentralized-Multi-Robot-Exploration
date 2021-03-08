@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 from decentralized_exploration.core.constants import Actions
-from decentralized_exploration.helpers.decision_making import find_new_orientation, possible_actions, get_new_state
+from decentralized_exploration.helpers.decision_making import find_new_orientation, possible_actions, get_new_state, solve_MDP
 from decentralized_exploration.helpers.hex_grid import Hex, convert_pixelmap_to_grid
 from decentralized_exploration.helpers.plotting import plot_grid
 
@@ -19,6 +19,8 @@ class Robot:
     noise (float): the possibility (between 0 and 1, inclusive), of performing a random action
         rather than the desired action in the MDP
     minimum_change (float): the MDP exits when the largest change in Value is less than this
+    minimum_change_repulsive (float): the repulsive MDP exits when the largest change in Value is less than this
+    max_iterations (int): the maximum number of iterations before the MDP returns
 
     Instance Attributes
     -------------------
@@ -34,7 +36,8 @@ class Robot:
     known_robots (dict): a dictionary containing the last known position and last time of contact
         with every other known robot in the team
     all_states (list)
-    V = {}
+    V (dict): a dictionary containing the value at each state, indexed by state
+    repulsive_V (dict): a dictionary containing the repulsive value at each state, indexed by state
 
     Public Methods
     --------------
@@ -44,7 +47,10 @@ class Robot:
     hexagon_size = 4
     discount_factor = 0.9
     noise = 0.1
-    minimum_change = 1
+    minimum_change = 5
+    minimum_change_repulsive = 1
+    max_iterations = 20
+    rho = 0.1
 
     def __init__(self, robot_id, range_finder, width, length, world_size):
         self.__robot_id = robot_id
@@ -55,6 +61,7 @@ class Robot:
         self.__known_robots = {}
         self.__all_states = set()
         self.__V = {}
+        self.__repulsive_V = {}
 
         self.__initialize_map(world_size=world_size)
 
@@ -86,14 +93,13 @@ class Robot:
 
         self.__pixel_map = -np.ones(world_size)
         self.__hex_map = convert_pixelmap_to_grid(pixel_map=self.__pixel_map, size=self.hexagon_size)
-        
-        all_positions = set(self.__hex_map.all_hexes.keys())
-        
+                
         for orientation in [1, 2, 3, 4, 5, 6]:
-            new_states = set([(position[0], position[1], orientation) for position in all_positions])
+            new_states = set([(position[0], position[1], orientation) for position in self.__hex_map.all_hexes.keys()])
             self.__all_states.update(new_states)
         
         self.__V = {state : self.__hex_map.all_hexes[(state[0], state[1])].reward for state in self.__all_states}
+        self.__repulsive_V = {state : 0 for state in self.__all_states}
 
 
     def __update_map(self, occupied_points, free_points):
@@ -150,6 +156,21 @@ class Robot:
                         self.__hex_map.update_hex(hex_to_update=found_hex, dOccupied=1, dUnknown=-1)
 
 
+    def __update_repulsive_value(self):
+        """
+        Updates the repulsive value at each state. This is then used in __choose_next_pose to avoid other robots
+        """
+
+        if (len(self.__known_robots.keys()) > 0):
+            known_robot_positions = [robot['last_known_position'] for robot in self.__known_robots.values()]
+            known_robot_states = [self.__hex_map.hex_at(point=position) for position in known_robot_positions]
+            known_robot_states = [(hex_position.q, hex_position.r) for hex_position in known_robot_states]
+
+            repulsive_rewards = { key: self.rho if key in known_robot_states else 0 for key in self.__hex_map.all_hexes.keys() }
+
+            solve_MDP(self.__hex_map, self.__repulsive_V, self.__all_states, repulsive_rewards, self.noise, self.discount_factor, self.minimum_change_repulsive, self.max_iterations)
+
+
     def __choose_next_pose(self, current_pos, current_orientation):
         """
         Given the current pos, decides on the next best position for the robot
@@ -161,9 +182,7 @@ class Robot:
 
         Returns
         -------
-        new_pos (tuple): tuple of integer pixel coordinates of the new position
-        new_orientation (int): an int representing the new orientation
-        is_clockwise (bool): a bool representing whether the rotation is clockwise
+        next_state (tuple): tuple of q and r coordinates of the new position, with orientation at the end
         """
 
         current_hex_pos = self.__hex_map.hex_at(point=current_pos)
@@ -180,44 +199,20 @@ class Robot:
             next_state = get_new_state(current_state, action)
             return next_state
 
-        # Initial policy
-        rewards = { key:hexagon.reward for (key, hexagon) in self.__hex_map.all_hexes.items() }
+        self.__update_repulsive_value()
+        repulsive_reward = { key:0 for key in self.__hex_map.all_hexes.keys() }
+        
+        for state in self.__repulsive_V.keys():
+            repulsive_reward[(state[0], state[1])] += self.__repulsive_V[state]
+        
+        rewards = { key:hexagon.reward - repulsive_reward[key] for (key, hexagon) in self.__hex_map.all_hexes.items() }
 
-        policy = {}
-
-        biggest_change = float('inf')
-
-        while biggest_change >= self.minimum_change:
-            biggest_change = 0
-            
-            for state in self.__all_states:
-                if self.__hex_map.all_hexes[(state[0], state[1])].state != 0:
-                    continue
-
-                old_value = self.__V[state]
-                new_value = 0
-                
-                for action in possible_actions(state, self.__hex_map):
-                    next_state = get_new_state(state, action)
-
-                    # Choose a random action to do with probability self.noise
-                    random_action = np.random.choice([rand_act for rand_act in possible_actions(state, self.__hex_map) if rand_act != action])
-                    random_state = get_new_state(state, random_action)
-
-                    value = rewards[(state[0], state[1])] + self.discount_factor * ((1 - self.noise)* self.__V[next_state] + (self.noise * self.__V[random_state]))
-                    
-                    # Keep best action so far
-                    if value > new_value:
-                        new_value = value
-                        policy[state] = action
-
-                # Save best value                         
-                self.__V[state] = new_value
-                biggest_change = max(biggest_change, np.abs(old_value - self.__V[state]))
+        policy = solve_MDP(self.__hex_map, self.__V, self.__all_states, rewards, self.noise, self.discount_factor, self.minimum_change, self.max_iterations)
 
         next_state = get_new_state(state=current_state, action=policy[current_state])
 
         return next_state
+
 
     # Public Methods
     def complete_rotation(self, world):

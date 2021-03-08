@@ -1,3 +1,5 @@
+import numpy as np
+
 from ..core.constants import Actions
 
 def find_new_orientation(current_hex, current_orientation, next_hex):
@@ -141,3 +143,60 @@ def get_new_state(state, action):
         next_state = (state[0], state[1], new_orientation)
     
     return next_state
+
+
+def solve_MDP(hex_map, V, all_states, rewards, noise, discount_factor, minimum_change, max_iterations):
+    """
+    Solves an MDP given the states, rewards, transition function, and actions. 
+
+    Parameters
+    ----------
+    hex_map (Grid): a Grid object containing the map. 
+    V (dict): a dictionary containing the initial guess for the value of each state
+    all_states (list): a list of all possible states
+    rewards (dict): a dictionary of the reward at each positional state
+    noise (float): the possibility (between 0 and 1, inclusive), of performing a random action
+        rather than the desired action in the MDP
+    discount_factor (float): a float less than or equal to 1 that discounts distant values in the MDP
+    minimum_change (float): the MDP exits when the largest change in Value is less than this
+    max_iterations (int): the maximum number of iterations before the MDP returns
+
+    Returns
+    -------
+    policy (dict): a dictionary containing the optimal action to perform at each state, indexed by state
+    """
+
+    policy = {}
+    biggest_change = float('inf')
+    iterations = 0
+
+    while (biggest_change >= minimum_change) and (iterations < max_iterations):
+        biggest_change = 0
+        iterations += 1
+        
+        for state in all_states:
+            if hex_map.all_hexes[(state[0], state[1])].state != 0:
+                continue
+
+            old_value = V[state]
+            new_value = -float('inf')
+            
+            for action in possible_actions(state, hex_map):
+                next_state = get_new_state(state, action)
+
+                # Choose a random action to do with probability self.noise
+                random_action = np.random.choice([rand_act for rand_act in possible_actions(state, hex_map) if rand_act != action])
+                random_state = get_new_state(state, random_action)
+
+                value = rewards[(state[0], state[1])] + discount_factor * ((1 - noise)* V[next_state] + (noise * V[random_state]))
+                
+                # Keep best action so far
+                if value > new_value:
+                    new_value = value
+                    policy[state] = action
+
+            # Save best value                         
+            V[state] = new_value
+            biggest_change = max(biggest_change, np.abs(old_value - V[state]))
+    
+    return policy
