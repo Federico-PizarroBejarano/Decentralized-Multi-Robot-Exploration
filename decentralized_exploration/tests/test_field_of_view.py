@@ -17,7 +17,8 @@ def test_field_of_view(I, robot_pos):
 
     return unknown_I
 
-if __name__ == "__main__":
+
+def main():
     I = np.load('./decentralized_exploration/maps/map_1_small.npy')
     robot_pos = (30, 77)
     unknown_I = test_field_of_view(I, robot_pos)
@@ -27,3 +28,7 @@ if __name__ == "__main__":
     plot_map(unknown_I, plot=ax)
 
     plt.show()
+
+
+if __name__ == "__main__":
+    main()

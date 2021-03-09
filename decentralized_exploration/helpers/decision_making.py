@@ -1,7 +1,9 @@
 import numpy as np
+from scipy.spatial import Voronoi
 
 from decentralized_exploration.core.constants import Actions
 from decentralized_exploration.helpers.hex_grid import Hex
+from decentralized_exploration.helpers.field_of_view import bresenham
 
 def find_new_orientation(current_hex, current_orientation, next_hex):
     """
@@ -97,6 +99,19 @@ def distance_between_orientations(start_orientation, end_orientation):
 
 
 def possible_actions(state, hex_map):
+    """
+    Given a state and the hex_map, returns all possible actions 
+
+    Parameters
+    ----------
+    state (tuple): tuple of state (q, r, orientation)
+    hex_map (Grid): a Grid representing the map
+
+    Returns
+    -------
+    poss_actions (list): a list of Actions (either forward, clockwise, or counter_clockwise)
+    """
+
     poss_actions = [Actions.COUNTER_CLOCKWISE, Actions.CLOCKWISE]
 
     orientation = state[2]
@@ -121,29 +136,42 @@ def possible_actions(state, hex_map):
 
 
 def get_new_state(state, action):
+    """
+    Given a state and an action, computes the resulting state
+
+    Parameters
+    ----------
+    state (tuple): tuple of state (q, r, orientation)
+    action (Action): an Action (either forward, clockwise, or counter_clockwise)
+
+    Returns
+    -------
+    new_state (tuple): tuple of the new state (q, r, orientation)
+    """
+
     if action == Actions.FORWARD:
         orientation = state[2]
         
         if orientation == 1:
-            next_state = (state[0], state[1] - 1, orientation)
+            new_state = (state[0], state[1] - 1, orientation)
         elif orientation == 2:
-            next_state = (state[0] - 1, state[1], orientation)
+            new_state = (state[0] - 1, state[1], orientation)
         elif orientation == 3:
-            next_state = (state[0] - 1, state[1] + 1, orientation)
+            new_state = (state[0] - 1, state[1] + 1, orientation)
         elif orientation == 4:
-            next_state = (state[0], state[1] + 1, orientation)
+            new_state = (state[0], state[1] + 1, orientation)
         elif orientation == 5:
-            next_state = (state[0] + 1, state[1], orientation)
+            new_state = (state[0] + 1, state[1], orientation)
         elif orientation == 6:
-            next_state = (state[0] + 1, state[1] - 1, orientation)
+            new_state = (state[0] + 1, state[1] - 1, orientation)
     elif action == Actions.COUNTER_CLOCKWISE:
         new_orientation = state[2] + 1 if state[2] + 1 <= 6 else 1 
-        next_state = (state[0], state[1], new_orientation)
+        new_state = (state[0], state[1], new_orientation)
     elif action == Actions.CLOCKWISE:
         new_orientation = state[2] - 1 if (state[2] - 1 >= 1) else 6 
-        next_state = (state[0], state[1], new_orientation)
+        new_state = (state[0], state[1], new_orientation)
     
-    return next_state
+    return new_state
 
 
 def solve_MDP(hex_map, V, all_states, rewards, noise, discount_factor, minimum_change, max_iterations, horizon, current_hex):
@@ -203,3 +231,36 @@ def solve_MDP(hex_map, V, all_states, rewards, noise, discount_factor, minimum_c
             biggest_change = max(biggest_change, np.abs(old_value - V[state]))
     
     return policy
+
+
+def voronoi_paths(pixel_map):
+    """
+    Given a map, finds the voronoi paths through the free space
+
+    Parameters
+    ----------
+    pixel_map (numpy.ndarry): numpy array of pixels representing the map.
+
+    Returns
+    -------
+    voronoi_path (numpy.ndarry): a numpy array of every point that is along a voronoi path
+    """
+
+    obstacle_points = np.argwhere(pixel_map != 0)
+    
+    vor = Voronoi(np.array(obstacle_points))
+
+    voronoi_path = []
+
+    for vpair in vor.ridge_vertices:
+        if vpair[0] >= 0 and vpair[1] >= 0:
+            v0 = vor.vertices[vpair[0]]
+            v1 = vor.vertices[vpair[1]]
+
+            v0 = [int(round(coord)) for coord in v0]
+            v1 = [int(round(coord)) for coord in v1]
+            if pixel_map[v0[0], v0[1]] == 0 and pixel_map[v1[0], v1[1]] == 0:
+                voronoi_path += bresenham(pixel_map, v0, v1)
+    
+    return np.array(voronoi_path)
+                

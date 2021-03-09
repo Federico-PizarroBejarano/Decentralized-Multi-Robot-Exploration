@@ -12,7 +12,11 @@ def test_convert_image_to_pixelmap(file_path, pixel_map):
         raise ValueError()
 
 
-if __name__ == "__main__":
+def main():
     file_path = './decentralized_exploration/maps/map_1_small.png'
     pixel_map = np.load('./decentralized_exploration/maps/map_1_small.npy')
     test_convert_image_to_pixelmap(file_path, pixel_map)
+
+
+if __name__ == "__main__":
+    main()
