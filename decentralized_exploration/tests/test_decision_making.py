@@ -12,9 +12,9 @@ def main():
     I = np.load('./decentralized_exploration/maps/map_1_small.npy')
 
     points = test_voronoi_paths(I)
-
+    I[points[:, 0], points[:, 1]] = 0.5
+    
     plt.imshow(I, cmap='gray')
-    plt.scatter(points[:,1], points[:, 0])
 
     plt.show()
 
