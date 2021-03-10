@@ -10,6 +10,7 @@ This is a list of tasks that need to be done as well as possible enhancements
     - [x] Change Robot.choose_next_pose to choose based on rewards 
 - [ ] Allow for robots of varying sizes
 - [ ] Asynchronously scan and update map while choosing actions in another thread
+- [ ] Dynamically increase horizon if no reward within horizon
 
 ### Multi-Robot Exploration
 

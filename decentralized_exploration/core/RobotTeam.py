@@ -84,7 +84,7 @@ class RobotTeam:
             plot_grid(grid=robot.hex_map, plot=ax, robot_states=world.robot_states)
             plt.pause(0.05)
         
-        while True:
+        while self.__robots.values()[0].hex_map.has_rewards():
             for robot in self.__robots.values():
                 robot.communicate(message = self.__generate_message(robot_id=robot.robot_id,  world=world))
             

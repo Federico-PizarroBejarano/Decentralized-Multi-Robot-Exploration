@@ -126,7 +126,7 @@ class Grid():
         Otherwise, returns None
     add_hex(new_hex): adds a given Hex object to the grid. If that Hex already exists, does nothing. Returns Hex.
     hex_at(point): returns Hex with axial coordinates of Hex covering given pixel coordinate
-    has_unexplored(): returns True if there are unexplored Hexs in all_hexes
+    has_rewards(): returns True if there are Hexs with rewards in all_hexes
     hex_neighbours(center_hex): returns list of the adjacent neighbours of given Hex
     update_hex(hex_to_update, nUnknown = 0, nFree = 0, nOccupied = 0): updates the number of unknown, free, 
         and occupied pixels of a given Hex
@@ -204,17 +204,17 @@ class Grid():
         hex_at_point = FractionalHex(q=q, r=r).to_hex()
         return hex_at_point
 
-    def has_unexplored(self):
+    def has_rewards(self):
         """
         Checks whether there are hexes left to explore 
 
         Returns
         -------
-        has_unexplored (bool): True if there are unexplored hexes in all_hexes, False otherwise
+        has_rewards (bool): True if there are hexes with rewadrs in all_hexes, False otherwise
         """
 
         for hexagon in self.all_hexes.values():
-            if hexagon.state == -1:
+            if hexagon.reward > 0:
                 return True
         
         return False

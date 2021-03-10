@@ -51,7 +51,7 @@ class Robot:
     minimum_change = 5
     minimum_change_repulsive = 1
     max_iterations = 20
-    rho = 0.1
+    rho = 0.5
     horizon = 15
 
     def __init__(self, robot_id, range_finder, width, length, world_size):
@@ -168,6 +168,8 @@ class Robot:
         """
 
         if (len(self.__known_robots.keys()) > 0):
+            self.__repulsive_V = {state : 0 for state in self.__all_states}
+
             current_hex_pos = self.__hex_map.hex_at(point=current_position)
             current_hex = self.__hex_map.find_hex(desired_hex=current_hex_pos)
 
