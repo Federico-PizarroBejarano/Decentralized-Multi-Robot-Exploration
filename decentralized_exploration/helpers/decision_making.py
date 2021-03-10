@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.spatial import Voronoi
+from scipy.spatial import Voronoi # pylint: disable-msg=E0611
 
 from decentralized_exploration.core.constants import Actions
 from decentralized_exploration.helpers.hex_grid import Hex
