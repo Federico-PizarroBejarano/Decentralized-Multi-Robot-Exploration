@@ -23,10 +23,16 @@ def plot_grid(grid, plot, robot_states = {}):
     colors = [colors_list[h.state+1] for h in all_hexes]
 
     rewards = {}
+    max_reward = 0
+    min_reward = 0
     for hexagon in all_hexes:
-        if hexagon.reward > 0:
+        if hexagon.V != 0:
             y = 2. * np.sin(np.radians(60)) * (hexagon.r - hexagon.s) / 3.
-            rewards[(hexagon.q, y)] = hexagon.reward
+            rewards[(hexagon.q, y)] = round(hexagon.V, 1)
+            if round(hexagon.V, 1) > max_reward:
+                max_reward = round(hexagon.V, 1)
+            if round(hexagon.V, 1) < min_reward:
+                min_reward = round(hexagon.V, 1)
 
     # Horizontal cartesian coords
     hcoord = [c[0] for c in coord]
@@ -45,13 +51,21 @@ def plot_grid(grid, plot, robot_states = {}):
         hex_robot_states[(hex_x, hex_y)] = robot_state.orientation
 
     # Add some coloured hexagons
-    for x, y, c in zip(hcoord, vcoord, colors):        
+    for x, y, c in zip(hcoord, vcoord, colors):  
+        alpha = 0.5      
         if (x, y) in rewards:
-            c = 'green'
-            plot.text(x, y, rewards[(x, y)], ha='center', va='center', size=8)
+            # c = 'green'
+            # plot.text(x, y, rewards[(x, y)], ha='center', va='center', size=8)
+            if rewards[(x, y)] > 0:
+                c = 'green'
+                alpha = rewards[(x, y)]/max_reward
+            else:
+                c = 'red'
+                alpha = rewards[(x, y)]/min_reward
 
         if (x, y) in hex_robot_states:
-            c = 'red'
+            alpha = 0.5
+            c = 'yellow'
 
             if hex_robot_states[(x, y)] == 1:
                 plot.plot(x, y-0.3, 'bo')
@@ -69,7 +83,7 @@ def plot_grid(grid, plot, robot_states = {}):
 
         hexagon = RegularPolygon((x, y), numVertices=6, radius=2./3.,
                                  orientation=np.radians(30),
-                                 facecolor=c, alpha=0.5, edgecolor='k')
+                                 facecolor=c, alpha=alpha, edgecolor='k')
         plot.add_patch(hexagon)
 
     plot.set_xlim([min(hcoord)-1, max(hcoord)+1])

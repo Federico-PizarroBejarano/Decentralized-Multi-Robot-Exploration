@@ -77,20 +77,26 @@ class RobotTeam:
         """
 
         fig = plt.figure()
-        ax = fig.add_subplot(111)
+        ax1 = fig.add_subplot(111)
+
+        fig2 = plt.figure()
+        ax2 = fig2.add_subplot(111)
 
         for robot in self.__robots.values():
             robot.complete_rotation(world=world)
-            plot_grid(grid=robot.hex_map, plot=ax, robot_states=world.robot_states)
-            plt.pause(0.05)
+            # plot_grid(grid=robot.hex_map, plot=ax, robot_states=world.robot_states)
+            # plt.pause(0.05)
         
         while self.__robots.values()[0].hex_map.has_rewards():
             for robot in self.__robots.values():
                 robot.communicate(message = self.__generate_message(robot_id=robot.robot_id,  world=world))
             
             for robot in self.__robots.values():
+                if robot.robot_id == 'robot_1':
+                    ax = ax1
+                else:
+                    ax = ax2
                 robot.explore_1_timestep(world=world)
-            
-            plot_grid(grid=robot.hex_map, plot=ax, robot_states=world.robot_states)
-            plt.pause(0.05)
+                plot_grid(grid=robot.hex_map, plot=ax, robot_states=world.robot_states)
+                plt.pause(0.05)
             

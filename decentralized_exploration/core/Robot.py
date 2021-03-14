@@ -48,10 +48,10 @@ class Robot:
     hexagon_size = 4
     discount_factor = 0.9
     noise = 0.1
-    minimum_change = 5
+    minimum_change = 4
     minimum_change_repulsive = 1
-    max_iterations = 20
-    rho = 0.5
+    max_iterations = 50
+    rho = 1
     horizon = 15
 
     def __init__(self, robot_id, range_finder, width, length, world_size):
@@ -211,14 +211,18 @@ class Robot:
             return next_state
 
         self.__update_repulsive_value(current_position)
-        repulsive_reward = { key:0 for key in self.__hex_map.all_hexes.keys() }
+        repulsive_value = { key:0 for key in self.__hex_map.all_hexes.keys() }
         
         for state in self.__repulsive_V.keys():
-            repulsive_reward[(state[0], state[1])] += self.__repulsive_V[state]
-        
-        rewards = { key:hexagon.reward - repulsive_reward[key] for (key, hexagon) in self.__hex_map.all_hexes.items() }
+            self.__hex_map.find_hex(Hex(state[0], state[1])).V = 0
+            repulsive_value[(state[0], state[1])] += self.__repulsive_V[state]
+    
+        rewards = { key:hexagon.reward - repulsive_value[key] for (key, hexagon) in self.__hex_map.all_hexes.items() }
 
         policy = solve_MDP(self.__hex_map, self.__V, self.__all_states, rewards, self.noise, self.discount_factor, self.minimum_change, self.max_iterations, self.horizon, current_hex)
+
+        for state in self.__V.keys():
+            self.__hex_map.find_hex(Hex(state[0], state[1])).V += self.__V[state]
 
         next_state = get_new_state(state=current_state, action=policy[current_state])
 
