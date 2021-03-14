@@ -167,6 +167,8 @@ class Robot:
         current_position (tuple): tuple of integer pixel coordinates
         """
 
+        repulsive_rewards = {key:0 for key in self.__hex_map.all_hexes.keys()}
+
         if (len(self.__known_robots.keys()) > 0):
             self.__repulsive_V = {state : 0 for state in self.__all_states}
 
@@ -177,9 +179,14 @@ class Robot:
             known_robot_states = [self.__hex_map.hex_at(point=position) for position in known_robot_positions]
             known_robot_states = [(hex_position.q, hex_position.r) for hex_position in known_robot_states]
 
-            repulsive_rewards = { key: self.rho if key in known_robot_states else 0 for key in self.__hex_map.all_hexes.keys() }
+            initial_repulsive_rewards = { key: self.rho if key in known_robot_states else 0 for key in self.__hex_map.all_hexes.keys() }
 
-            solve_MDP(self.__hex_map, self.__repulsive_V, self.__all_states, repulsive_rewards, self.noise, self.discount_factor, self.minimum_change_repulsive, self.max_iterations, self.horizon, current_hex)
+            solve_MDP(self.__hex_map, self.__repulsive_V, self.__all_states, initial_repulsive_rewards, self.noise, self.discount_factor, self.minimum_change_repulsive, self.max_iterations, self.horizon, current_hex)
+
+            for state in self.__repulsive_V.keys():
+                repulsive_rewards[(state[0], state[1])] += self.__repulsive_V[state]
+        
+        return repulsive_rewards
 
 
     def __choose_next_pose(self, current_position, current_orientation):
@@ -210,11 +217,7 @@ class Robot:
             next_state = get_new_state(current_state, action)
             return next_state
 
-        self.__update_repulsive_value(current_position)
-        repulsive_reward = { key:0 for key in self.__hex_map.all_hexes.keys() }
-        
-        for state in self.__repulsive_V.keys():
-            repulsive_reward[(state[0], state[1])] += self.__repulsive_V[state]
+        repulsive_reward = self.__update_repulsive_value(current_position)
         
         rewards = { key:hexagon.reward - repulsive_reward[key] for (key, hexagon) in self.__hex_map.all_hexes.items() }
 
