@@ -26,7 +26,8 @@ This is a list of tasks that need to be done as well as possible enhancements
 ### Enhancements
 
 - [ ] Add RangeFinder that works more realistically
+- [ ] Make dynamically growing map i.e. no previous knowledge of map size
+- [ ] Add negative reward to obstacles so robots stays away from them
+- [ ] Improve efficiency
 - [ ] Add comprehensive unit testing
 - [ ] Add comprehensive integration testing
-- [ ] Make dynamically growing map i.e. no previous knowledge of map size
-- [ ] Improve efficiency

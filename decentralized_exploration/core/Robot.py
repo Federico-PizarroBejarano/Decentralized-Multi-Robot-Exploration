@@ -50,8 +50,8 @@ class Robot:
     noise = 0.1
     minimum_change = 5
     minimum_change_repulsive = 1
-    max_iterations = 20
-    rho = 0.5
+    max_iterations = 50
+    rho = 1
     horizon = 15
 
     def __init__(self, robot_id, range_finder, width, length, world_size):
