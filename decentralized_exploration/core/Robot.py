@@ -1,10 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from datetime import datetime
 
 from decentralized_exploration.core.constants import Actions
-from decentralized_exploration.helpers.decision_making import find_new_orientation, possible_actions, get_new_state, solve_MDP
-from decentralized_exploration.helpers.hex_grid import Hex, convert_pixelmap_to_grid
+from decentralized_exploration.helpers.decision_making import find_new_orientation, possible_actions, get_new_state, solve_MDP, probability_of_state
+from decentralized_exploration.helpers.hex_grid import Hex, Grid, convert_pixelmap_to_grid
 from decentralized_exploration.helpers.plotting import plot_grid
 
 
@@ -101,7 +100,6 @@ class Robot:
             self.__all_states.update(new_states)
         
         self.__V = {state : self.__hex_map.all_hexes[(state[0], state[1])].reward for state in self.__all_states}
-        self.__repulsive_V = {state : 0 for state in self.__all_states}
 
 
     def __update_map(self, occupied_points, free_points):
@@ -126,12 +124,12 @@ class Robot:
         for occ_point in occupied_points:
             desired_hex = self.__hex_map.hex_at(point=occ_point)
             found_hex = self.__hex_map.find_hex(desired_hex=desired_hex)
-            self.__hex_map.update_hex(hex_to_update=found_hex, dOccupied=1, dUnknown=-1)
+            found_hex.update_hex(dOccupied=1, dUnknown=-1)
 
         for free_point in free_points:
             desired_hex = self.__hex_map.hex_at(point=free_point)
             found_hex = self.__hex_map.find_hex(desired_hex=desired_hex)
-            self.__hex_map.update_hex(hex_to_update=found_hex, dFree=1, dUnknown=-1)
+            found_hex.update_hex(dFree=1, dUnknown=-1)
         
         self.__hex_map.propagate_rewards()
 
@@ -153,43 +151,62 @@ class Robot:
                     found_hex = self.__hex_map.find_hex(desired_hex=desired_hex)
 
                     if other_map[y, x] == 0:
-                        self.__hex_map.update_hex(hex_to_update=found_hex, dFree=1, dUnknown=-1)
+                        found_hex.update_hex(dFree=1, dUnknown=-1)
                     elif other_map[y, x] == 1:
-                        self.__hex_map.update_hex(hex_to_update=found_hex, dOccupied=1, dUnknown=-1)
+                        found_hex.update_hex(dOccupied=1, dUnknown=-1)
+    
+
+    def __calculate_V(self, current_robot):
+            current_hex_pos = self.__hex_map.hex_at(point=current_robot['last_known_position'])
+            current_hex = self.__hex_map.find_hex(desired_hex=current_hex_pos)
+
+            close_robots = [robot for robot in self.__known_robots.values() if Grid.hex_distance(self.__hex_map.hex_at(robot['last_known_position']), current_hex_pos) < self.horizon]            
+            close_robot_states = [self.__hex_map.hex_at(robot['last_known_position']) for robot in close_robots]
+            close_robot_states = [(hex_position.q, hex_position.r) for hex_position in close_robot_states]
+
+            initial_repulsive_rewards = { key: self.rho if key in close_robot_states else 0 for key in self.__hex_map.all_hexes.keys() }
+
+            solve_MDP(self.__hex_map, current_robot['repulsive_V'], initial_repulsive_rewards, self.noise, self.discount_factor, self.minimum_change_repulsive, self.max_iterations, self.horizon, current_hex)
+
+            repulsive_reward = { key:0 for key in self.__hex_map.all_hexes.keys() }
+        
+            for state in current_robot['repulsive_V'].keys():
+                repulsive_reward[(state[0], state[1])] += current_robot['repulsive_V'][state]
+
+            rewards = { key:hexagon.reward - repulsive_reward[key] for (key, hexagon) in self.__hex_map.all_hexes.items() }
+
+            solve_MDP(self.__hex_map, current_robot['V'], rewards, self.noise, self.discount_factor, self.minimum_change, self.max_iterations, self.horizon, current_hex)
 
 
-    def __update_repulsive_value(self, current_position):
+    def __compute_DVF(self, current_hex, iteration):
         """
         Updates the repulsive value at each state. This is then used in __choose_next_pose to avoid other robots
 
         Parameters
         ----------
         current_position (tuple): tuple of integer pixel coordinates
+        iteration (int): the current iteration of the algorithm
         """
 
-        repulsive_rewards = {key:0 for key in self.__hex_map.all_hexes.keys()}
+        close_robots = [robot for robot in self.__known_robots.values() if Grid.hex_distance(self.__hex_map.hex_at(robot['last_known_position']), current_hex) < self.horizon]
 
-        if (len(self.__known_robots.keys()) > 0):
-            self.__repulsive_V = {state : 0 for state in self.__all_states}
+        DVF = {state : 0 for state in self.__all_states}
 
-            current_hex_pos = self.__hex_map.hex_at(point=current_position)
-            current_hex = self.__hex_map.find_hex(desired_hex=current_hex_pos)
+        for robot in close_robots:
+            self.__calculate_V(current_robot=robot)
+            robot_hex = self.__hex_map.hex_at(point=robot['last_known_position'])
 
-            known_robot_positions = [robot['last_known_position'] for robot in self.__known_robots.values()]
-            known_robot_states = [self.__hex_map.hex_at(point=position) for position in known_robot_positions]
-            known_robot_states = [(hex_position.q, hex_position.r) for hex_position in known_robot_states]
-
-            initial_repulsive_rewards = { key: self.rho if key in known_robot_states else 0 for key in self.__hex_map.all_hexes.keys() }
-
-            solve_MDP(self.__hex_map, self.__repulsive_V, self.__all_states, initial_repulsive_rewards, self.noise, self.discount_factor, self.minimum_change_repulsive, self.max_iterations, self.horizon, current_hex)
-
-            for state in self.__repulsive_V.keys():
-                repulsive_rewards[(state[0], state[1])] += self.__repulsive_V[state]
+            for state in self.__all_states:
+                probability = probability_of_state(start_hex=robot_hex,
+                                                   new_hex=Hex(state[0], state[1]),
+                                                   time_increment=iteration - robot['last_updated'],
+                                                   hex_map=self.__hex_map)
+                DVF[state] -=  probability * robot['V'][state]
         
-        return repulsive_rewards
+        return DVF
 
 
-    def __choose_next_pose(self, current_position, current_orientation):
+    def __choose_next_pose(self, current_position, current_orientation, iteration):
         """
         Given the current pos, decides on the next best position for the robot
 
@@ -197,6 +214,7 @@ class Robot:
         ----------
         current_position (tuple): tuple of integer pixel coordinates
         current_orientation (int): int representing current orientation of robot
+        iteration (int): the current iteration of the algorithm
 
         Returns
         -------
@@ -217,11 +235,11 @@ class Robot:
             next_state = get_new_state(current_state, action)
             return next_state
 
-        repulsive_reward = self.__update_repulsive_value(current_position)
+        DVF = self.__compute_DVF(current_hex=current_hex_pos, iteration=iteration)
         
-        rewards = { key:hexagon.reward - repulsive_reward[key] for (key, hexagon) in self.__hex_map.all_hexes.items() }
+        rewards = { key:hexagon.reward for (key, hexagon) in self.__hex_map.all_hexes.items() }
 
-        policy = solve_MDP(self.__hex_map, self.__V, self.__all_states, rewards, self.noise, self.discount_factor, self.minimum_change, self.max_iterations, self.horizon, current_hex)
+        policy = solve_MDP(self.__hex_map, self.__V, rewards, self.noise, self.discount_factor, self.minimum_change, self.max_iterations, self.horizon, current_hex, DVF)
 
         next_state = get_new_state(state=current_state, action=policy[current_state])
 
@@ -249,7 +267,7 @@ class Robot:
             next_orientation = next_orientation + 1 if (next_orientation + 1 <= 6) else 1
 
 
-    def communicate(self, message):
+    def communicate(self, message, iteration):
         """
         Communicates with the other robots in the team. Receives a message and updates the 
         last known position and last updated time of every robot that transmitted a message. 
@@ -258,27 +276,34 @@ class Robot:
         Parameters
         ----------
         message (dict): a dictionary containing the robot position and pixel map of the other robots
+        iteration (int): the current iteration
         """
 
         for robot_id in message:
             self.__known_robots[robot_id] = {
-                'last_updated': datetime.now(),
+                'last_updated': iteration,
                 'last_known_position': message[robot_id]['robot_position']
             }
+
+            if 'V' not in self.__known_robots[robot_id]:
+                self.__known_robots[robot_id]['V'] = {state : self.__hex_map.all_hexes[(state[0], state[1])].reward for state in self.__all_states}
+            if 'repulsive_V' not in self.__known_robots[robot_id]:
+                self.__known_robots[robot_id]['repulsive_V'] = {state : 0 for state in self.__all_states}
 
             self.__merge_map(other_map=message[robot_id]['pixel_map'])
 
 
-    def explore_1_timestep(self, world):
+    def explore_1_timestep(self, world, iteration):
         """
         Given the world the robot is exploring, explores the area for 1 timestep/action
 
         Parameters
         ----------
         world (World): a World object that the robot will explore
+        iteration (int): the current iteration of the algorithm
         """
 
-        new_state = self.__choose_next_pose(current_position=world.get_position(self.__robot_id), current_orientation=world.get_orientation(self.__robot_id))
+        new_state = self.__choose_next_pose(current_position=world.get_position(self.__robot_id), current_orientation=world.get_orientation(self.__robot_id), iteration=iteration)
         new_position = self.__hex_map.hex_center(Hex(new_state[0], new_state[1]))
         new_position = [int(coord) for coord in new_position]
         new_orientation = new_state[2]

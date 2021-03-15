@@ -2,7 +2,7 @@ import numpy as np
 from scipy.spatial import Voronoi # pylint: disable-msg=E0611
 
 from decentralized_exploration.core.constants import Actions
-from decentralized_exploration.helpers.hex_grid import Hex
+from decentralized_exploration.helpers.hex_grid import Hex, Grid
 from decentralized_exploration.helpers.field_of_view import bresenham
 
 def find_new_orientation(current_hex, current_orientation, next_hex):
@@ -174,7 +174,7 @@ def get_new_state(state, action):
     return new_state
 
 
-def solve_MDP(hex_map, V, all_states, rewards, noise, discount_factor, minimum_change, max_iterations, horizon, current_hex):
+def solve_MDP(hex_map, V, rewards, noise, discount_factor, minimum_change, max_iterations, horizon, current_hex, DVF=None):
     """
     Solves an MDP given the states, rewards, transition function, and actions. 
 
@@ -182,7 +182,6 @@ def solve_MDP(hex_map, V, all_states, rewards, noise, discount_factor, minimum_c
     ----------
     hex_map (Grid): a Grid object containing the map. 
     V (dict): a dictionary containing the initial guess for the value of each state
-    all_states (list): a list of all possible states
     rewards (dict): a dictionary of the reward at each positional state
     noise (float): the possibility (between 0 and 1, inclusive), of performing a random action
         rather than the desired action in the MDP
@@ -201,12 +200,17 @@ def solve_MDP(hex_map, V, all_states, rewards, noise, discount_factor, minimum_c
     biggest_change = float('inf')
     iterations = 0
 
+    all_states = V.keys()
+
+    if not DVF:
+        DVF = {key:0 for key in V.keys()}
+
     while (biggest_change >= minimum_change) and (iterations < max_iterations):
         biggest_change = 0
         iterations += 1
         
         for state in all_states:
-            if (hex_map.all_hexes[(state[0], state[1])].state != 0) or (hex_map.hex_distance(current_hex, Hex(state[0], state[1])) > horizon):
+            if (hex_map.all_hexes[(state[0], state[1])].state != 0) or (Grid.hex_distance(current_hex, Hex(state[0], state[1])) > horizon):
                 continue
 
             old_value = V[state]
@@ -219,7 +223,7 @@ def solve_MDP(hex_map, V, all_states, rewards, noise, discount_factor, minimum_c
                 random_action = np.random.choice([rand_act for rand_act in possible_actions(state, hex_map) if rand_act != action])
                 random_state = get_new_state(state, random_action)
 
-                value = rewards[(state[0], state[1])] + discount_factor * ((1 - noise)* V[next_state] + (noise * V[random_state]))
+                value = rewards[(state[0], state[1])] + discount_factor * ( ((1 - noise)* V[next_state] + (noise * V[random_state])) - DVF[next_state])
                 
                 # Keep best action so far
                 if value > new_value:
@@ -263,4 +267,36 @@ def voronoi_paths(pixel_map):
                 voronoi_path += bresenham(pixel_map, v0, v1)
     
     return np.array(voronoi_path)
+
+
+def probability_of_state(start_hex, new_hex, time_increment, hex_map):
+    """
+    Calculates the probability that a robot has moved from start_hex to new_hex in time_increment. 
+
+    Parameters
+    ----------
+    start_hex (Hex): the Hex position that the robot was last known to occupy
+    new_hex (Hex): the possible new position
+    time_increment (int): the number of iterations of the algorithm since the robot was last contacted
+    hex_map (Grid): the Grid object representing the hex_map 
+
+    Returns
+    -------
+    probability (float): the probability (from 0 - 1) that the robot is in the new state. 
+    """
+
+    distance = Grid.hex_distance(start_hex=start_hex, end_hex=new_hex)
+    probability = 0
+
+    if distance <= time_increment:
+        num_free_neighbours = 0
+        neighbours = hex_map.hex_neighbours(center_hex=new_hex, radius=time_increment)
+        
+        for neighbour in neighbours:
+            if neighbour.state == 0:
+                num_free_neighbours += 1
+        
+        probability = 1/(num_free_neighbours + 1)
+    
+    return probability
                 

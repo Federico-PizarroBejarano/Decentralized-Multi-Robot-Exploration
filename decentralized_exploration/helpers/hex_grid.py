@@ -20,6 +20,11 @@ class Hex:
     nOccupied (int): number of occupied pixels in this hexagon
     reward (int): the reward associated with this hex
     state (int): the state of this hexagon as unknown (-1), free (0), or occupied (1)
+
+    Public Methods
+    --------------
+    update_hex(nUnknown = 0, nFree = 0, nOccupied = 0): updates the number of unknown, free, 
+        and occupied pixels
     """
 
     # Tunable Parameter
@@ -49,6 +54,22 @@ class Hex:
                 return 0
             else:
                 return -1
+    
+    # Public Methods
+    def update_hex(self, dUnknown=0, dFree=0, dOccupied=0):
+        """
+        Updates the hex with changes to the number of unknown, free, and occupied pixels
+
+        Parameters
+        ----------
+        dUnknown (int): the difference in unknown pixels 
+        dFree (int): the difference in free pixels 
+        dOccupied (int): the difference in occupied pixels 
+        """
+
+        self.nUnknown += dUnknown
+        self.nFree += dFree
+        self.nOccupied += dOccupied
 
 
 class FractionalHex(Hex):
@@ -128,8 +149,6 @@ class Grid():
     hex_at(point): returns Hex with axial coordinates of Hex covering given pixel coordinate
     has_rewards(): returns True if there are Hexs with rewards in all_hexes
     hex_neighbours(center_hex): returns list of the adjacent neighbours of given Hex
-    update_hex(hex_to_update, nUnknown = 0, nFree = 0, nOccupied = 0): updates the number of unknown, free, 
-        and occupied pixels of a given Hex
     hex_center(hexagon): returns the sub-pixel coordinates of the center of a given Hex
     """
 
@@ -141,8 +160,30 @@ class Grid():
         self.origin = origin
         self.size = size
         self.all_hexes = {}
+    
+    # Static Methods
+    @staticmethod
+    def hex_distance(start_hex, end_hex):
+        """
+        Takes two hexes and returns the hex distance between them as an integer
 
-    # Public Methods
+        Parameters
+        ----------
+        start_hex (Hex): a Hex object representing the starting hex
+        end_hex (Hex): a Hex object representing the ending hex
+
+        Returns
+        -------
+        distance (int): a integer representing the Hex distance between two hexes
+        """
+
+        s_q, s_r = start_hex.q, start_hex.r
+        e_q, e_r = end_hex.q, end_hex.r
+
+        distance = (abs(s_q - e_q) + abs(s_q + s_r - e_q - e_r) + abs(s_r - e_r)) / 2
+        return int(distance)
+
+    # Public Instance Methods
     def find_hex(self, desired_hex):
         """
         Finds and returns the Hex in the Grid with given coordinates if there is one
@@ -221,11 +262,12 @@ class Grid():
 
     def hex_neighbours(self, center_hex, radius=1):
         """
-        Returns list of directly adjacent neighbours of a given Hex
+        Returns list of neighbours of a given Hex within a specified hex radius
 
         Parameters
         ----------
         center_hex (Hex): a Hex object
+        radius (int): the radius to consider
 
         Returns
         -------
@@ -242,22 +284,6 @@ class Grid():
                         neighbours.append(neighbour)
 
         return neighbours
-
-    def update_hex(self, hex_to_update, dUnknown=0, dFree=0, dOccupied=0):
-        """
-        Updates a Hex with changes to the number of unknown, free, and occupied pixels
-
-        Parameters
-        ----------
-        hex_to_update (Hex): the Hex to be updated
-        dUnknown (int): the difference in unknown pixels 
-        dFree (int): the difference in free pixels 
-        dOccupied (int): the difference in occupied pixels 
-        """
-
-        hex_to_update.nUnknown += dUnknown
-        hex_to_update.nFree += dFree
-        hex_to_update.nOccupied += dOccupied
 
     def hex_center(self, hexagon):
         """
@@ -295,26 +321,6 @@ class Grid():
                 for neighbour in neighbours:
                     if neighbour.state == 0 and self.clear_path(start_hex=hexagon, end_hex=neighbour):
                         neighbour.reward += 1
-    
-    def hex_distance(self, start_hex, end_hex):
-        """
-        Takes two hexes and returns the hex distance between them as an integer
-
-        Parameters
-        ----------
-        start_hex (Hex): a Hex object representing the starting hex
-        end_hex (Hex): a Hex object representing the ending hex
-
-        Returns
-        -------
-        distance (int): a integer representing the Hex distance between two hexes
-        """
-
-        s_q, s_r = start_hex.q, start_hex.r
-        e_q, e_r = end_hex.q, end_hex.r
-
-        distance = (abs(s_q - e_q) + abs(s_q + s_r - e_q - e_r) + abs(s_r - e_r)) / 2
-        return int(distance)
 
     def clear_path(self, start_hex, end_hex):
         """
@@ -330,7 +336,7 @@ class Grid():
         clear (bool): True if clear, False otherwise
         """
 
-        distance = self.hex_distance(start_hex=start_hex, end_hex=end_hex)
+        distance = Grid.hex_distance(start_hex=start_hex, end_hex=end_hex)
         s_x, s_y = self.hex_center(hexagon=start_hex)
         e_x, e_y = self.hex_center(hexagon=end_hex)
 
@@ -397,10 +403,10 @@ def convert_pixelmap_to_grid(pixel_map, size):
             new_hex = grid.add_hex(new_hex=found_hex)
 
             if pixel_map[y][x] == 0:
-                grid.update_hex(hex_to_update=new_hex, dFree=1)
+                new_hex.update_hex(dFree=1)
             elif pixel_map[y][x] == 1:
-                grid.update_hex(hex_to_update=new_hex, dOccupied=1)
+                new_hex.update_hex(dOccupied=1)
             elif pixel_map[y][x] == -1:
-                grid.update_hex(hex_to_update=new_hex, dUnknown=1)
+                new_hex.update_hex(dUnknown=1)
 
     return grid
