@@ -50,7 +50,7 @@ class Robot:
     minimum_change = 5.0
     minimum_change_repulsive = 1.0
     max_iterations = 50
-    rho = 1.0
+    rho = 0.4
     horizon = 15
     exploration_horizon = 5
     weighing_factor = 10.0
@@ -195,7 +195,9 @@ class Robot:
         DVF = {state : 0 for state in self.__all_states}
 
         for robot in close_robots:
-            self.__calculate_V(current_robot=robot)
+            if self.__known_robots[robot]['last_updated'] == iteration:
+                self.__calculate_V(current_robot=robot)
+            
             robot_hex = self.hex_map.find_hex(self.hex_map.hex_at(point=self.__known_robots[robot]['last_known_position']))
 
             for state in self.__all_states:
@@ -297,15 +299,14 @@ class Robot:
         """
 
         for robot_id in message:
-            self.__known_robots[robot_id] = {
-                'last_updated': iteration,
-                'last_known_position': message[robot_id]['robot_position']
-            }
-
-            if 'V' not in self.__known_robots[robot_id]:
-                self.__known_robots[robot_id]['V'] = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self.__all_states}
-            if 'repulsive_V' not in self.__known_robots[robot_id]:
-                self.__known_robots[robot_id]['repulsive_V'] = {state : 0 for state in self.__all_states}
+            if robot_id not in self.__known_robots:
+                self.__known_robots[robot_id] = {
+                    'V': {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self.__all_states},
+                    'repulsive_V': {state : 0 for state in self.__all_states}
+                }
+            
+            self.__known_robots[robot_id]['last_updated'] = iteration
+            self.__known_robots[robot_id]['last_known_position'] = message[robot_id]['robot_position']
 
             self.__merge_map(other_map=message[robot_id]['pixel_map'])
         
