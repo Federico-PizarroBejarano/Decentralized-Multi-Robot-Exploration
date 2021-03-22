@@ -19,6 +19,7 @@ class Hex:
     nFree (int): number of free pixels in this hexagon
     nOccupied (int): number of occupied pixels in this hexagon
     reward (int): the reward associated with this hex
+    V (float): the true value of a Hex. Used for displaying computed values.
     state (int): the state of this hexagon as unknown (-1), free (0), or occupied (1)
 
     Public Methods
@@ -28,16 +29,17 @@ class Hex:
     """
 
     # Tunable Parameter
-    Tr = 0.5
+    Tr = 1.0
 
     # Starting value for nOccupied should not be 0
-    def __init__(self, q, r, nUnknown=0, nFree=0, nOccupied=0, reward=0):
+    def __init__(self, q, r, nUnknown=0.0, nFree=0.0, nOccupied=0.0, reward=0.0):
         self.q = q
         self.r = r
         self.nUnknown = nUnknown
         self.nFree = nFree
         self.nOccupied = nOccupied
         self.reward = reward
+        self.V = 0
 
     @property
     def s(self):
@@ -50,7 +52,7 @@ class Hex:
         elif self.nUnknown == 0:
             return 0
         else:
-            if self.nFree/self.nUnknown > Hex.Tr:
+            if float(self.nFree)/float(self.nUnknown) > Hex.Tr:
                 return 0
             else:
                 return -1
@@ -341,8 +343,8 @@ class Grid():
         e_x, e_y = self.hex_center(hexagon=end_hex)
 
         for i in range(1, distance):
-            x = s_x + (e_x - s_x) * (1/distance) * i
-            y = s_y + (e_y - s_y) * (1/distance) * i
+            x = s_x + (e_x - s_x) * (1.0/distance) * i
+            y = s_y + (e_y - s_y) * (1.0/distance) * i
 
             intermediate_hex = self.hex_at(point=[x, y])
             intermediate_hex = self.find_hex(desired_hex=intermediate_hex)
