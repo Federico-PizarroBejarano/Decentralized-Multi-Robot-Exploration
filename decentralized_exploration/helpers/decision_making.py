@@ -233,7 +233,7 @@ def solve_MDP(hex_map, V, rewards, noise, discount_factor, minimum_change, max_i
             # Save best value                         
             V[state] = new_value
             biggest_change = max(biggest_change, np.abs(old_value - V[state]))
-    
+
     return policy
 
 
@@ -269,14 +269,13 @@ def voronoi_paths(pixel_map):
     return np.array(voronoi_path)
 
 
-def probability_of_state(start_hex, new_hex, time_increment, exploration_horizon, hex_map):
+def compute_probability(start_hex, time_increment, exploration_horizon, hex_map):
     """
     Calculates the probability that a robot has moved from start_hex to new_hex in time_increment. 
 
     Parameters
     ----------
     start_hex (Hex): the Hex position that the robot was last known to occupy
-    new_hex (Hex): the possible new position
     time_increment (int): the number of iterations of the algorithm since the robot was last contacted
     exploration_horizon (int): how far another hex can be and still be considered to be potentially explored
     hex_map (Grid): the Grid object representing the hex_map 
@@ -286,18 +285,33 @@ def probability_of_state(start_hex, new_hex, time_increment, exploration_horizon
     probability (float): the probability (from 0 - 1) that the robot is in the new state. 
     """
 
-    distance = Grid.hex_distance(start_hex=start_hex, end_hex=new_hex)
-    probability = 0
+    for hexagon in hex_map.all_hexes.values():
+        hexagon.probability = 0.0
+        hexagon.probability_steps = float('inf')
+        
+    start_hex.probability = 1.0
+    start_hex.probability_steps = 0
 
-    if distance <= exploration_horizon + time_increment and new_hex.state != 1 and hex_map.clear_path(start_hex=start_hex, end_hex=new_hex):
-        num_free_neighbours = 0
-        neighbours = hex_map.hex_neighbours(center_hex=new_hex, radius=exploration_horizon + time_increment)
-        
-        for neighbour in neighbours:
-            if neighbour.state == 0 and hex_map.clear_path(start_hex=start_hex, end_hex=neighbour):
-                num_free_neighbours += 1
-        
-        probability = 1.0/(num_free_neighbours + 1)
-    
-    return probability
-                
+    neighbours = hex_map.hex_neighbours(center_hex=start_hex, radius=1)
+    for neighbour in neighbours:
+        neighbour.probability_steps = start_hex.probability_steps + 1
+
+    hexes_to_explore = neighbours
+    num_possible_hexes = 0
+
+    while(len(hexes_to_explore) != 0):
+        curr_hex = hexes_to_explore.pop(-1)
+        if curr_hex.state == 0 and curr_hex.probability == 0 and curr_hex.probability_steps < exploration_horizon + time_increment/2:
+            curr_hex.probability = 1.0
+            num_possible_hexes += 1
+
+            new_neighbours = hex_map.hex_neighbours(center_hex=curr_hex, radius=1)
+            for neighbour in new_neighbours:
+                neighbour.probability_steps = min(curr_hex.probability_steps + 1, neighbour.probability_steps)
+            
+            hexes_to_explore += new_neighbours
+                    
+    for hexagon in hex_map.all_hexes.values():
+        if hexagon.probability > 0:
+            hexagon.probability /= num_possible_hexes * max(1, Grid.hex_distance(start_hex, hexagon)**0.5)
+                    

@@ -39,7 +39,9 @@ class Hex:
         self.nFree = nFree
         self.nOccupied = nOccupied
         self.reward = reward
-        self.V = 0
+        self.V = 0.0
+        self.probability = 0.0
+        self.probability_steps = 0
 
     @property
     def s(self):

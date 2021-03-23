@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from decentralized_exploration.core.constants import Actions
-from decentralized_exploration.helpers.decision_making import find_new_orientation, possible_actions, get_new_state, solve_MDP, probability_of_state
+from decentralized_exploration.helpers.decision_making import find_new_orientation, possible_actions, get_new_state, solve_MDP, compute_probability
 from decentralized_exploration.helpers.hex_grid import Hex, Grid, convert_pixelmap_to_grid
 from decentralized_exploration.helpers.plotting import plot_grid
 
@@ -47,13 +47,13 @@ class Robot:
     hexagon_size = 4
     discount_factor = 0.9
     noise = 0.1
-    minimum_change = 5.0
-    minimum_change_repulsive = 1.0
+    minimum_change = 0.1
+    minimum_change_repulsive = 0.1
     max_iterations = 50
-    rho = 0.4
+    rho = 0.10
     horizon = 15
     exploration_horizon = 5
-    weighing_factor = 10.0
+    weighing_factor = 15.0
 
     def __init__(self, robot_id, range_finder, width, length, world_size):
         self.__robot_id = robot_id
@@ -168,6 +168,7 @@ class Robot:
 
             initial_repulsive_rewards = { key: self.rho if key in close_robot_states else 0 for key in self.hex_map.all_hexes.keys() }
 
+            self.__known_robots[current_robot]['repulsive_V'] = {state : 0 for state in self.__all_states}
             solve_MDP(self.hex_map, self.__known_robots[current_robot]['repulsive_V'], initial_repulsive_rewards, self.noise, self.discount_factor, self.minimum_change_repulsive, self.max_iterations, self.horizon, current_hex)
 
             repulsive_reward = { key:0 for key in self.hex_map.all_hexes.keys() }
@@ -177,6 +178,7 @@ class Robot:
 
             rewards = { key:hexagon.reward - repulsive_reward[key] for (key, hexagon) in self.hex_map.all_hexes.items() }
 
+            self.__known_robots[current_robot]['V'] = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self.__all_states}
             solve_MDP(self.hex_map, self.__known_robots[current_robot]['V'], rewards, self.noise, self.discount_factor, self.minimum_change, self.max_iterations, self.horizon, current_hex)
 
 
@@ -199,18 +201,16 @@ class Robot:
                 self.__calculate_V(current_robot=robot)
             
             robot_hex = self.hex_map.find_hex(self.hex_map.hex_at(point=self.__known_robots[robot]['last_known_position']))
+            compute_probability(start_hex=robot_hex,
+                                time_increment=iteration - self.__known_robots[robot]['last_updated'],
+                                exploration_horizon=self.exploration_horizon,
+                                hex_map=self.hex_map)
 
             for state in self.__all_states:
-                probability = probability_of_state(start_hex=robot_hex,
-                                                   new_hex=self.hex_map.find_hex(Hex(state[0], state[1])),
-                                                   time_increment=iteration - self.__known_robots[robot]['last_updated'],
-                                                   exploration_horizon=self.exploration_horizon,
-                                                   hex_map=self.hex_map)
-                DVF[state] +=  self.weighing_factor * probability * self.__known_robots[robot]['V'][state]
+                DVF[state] +=  self.weighing_factor * self.hex_map.all_hexes[(state[0], state[1])].probability * self.__known_robots[robot]['V'][state]
         
         for state in self.__all_states:
-            if DVF[state] < 0:
-                DVF[state] = 0.0
+            DVF[state] = abs(DVF[state])
 
         return DVF
 
@@ -247,7 +247,8 @@ class Robot:
         DVF = self.__compute_DVF(current_hex=current_hex_pos, iteration=iteration)
         
         rewards = { key:hexagon.reward for (key, hexagon) in self.hex_map.all_hexes.items() }
-
+        
+        self.__V = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self.__all_states}
         policy = solve_MDP(self.hex_map, self.__V, rewards, self.noise, self.discount_factor, self.minimum_change, self.max_iterations, self.horizon, current_hex, DVF)
         
         next_state = get_new_state(state=current_state, action=policy[current_state])

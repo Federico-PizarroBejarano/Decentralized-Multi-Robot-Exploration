@@ -88,6 +88,7 @@ class RobotTeam:
         iteration = 0
 
         while self.__robots.values()[0].hex_map.has_rewards():
+            print(iteration)
             if iteration < 10:
                 for robot in self.__robots.values():
                     robot.communicate(message = self.__generate_message(robot_id=robot.robot_id,  world=world), iteration=iteration)

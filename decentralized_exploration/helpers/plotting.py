@@ -28,7 +28,7 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
 
     if mode == 'value':
         for hexagon in all_hexes:
-            if hexagon.V != 0:
+            if hexagon.V != 0 and hexagon.state == 0:
                 y = 2. * np.sin(np.radians(60)) * (hexagon.r - hexagon.s) / 3.
                 rewards[(hexagon.q, y)] = round(hexagon.V, 1)
                 if round(hexagon.V, 1) > max_reward:
@@ -42,8 +42,13 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
                 rewards[(hexagon.q, y)] = round(hexagon.reward, 1)
                 if round(hexagon.reward, 1) > max_reward:
                     max_reward = round(hexagon.reward, 1)
-                if round(hexagon.reward, 1) < min_reward:
-                    min_reward = round(hexagon.reward, 1)
+    if mode == 'probability':
+        for hexagon in all_hexes:
+            if hexagon.probability != 0:
+                y = 2. * np.sin(np.radians(60)) * (hexagon.r - hexagon.s) / 3.
+                rewards[(hexagon.q, y)] = round(hexagon.probability*100, 2)
+                if round(hexagon.probability*100, 2) > max_reward:
+                    max_reward = round(hexagon.probability*100, 2)
 
     # Horizontal cartesian coords
     hcoord = [c[0] for c in coord]
