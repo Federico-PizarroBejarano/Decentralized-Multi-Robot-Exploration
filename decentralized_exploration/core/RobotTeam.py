@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import cPickle as pickle
 
 from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
@@ -132,8 +132,8 @@ class RobotTeam:
         world (World): a World object that the robot will explore
         """
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111)
 
         for robot in self._robots.values():
             robot.complete_rotation(world=world)
@@ -149,15 +149,14 @@ class RobotTeam:
             for robot in self._robots.values():
                 robot.explore_1_timestep(world=world, iteration=iteration)
                 self._pixel_map = merge_map(hex_map=self._hex_map, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
-                self._hex_map.propagate_rewards()
-
-                hex_states = [h.state for h in self._hex_map.all_hexes.values()]
-                grid_statistics =  [hex_states.count(-1), hex_states.count(0), hex_states.count(1), self._local_interaction(robot_states=world.robot_states)]
-                print(grid_statistics)
-                explored_per_iteration.append(grid_statistics)
-
-                plot_grid(grid=self._hex_map, plot=ax, robot_states=world.robot_states, mode='reward')
-                plt.pause(0.05)
+                
+                # self._hex_map.propagate_rewards()
+                # plot_grid(grid=self._hex_map, plot=ax, robot_states=world.robot_states, mode='reward')
+                # plt.pause(0.05)
+            
+            grid_statistics =  [self._hex_map.percent_explored(), self._local_interaction(robot_states=world.robot_states)]
+            print(grid_statistics)
+            explored_per_iteration.append(grid_statistics)
             
             iteration += 1
         

@@ -265,6 +265,16 @@ class Grid():
                 return True
         
         return False
+    
+    def percent_explored(self):
+        total_hexes = len(self.all_hexes.values())
+        num_unknown = 0.0
+        
+        for hexagon in self.all_hexes.values():
+            if hexagon.state == -1:
+                num_unknown += 1.0
+        
+        return 1.0 - num_unknown/total_hexes
 
     def hex_neighbours(self, center_hex, radius=1):
         """

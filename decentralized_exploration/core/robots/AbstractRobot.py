@@ -34,7 +34,7 @@ class AbstractRobot:
     __metaclass__ = ABCMeta
 
     # Tunable Parameters
-    hexagon_size = 7
+    hexagon_size = 9
     
     def __init__(self, robot_id, range_finder, width, length, world_size):
         self._robot_id = robot_id

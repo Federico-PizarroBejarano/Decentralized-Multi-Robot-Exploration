@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import cPickle as pickle
 
 from decentralized_exploration.core.World import World
 from decentralized_exploration.core.RangeFinder import RangeFinder
@@ -7,6 +8,8 @@ from decentralized_exploration.core.robots.RobotGreedy_MapMerger import RobotGre
 from decentralized_exploration.core.RobotTeam import RobotTeam
 from decentralized_exploration.helpers.RobotState import RobotState
 from decentralized_exploration.helpers.hex_grid import convert_pixelmap_to_grid
+
+from decentralized_exploration.results.results_plotting import plot_all_results
 
 
 if __name__ == "__main__":
@@ -32,3 +35,8 @@ if __name__ == "__main__":
     world = World(world_map=world_map, pixel_size=0.02, robot_states=robot_states)
 
     robot_team.explore(world=world)
+
+    with open('./decentralized_exploration/results/greedy_mapmerger.pkl', 'rb') as infile:
+        all_results = pickle.load(infile)
+    
+    plot_all_results(all_results)
