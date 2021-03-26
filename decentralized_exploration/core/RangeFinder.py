@@ -17,16 +17,16 @@ class RangeFinder:
     """
 
     def __init__(self, full_range, frequency):
-        self.__full_range = full_range
-        self.__frequency = frequency
+        self._full_range = full_range
+        self._frequency = frequency
 
     @property
     def full_range(self):
-        return self.__full_range
+        return self._full_range
 
     @property
     def frequency(self):
-        return self.__frequency
+        return self._frequency
 
     # Public Methods
     def scan(self, world, position, old_orientation, new_orientation, is_clockwise = None):

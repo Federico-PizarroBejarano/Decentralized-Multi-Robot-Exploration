@@ -41,7 +41,9 @@ class Hex:
         self.reward = reward
         self.V = 0.0
         self.probability = 0.0
-        self.probability_steps = 0
+        self.distance_from_start = float('inf')
+        self.visited = False
+        self.previous_hex = None
 
     @property
     def s(self):

@@ -286,32 +286,77 @@ def compute_probability(start_hex, time_increment, exploration_horizon, hex_map)
     """
 
     for hexagon in hex_map.all_hexes.values():
-        hexagon.probability = 0.0
-        hexagon.probability_steps = float('inf')
+        hexagon.visited = False
+        hexagon.distance_from_start = float('inf')
         
-    start_hex.probability = 1.0
-    start_hex.probability_steps = 0
+    start_hex.visited = True
+    start_hex.distance_from_start = 0
 
     neighbours = hex_map.hex_neighbours(center_hex=start_hex, radius=1)
     for neighbour in neighbours:
-        neighbour.probability_steps = start_hex.probability_steps + 1
+        neighbour.distance_from_start = start_hex.distance_from_start + 1
 
     hexes_to_explore = neighbours
     num_possible_hexes = 0
 
     while(len(hexes_to_explore) != 0):
-        curr_hex = hexes_to_explore.pop(-1)
-        if curr_hex.state == 0 and curr_hex.probability == 0 and curr_hex.probability_steps < exploration_horizon + time_increment/2:
-            curr_hex.probability = 1.0
+        curr_hex = hexes_to_explore.pop(0)
+        if curr_hex.state == 0 and curr_hex.visited == False and curr_hex.distance_from_start < exploration_horizon + time_increment/2:
+            curr_hex.visited = True
             num_possible_hexes += 1
 
             new_neighbours = hex_map.hex_neighbours(center_hex=curr_hex, radius=1)
             for neighbour in new_neighbours:
-                neighbour.probability_steps = min(curr_hex.probability_steps + 1, neighbour.probability_steps)
-            
-            hexes_to_explore += new_neighbours
+                if curr_hex.distance_from_start + 1 < neighbour.distance_from_start and neighbour.state == 0:
+                    neighbour.distance_from_start = curr_hex.distance_from_start + 1
+                    hexes_to_explore.append(neighbour)
                     
     for hexagon in hex_map.all_hexes.values():
-        if hexagon.probability > 0:
+        if hexagon.visited:
             hexagon.probability /= num_possible_hexes * max(1, Grid.hex_distance(start_hex, hexagon)**0.5)
+
+
+def closest_reward(current_hex, hex_map):
+    """
+    Uses breadth first search to find the nearest free Hex with a reward.
+
+    Parameters
+    ----------
+    current_hex (Hex): the current Hex position
+    hex_map (Grid): the Grid object representing the hex_map 
+
+    Returns
+    -------
+    next_state (tuple): the next state the robot should go to as a tuple of 
+        q and r coordinates of the new position
+    """
+
+    for hexagon in hex_map.all_hexes.values():
+        hexagon.distance_from_start = float('inf')
+        hexagon.visited = False
+        hexagon.previous_hex = None
+        
+    current_hex.distance_from_start = 0
+
+    neighbours = hex_map.hex_neighbours(center_hex=current_hex, radius=1)
+    for neighbour in neighbours:
+        neighbour.distance_from_start = current_hex.distance_from_start + 1
+        neighbour.previous_hex = current_hex
+
+    hexes_to_explore = neighbours
+
+    while(len(hexes_to_explore) != 0):
+        curr_hex = hexes_to_explore.pop(0)
+        if curr_hex.reward > 0:
+            while curr_hex.previous_hex != current_hex and curr_hex.previous_hex != None:
+                curr_hex = curr_hex.previous_hex
+            return (curr_hex.q, curr_hex.r)
+        elif curr_hex.state == 0 and curr_hex.visited == False:
+            new_neighbours = hex_map.hex_neighbours(center_hex=curr_hex, radius=1)
+            for neighbour in new_neighbours:
+                if curr_hex.distance_from_start + 1 < neighbour.distance_from_start and neighbour.state == 0:
+                    neighbour.previous_hex = curr_hex
+                    neighbour.distance_from_start = curr_hex.distance_from_start + 1
+                    hexes_to_explore.append(neighbour)
+
                     

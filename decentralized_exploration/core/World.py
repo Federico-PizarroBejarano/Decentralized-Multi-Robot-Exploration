@@ -20,21 +20,21 @@ class World:
     """
 
     def __init__(self, world_map, pixel_size, robot_states):
-        self.__map = world_map
-        self.__pixel_size = pixel_size
-        self.__robot_states = robot_states
+        self._map = world_map
+        self._pixel_size = pixel_size
+        self._robot_states = robot_states
 
     @property
     def world_map(self):
-        return self.__map
+        return self._map
 
     @property
     def pixel_size(self):
-        return self.__pixel_size
+        return self._pixel_size
     
     @property
     def robot_states(self):
-        return self.__robot_states
+        return self._robot_states
 
     # Public Methods
     def get_position(self, robot_id):
@@ -50,7 +50,7 @@ class World:
         position (list): a 2-element list of integer pixel coordinates
         """
 
-        return self.__robot_states[robot_id].pixel_position
+        return self._robot_states[robot_id].pixel_position
     
 
     def get_orientation(self, robot_id):
@@ -66,7 +66,7 @@ class World:
         orientation (int): an int representing the orientation of the robot
         """
 
-        return self.__robot_states[robot_id].orientation
+        return self._robot_states[robot_id].orientation
 
 
     def move_robot(self, robot_id, new_position, new_orientation):
@@ -80,5 +80,5 @@ class World:
         new_orientation (int): an integer representing the orientation of the robot
         """
 
-        self.__robot_states[robot_id].pixel_position = new_position
-        self.__robot_states[robot_id].orientation = new_orientation
+        self._robot_states[robot_id].pixel_position = new_position
+        self._robot_states[robot_id].orientation = new_orientation

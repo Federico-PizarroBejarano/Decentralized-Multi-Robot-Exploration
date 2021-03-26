@@ -3,6 +3,7 @@ import numpy as np
 from decentralized_exploration.core.World import World
 from decentralized_exploration.core.RangeFinder import RangeFinder
 from decentralized_exploration.core.Robot import Robot
+from decentralized_exploration.core.RobotGreedy import RobotGreedy
 from decentralized_exploration.core.RobotTeam import RobotTeam
 
 from decentralized_exploration.helpers.plotting import plot_grid

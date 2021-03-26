@@ -21,13 +21,13 @@ class RobotTeam:
     """
 
     def __init__(self, communication_range = float('inf'), blocked_by_obstacles = False):
-        self.__robots = {}
-        self.__communication_range = communication_range
-        self.__blocked_by_obstacles = blocked_by_obstacles
+        self._robots = {}
+        self._communication_range = communication_range
+        self._blocked_by_obstacles = blocked_by_obstacles
 
 
     # Private Methods
-    def __generate_message(self, robot_id, world):
+    def _generate_message(self, robot_id, world):
         """
         Generates the message that a given robot with robot_id will receive
 
@@ -40,12 +40,12 @@ class RobotTeam:
         message = {}
         robot_position = np.array(world.get_position(robot_id=robot_id))
 
-        for robot in self.__robots.values():
+        for robot in self._robots.values():
             if (robot.robot_id != robot_id):
                 other_robot_position = np.array(world.get_position(robot.robot_id))
                 distance = np.linalg.norm(robot_position - other_robot_position) * world.pixel_size
 
-                if distance < self.__communication_range:
+                if distance < self._communication_range:
                     message[robot.robot_id] = { 
                         'robot_position': other_robot_position,
                         'pixel_map': robot.pixel_map
@@ -63,8 +63,8 @@ class RobotTeam:
         robot (Robot): the robot to be added
         """
 
-        if robot.robot_id not in self.__robots:
-            self.__robots[robot.robot_id] = robot
+        if robot.robot_id not in self._robots:
+            self._robots[robot.robot_id] = robot
 
 
     def explore(self, world):
@@ -82,24 +82,24 @@ class RobotTeam:
         fig2 = plt.figure()
         ax2 = fig2.add_subplot(111)
 
-        for robot in self.__robots.values():
+        for robot in self._robots.values():
             robot.complete_rotation(world=world)
         
         iteration = 0
 
-        while self.__robots.values()[0].hex_map.has_rewards():
+        while self._robots.values()[0].hex_map.has_rewards():
             print(iteration)
             if iteration < 10:
-                for robot in self.__robots.values():
-                    robot.communicate(message = self.__generate_message(robot_id=robot.robot_id,  world=world), iteration=iteration)
+                for robot in self._robots.values():
+                    robot.communicate(message = self._generate_message(robot_id=robot.robot_id,  world=world), iteration=iteration)
             
-            for robot in self.__robots.values():
+            for robot in self._robots.values():
                 if robot.robot_id == 'robot_1':
                     ax = ax1
                 else:
                     ax = ax2
                 robot.explore_1_timestep(world=world, iteration=iteration)
-                plot_grid(grid=robot.hex_map, plot=ax, robot_states=world.robot_states, mode='value')
+                plot_grid(grid=robot.hex_map, plot=ax, robot_states=world.robot_states, mode='reward')
                 plt.pause(0.05)
             
             iteration += 1

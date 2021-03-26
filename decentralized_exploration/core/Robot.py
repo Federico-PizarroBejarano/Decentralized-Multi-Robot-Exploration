@@ -56,36 +56,36 @@ class Robot:
     weighing_factor = 15.0
 
     def __init__(self, robot_id, range_finder, width, length, world_size):
-        self.__robot_id = robot_id
-        self.__range_finder = range_finder
-        self.__width = width
-        self.__length = length
+        self._robot_id = robot_id
+        self._range_finder = range_finder
+        self._width = width
+        self._length = length
 
-        self.__known_robots = {}
-        self.__all_states = set()
-        self.__V = {}
-        self.__repulsive_V = {}
+        self._known_robots = {}
+        self._all_states = set()
+        self._V = {}
+        self._repulsive_V = {}
 
-        self.__initialize_map(world_size=world_size)
+        self._initialize_map(world_size=world_size)
 
     @property
     def robot_id(self):
-        return self.__robot_id
+        return self._robot_id
 
     @property
     def size(self):
-        return [self.__width, self.__length]
+        return [self._width, self._length]
 
     @property
     def pixel_map(self):
-        return self.__pixel_map
+        return self._pixel_map
 
     @property
     def hex_map(self):
-        return self.__hex_map
+        return self._hex_map
 
     # Private methods
-    def __initialize_map(self, world_size):
+    def _initialize_map(self, world_size):
         """
         Initialized both the internal pixel and hex maps given the size of the world
 
@@ -94,17 +94,17 @@ class Robot:
         world_size (tuple): the size of the world map in pixels
         """
 
-        self.__pixel_map = -np.ones(world_size)
-        self.__hex_map = convert_pixelmap_to_grid(pixel_map=self.pixel_map, size=self.hexagon_size)
+        self._pixel_map = -np.ones(world_size)
+        self._hex_map = convert_pixelmap_to_grid(pixel_map=self.pixel_map, size=self.hexagon_size)
                 
         for orientation in [1, 2, 3, 4, 5, 6]:
             new_states = set([(position[0], position[1], orientation) for position in self.hex_map.all_hexes.keys()])
-            self.__all_states.update(new_states)
+            self._all_states.update(new_states)
         
-        self.__V = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self.__all_states}
+        self._V = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self._all_states}
 
 
-    def __update_map(self, occupied_points, free_points):
+    def _update_map(self, occupied_points, free_points):
         """
         Updates both the internal pixel and hex maps given lists of occupied and free pixels
 
@@ -136,7 +136,7 @@ class Robot:
         self.hex_map.propagate_rewards()
 
 
-    def __merge_map(self, other_map):
+    def _merge_map(self, other_map):
         """
         Merges the current pixel_map with another pixel map.
 
@@ -158,33 +158,33 @@ class Robot:
                         found_hex.update_hex(dOccupied=1, dUnknown=-1)
     
 
-    def __calculate_V(self, current_robot):
-            current_hex_pos = self.hex_map.hex_at(point=self.__known_robots[current_robot]['last_known_position'])
+    def _calculate_V(self, current_robot):
+            current_hex_pos = self.hex_map.hex_at(point=self._known_robots[current_robot]['last_known_position'])
             current_hex = self.hex_map.find_hex(desired_hex=current_hex_pos)
 
-            close_robots = [robot_id for (robot_id, robot) in self.__known_robots.items() if Grid.hex_distance(self.hex_map.hex_at(robot['last_known_position']), current_hex_pos) < self.horizon and robot_id != current_robot]            
-            close_robot_states = [self.hex_map.hex_at(self.__known_robots[robot]['last_known_position']) for robot in close_robots]
+            close_robots = [robot_id for (robot_id, robot) in self._known_robots.items() if Grid.hex_distance(self.hex_map.hex_at(robot['last_known_position']), current_hex_pos) < self.horizon and robot_id != current_robot]            
+            close_robot_states = [self.hex_map.hex_at(self._known_robots[robot]['last_known_position']) for robot in close_robots]
             close_robot_states = [(hex_position.q, hex_position.r) for hex_position in close_robot_states]
 
             initial_repulsive_rewards = { key: self.rho if key in close_robot_states else 0 for key in self.hex_map.all_hexes.keys() }
 
-            self.__known_robots[current_robot]['repulsive_V'] = {state : 0 for state in self.__all_states}
-            solve_MDP(self.hex_map, self.__known_robots[current_robot]['repulsive_V'], initial_repulsive_rewards, self.noise, self.discount_factor, self.minimum_change_repulsive, self.max_iterations, self.horizon, current_hex)
+            self._known_robots[current_robot]['repulsive_V'] = {state : 0 for state in self._all_states}
+            solve_MDP(self.hex_map, self._known_robots[current_robot]['repulsive_V'], initial_repulsive_rewards, self.noise, self.discount_factor, self.minimum_change_repulsive, self.max_iterations, self.horizon, current_hex)
 
             repulsive_reward = { key:0 for key in self.hex_map.all_hexes.keys() }
         
-            for state in self.__all_states:
-                repulsive_reward[(state[0], state[1])] += self.__known_robots[current_robot]['repulsive_V'][state]
+            for state in self._all_states:
+                repulsive_reward[(state[0], state[1])] += self._known_robots[current_robot]['repulsive_V'][state]
 
             rewards = { key:hexagon.reward - repulsive_reward[key] for (key, hexagon) in self.hex_map.all_hexes.items() }
 
-            self.__known_robots[current_robot]['V'] = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self.__all_states}
-            solve_MDP(self.hex_map, self.__known_robots[current_robot]['V'], rewards, self.noise, self.discount_factor, self.minimum_change, self.max_iterations, self.horizon, current_hex)
+            self._known_robots[current_robot]['V'] = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self._all_states}
+            solve_MDP(self.hex_map, self._known_robots[current_robot]['V'], rewards, self.noise, self.discount_factor, self.minimum_change, self.max_iterations, self.horizon, current_hex)
 
 
-    def __compute_DVF(self, current_hex, iteration):
+    def _compute_DVF(self, current_hex, iteration):
         """
-        Updates the repulsive value at each state. This is then used in __choose_next_pose to avoid other robots
+        Updates the repulsive value at each state. This is then used in _choose_next_pose to avoid other robots
 
         Parameters
         ----------
@@ -192,30 +192,30 @@ class Robot:
         iteration (int): the current iteration of the algorithm
         """
 
-        close_robots = [robot_id for (robot_id, robot) in self.__known_robots.items() if Grid.hex_distance(self.hex_map.hex_at(robot['last_known_position']), current_hex) < self.horizon and robot_id != self.robot_id]
+        close_robots = [robot_id for (robot_id, robot) in self._known_robots.items() if Grid.hex_distance(self.hex_map.hex_at(robot['last_known_position']), current_hex) < self.horizon and robot_id != self.robot_id]
 
-        DVF = {state : 0 for state in self.__all_states}
+        DVF = {state : 0 for state in self._all_states}
 
         for robot in close_robots:
-            if self.__known_robots[robot]['last_updated'] == iteration:
-                self.__calculate_V(current_robot=robot)
+            if self._known_robots[robot]['last_updated'] == iteration:
+                self._calculate_V(current_robot=robot)
             
-            robot_hex = self.hex_map.find_hex(self.hex_map.hex_at(point=self.__known_robots[robot]['last_known_position']))
+            robot_hex = self.hex_map.find_hex(self.hex_map.hex_at(point=self._known_robots[robot]['last_known_position']))
             compute_probability(start_hex=robot_hex,
-                                time_increment=iteration - self.__known_robots[robot]['last_updated'],
+                                time_increment=iteration - self._known_robots[robot]['last_updated'],
                                 exploration_horizon=self.exploration_horizon,
                                 hex_map=self.hex_map)
 
-            for state in self.__all_states:
-                DVF[state] +=  self.weighing_factor * self.hex_map.all_hexes[(state[0], state[1])].probability * self.__known_robots[robot]['V'][state]
+            for state in self._all_states:
+                DVF[state] +=  self.weighing_factor * self.hex_map.all_hexes[(state[0], state[1])].probability * self._known_robots[robot]['V'][state]
         
-        for state in self.__all_states:
+        for state in self._all_states:
             DVF[state] = abs(DVF[state])
 
         return DVF
 
 
-    def __choose_next_pose(self, current_position, current_orientation, iteration):
+    def _choose_next_pose(self, current_position, current_orientation, iteration):
         """
         Given the current pos, decides on the next best position for the robot
 
@@ -244,21 +244,21 @@ class Robot:
             next_state = get_new_state(current_state, action)
             return next_state
 
-        DVF = self.__compute_DVF(current_hex=current_hex_pos, iteration=iteration)
+        DVF = self._compute_DVF(current_hex=current_hex_pos, iteration=iteration)
         
         rewards = { key:hexagon.reward for (key, hexagon) in self.hex_map.all_hexes.items() }
         
-        self.__V = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self.__all_states}
-        policy = solve_MDP(self.hex_map, self.__V, rewards, self.noise, self.discount_factor, self.minimum_change, self.max_iterations, self.horizon, current_hex, DVF)
+        self._V = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self._all_states}
+        policy = solve_MDP(self.hex_map, self._V, rewards, self.noise, self.discount_factor, self.minimum_change, self.max_iterations, self.horizon, current_hex, DVF)
         
         next_state = get_new_state(state=current_state, action=policy[current_state])
 
         # Plotting
-        for state in self.__all_states:
+        for state in self._all_states:
             self.hex_map.find_hex(Hex(state[0], state[1])).V = 0
 
-        for state in self.__all_states:
-            self.hex_map.find_hex(Hex(state[0], state[1])).V += self.__V[state]
+        for state in self._all_states:
+            self.hex_map.find_hex(Hex(state[0], state[1])).V += self._V[state]
 
         return next_state
 
@@ -278,8 +278,8 @@ class Robot:
         count = 0
 
         while count < 6:
-            occupied_points, free_points = self.__range_finder.scan(world=world, position=world.get_position(self.robot_id), old_orientation=world.get_orientation(self.robot_id), new_orientation=next_orientation, is_clockwise=False)
-            self.__update_map(occupied_points=occupied_points, free_points=free_points)
+            occupied_points, free_points = self._range_finder.scan(world=world, position=world.get_position(self.robot_id), old_orientation=world.get_orientation(self.robot_id), new_orientation=next_orientation, is_clockwise=False)
+            self._update_map(occupied_points=occupied_points, free_points=free_points)
 
             world.move_robot(robot_id=self.robot_id, new_position=world.get_position(self.robot_id), new_orientation=next_orientation)
             next_orientation = next_orientation + 1 if (next_orientation + 1 <= 6) else 1
@@ -300,21 +300,21 @@ class Robot:
         """
 
         for robot_id in message:
-            if robot_id not in self.__known_robots:
-                self.__known_robots[robot_id] = {
-                    'V': {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self.__all_states},
-                    'repulsive_V': {state : 0 for state in self.__all_states}
+            if robot_id not in self._known_robots:
+                self._known_robots[robot_id] = {
+                    'V': {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self._all_states},
+                    'repulsive_V': {state : 0 for state in self._all_states}
                 }
             
-            self.__known_robots[robot_id]['last_updated'] = iteration
-            self.__known_robots[robot_id]['last_known_position'] = message[robot_id]['robot_position']
+            self._known_robots[robot_id]['last_updated'] = iteration
+            self._known_robots[robot_id]['last_known_position'] = message[robot_id]['robot_position']
 
-            self.__merge_map(other_map=message[robot_id]['pixel_map'])
+            self._merge_map(other_map=message[robot_id]['pixel_map'])
         
-        self.__known_robots[self.robot_id] = {
+        self._known_robots[self.robot_id] = {
             'last_updated': iteration,
-            'V': self.__V,
-            'repulsive_V': self.__repulsive_V
+            'V': self._V,
+            'repulsive_V': self._repulsive_V
         }
 
 
@@ -328,14 +328,14 @@ class Robot:
         iteration (int): the current iteration of the algorithm
         """
 
-        self.__known_robots[self.robot_id]['last_known_position'] = world.get_position(self.robot_id)
+        self._known_robots[self.robot_id]['last_known_position'] = world.get_position(self.robot_id)
 
-        new_state = self.__choose_next_pose(current_position=world.get_position(self.robot_id), current_orientation=world.get_orientation(self.robot_id), iteration=iteration)
+        new_state = self._choose_next_pose(current_position=world.get_position(self.robot_id), current_orientation=world.get_orientation(self.robot_id), iteration=iteration)
         new_position = self.hex_map.hex_center(Hex(new_state[0], new_state[1]))
         new_position = [int(coord) for coord in new_position]
         new_orientation = new_state[2]
 
-        occupied_points, free_points = self.__range_finder.scan(world=world, position=world.get_position(self.robot_id), old_orientation=world.get_orientation(self.robot_id), new_orientation=new_orientation)
+        occupied_points, free_points = self._range_finder.scan(world=world, position=world.get_position(self.robot_id), old_orientation=world.get_orientation(self.robot_id), new_orientation=new_orientation)
 
-        self.__update_map(occupied_points=occupied_points, free_points=free_points)
+        self._update_map(occupied_points=occupied_points, free_points=free_points)
         world.move_robot(robot_id=self.robot_id, new_position=new_position, new_orientation=new_orientation)
