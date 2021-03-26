@@ -4,6 +4,7 @@ from decentralized_exploration.core.World import World
 from decentralized_exploration.core.RangeFinder import RangeFinder
 from decentralized_exploration.core.Robot import Robot
 from decentralized_exploration.core.RobotGreedy import RobotGreedy
+from decentralized_exploration.core.RobotGreedy_MapMerger import RobotGreedy_MapMerger
 from decentralized_exploration.core.RobotTeam import RobotTeam
 
 from decentralized_exploration.helpers.plotting import plot_grid
@@ -16,10 +17,10 @@ if __name__ == "__main__":
     starting_pos = [30, 77]
     range_finder = RangeFinder(full_range=10, frequency=0.7)
 
-    robot_1 = Robot(robot_id="robot_1", range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
+    robot_1 = RobotGreedy_MapMerger(robot_id="robot_1", range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
     robot_1_state = RobotState([30, 77], 6)
 
-    robot_2 = Robot(robot_id="robot_2", range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
+    robot_2 = RobotGreedy_MapMerger(robot_id="robot_2", range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
     robot_2_state = RobotState([77, 30], 3)
 
     robot_team = RobotTeam()

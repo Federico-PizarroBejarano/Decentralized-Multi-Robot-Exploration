@@ -9,6 +9,7 @@ class RobotGreedy(Robot):
         Robot.__init__(self, robot_id, range_finder, width, length, world_size)
         self._known_robots = { robot_id: {}}
 
+
     # Private Methods
     def _choose_next_pose(self, current_position, current_orientation, iteration):
         """

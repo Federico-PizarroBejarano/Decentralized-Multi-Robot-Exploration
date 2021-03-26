@@ -84,6 +84,7 @@ class Robot:
     def hex_map(self):
         return self._hex_map
 
+
     # Private methods
     def _initialize_map(self, world_size):
         """
