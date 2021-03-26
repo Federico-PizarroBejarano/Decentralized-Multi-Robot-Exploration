@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import cPickle as pickle
 
+from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
+from decentralized_exploration.helpers.hex_grid import convert_pixelmap_to_grid, merge_map
 from decentralized_exploration.helpers.plotting import plot_grid
 
 class RobotTeam:
@@ -20,13 +23,26 @@ class RobotTeam:
     explore(world):  given the world the robot is exploring, iteratively explores the area
     """
 
-    def __init__(self, communication_range = float('inf'), blocked_by_obstacles = False):
+    def __init__(self, world_size, communication_range = float('inf'), blocked_by_obstacles = False):
         self._robots = {}
         self._communication_range = communication_range
         self._blocked_by_obstacles = blocked_by_obstacles
+        self._initialize_map(world_size=world_size)
 
 
     # Private Methods
+    def _initialize_map(self, world_size):
+        """
+        Initialized both the internal pixel and hex maps given the size of the world
+
+        Parameters
+        ----------
+        world_size (tuple): the size of the world map in pixels
+        """
+
+        self._pixel_map = -np.ones(world_size)
+        self._hex_map = convert_pixelmap_to_grid(pixel_map=self._pixel_map, size=AbstractRobot.hexagon_size)
+
     def _generate_message(self, robot_id, world):
         """
         Generates the message that a given robot with robot_id will receive
@@ -77,15 +93,13 @@ class RobotTeam:
         """
 
         fig = plt.figure()
-        ax1 = fig.add_subplot(111)
-
-        fig2 = plt.figure()
-        ax2 = fig2.add_subplot(111)
+        ax = fig.add_subplot(111)
 
         for robot in self._robots.values():
             robot.complete_rotation(world=world)
         
         iteration = 0
+        explored_per_iteration = []
 
         while self._robots.values()[0].hex_map.has_rewards():
             print(iteration)
@@ -94,13 +108,22 @@ class RobotTeam:
                     robot.communicate(message = self._generate_message(robot_id=robot.robot_id,  world=world), iteration=iteration)
             
             for robot in self._robots.values():
-                if robot.robot_id == 'robot_1':
-                    ax = ax1
-                else:
-                    ax = ax2
                 robot.explore_1_timestep(world=world, iteration=iteration)
-                plot_grid(grid=robot.hex_map, plot=ax, robot_states=world.robot_states, mode='reward')
+                self._pixel_map = merge_map(hex_map=self._hex_map, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
+
+                hex_states = [h.state for h in self._hex_map.all_hexes.values()]
+                grid_statistics =  [hex_states.count(-1), hex_states.count(0), hex_states.count(1)]
+                explored_per_iteration.append(grid_statistics)
+
+                plot_grid(grid=self._hex_map, plot=ax, robot_states=world.robot_states, mode='reward')
                 plt.pause(0.05)
             
             iteration += 1
-            
+        
+        with open('./decentralized_exploration/results/greedy_mapmerger.pkl', 'rb') as infile:
+            all_results = pickle.load(infile)
+        
+        all_results.append(np.array(explored_per_iteration))
+
+        with open('./decentralized_exploration/results/greedy_mapmerger.pkl', 'wb') as outfile:
+            pickle.dump(all_results, outfile, pickle.HIGHEST_PROTOCOL)

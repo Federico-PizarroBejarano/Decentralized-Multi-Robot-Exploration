@@ -10,11 +10,11 @@ from decentralized_exploration.helpers.hex_grid import convert_pixelmap_to_grid
 
 
 if __name__ == "__main__":
-    world_map = np.load('./decentralized_exploration/maps/map_1.npy')
+    world_map = np.load('./decentralized_exploration/maps/large_map.npy')
     completed_grid = convert_pixelmap_to_grid(pixel_map=world_map, size=RobotGreedy_MapMerger.hexagon_size)
 
     num_of_robots = 3
-    robot_team = RobotTeam()
+    robot_team = RobotTeam(world_size=world_map.shape)
     starting_hexes = random.sample(population=[h for h in completed_grid.all_hexes.values() if h.state == 0], k=num_of_robots)
     starting_poses = [completed_grid.hex_center(hexagon=h) for h in starting_hexes]
     robot_states = {}
