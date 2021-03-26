@@ -2,7 +2,7 @@ import numpy as np
 
 from decentralized_exploration.core.World import World
 from decentralized_exploration.core.RangeFinder import RangeFinder
-from decentralized_exploration.core.robots.RobotMDP_MapMerger import RobotMDP_MapMerger
+from decentralized_exploration.core.robots.RobotGreedy_MapMerger import RobotGreedy_MapMerger
 from decentralized_exploration.core.RobotTeam import RobotTeam
 
 from decentralized_exploration.helpers.plotting import plot_grid
@@ -10,15 +10,15 @@ from decentralized_exploration.helpers.RobotState import RobotState
 
 
 if __name__ == "__main__":
-    world_map = np.load('./decentralized_exploration/maps/map_1_small.npy')
+    world_map = np.load('./decentralized_exploration/maps/large_map.npy')
 
     starting_pos = [30, 77]
     range_finder = RangeFinder(full_range=10, frequency=0.7)
 
-    robot_1 = RobotMDP_MapMerger(robot_id="robot_1", range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
+    robot_1 = RobotGreedy_MapMerger(robot_id="robot_1", range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
     robot_1_state = RobotState([30, 77], 6)
 
-    robot_2 = RobotMDP_MapMerger(robot_id="robot_2", range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
+    robot_2 = RobotGreedy_MapMerger(robot_id="robot_2", range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
     robot_2_state = RobotState([77, 30], 3)
 
     robot_team = RobotTeam()

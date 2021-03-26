@@ -70,7 +70,7 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
     for x, y, c in zip(hcoord, vcoord, colors):  
         alpha = 0.5      
         if (x, y) in rewards:
-            plot.text(x, y, rewards[(x, y)], ha='center', va='center', size=8)
+            # plot.text(x, y, rewards[(x, y)], ha='center', va='center', size=8)
             if rewards[(x, y)] > 0:
                 c = 'green'
                 alpha = rewards[(x, y)]/max_reward
