@@ -1,10 +1,11 @@
-from decentralized_exploration.core.RobotGreedy import RobotGreedy
+from decentralized_exploration.core.robots.RobotGreedy import RobotGreedy
+from decentralized_exploration.helpers.hex_grid import merge_map
 
 
 class RobotGreedy_MapMerger(RobotGreedy):
     def __init__(self, robot_id, range_finder, width, length, world_size):
-        RobotGreedy.__init__(self, robot_id, range_finder, width, length, world_size)
-        self._known_robots = { robot_id: {}}  
+        super(RobotGreedy_MapMerger, self).__init__(robot_id, range_finder, width, length, world_size)
+
 
     # Public Methods
     def communicate(self, message, iteration):
@@ -18,7 +19,7 @@ class RobotGreedy_MapMerger(RobotGreedy):
         """
 
         for robot_id in message:
-            self._merge_map(other_map=message[robot_id]['pixel_map'])
+            self.__pixel_map = merge_map(hex_map=self.hex_map, pixel_map=self.pixel_map, pixel_map_to_merge=message[robot_id]['pixel_map'])
         
         self._known_robots[self.robot_id] = {
             'last_updated': iteration,

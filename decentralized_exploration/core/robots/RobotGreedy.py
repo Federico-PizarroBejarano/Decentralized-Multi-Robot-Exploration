@@ -1,13 +1,12 @@
-from decentralized_exploration.core.Robot import Robot
+from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
 from decentralized_exploration.core.constants import Actions
 from decentralized_exploration.helpers.decision_making import find_new_orientation, get_new_state, closest_reward
 from decentralized_exploration.helpers.hex_grid import Hex
 
 
-class RobotGreedy(Robot):
+class RobotGreedy(AbstractRobot):
     def __init__(self, robot_id, range_finder, width, length, world_size):
-        Robot.__init__(self, robot_id, range_finder, width, length, world_size)
-        self._known_robots = { robot_id: {}}
+        super(RobotGreedy, self).__init__(robot_id, range_finder, width, length, world_size)
 
 
     # Private Methods
@@ -51,20 +50,4 @@ class RobotGreedy(Robot):
                 next_state = get_new_state(current_state, action)
 
         return next_state
-
-
-    # Public Methods
-    def communicate(self, message, iteration):
-        """
-        Does nothing other than initialize the self._known_robots dictionary with itself.
-
-        Parameters
-        ----------
-        message (dict): a dictionary containing the robot position and pixel map of the other robots
-        iteration (int): the current iteration
-        """
-
-        self._known_robots[self.robot_id] = {
-            'last_updated': iteration,
-        }
     

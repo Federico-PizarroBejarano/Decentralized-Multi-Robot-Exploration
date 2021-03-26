@@ -381,7 +381,6 @@ class Grid():
                     return neighbour
 
 
-
 def convert_pixelmap_to_grid(pixel_map, size):
     """
     Converts an image (represented as a numpy.ndarray) into a grid
@@ -416,3 +415,33 @@ def convert_pixelmap_to_grid(pixel_map, size):
                 new_hex.update_hex(dUnknown=1)
 
     return grid
+
+
+def merge_map(hex_map, pixel_map, pixel_map_to_merge):
+        """
+        Merges the current pixel_map with another pixel map.
+
+        Parameters
+        ----------
+        hex_map (Grid): a Grid representing the hexagon layer to be updated
+        pixel_map (numpy.ndarry): numpy array of pixels representing the map to be updated
+        pixel_map_to_merge (numpy.ndarry): numpy array of pixels representing the map to be merged in 
+    
+        Returns
+        -------
+        pixel_map (numpy.ndarray): the updated pixel_map
+        """
+
+        for y in range(pixel_map.shape[0]):
+            for x in range(pixel_map.shape[1]):
+                if pixel_map[y, x] == -1:
+                    pixel_map[y, x] = pixel_map_to_merge[y, x]
+                    desired_hex = hex_map.hex_at(point=[y, x])
+                    found_hex = hex_map.find_hex(desired_hex=desired_hex)
+
+                    if pixel_map_to_merge[y, x] == 0:
+                        found_hex.update_hex(dFree=1, dUnknown=-1)
+                    elif pixel_map_to_merge[y, x] == 1:
+                        found_hex.update_hex(dOccupied=1, dUnknown=-1)
+
+        return pixel_map
