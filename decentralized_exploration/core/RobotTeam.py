@@ -4,12 +4,20 @@ import cPickle as pickle
 
 from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
 from decentralized_exploration.helpers.hex_grid import convert_pixelmap_to_grid, merge_map
+from decentralized_exploration.helpers.decision_making import check_distance_to_other_robot
 from decentralized_exploration.helpers.plotting import plot_grid
 
 class RobotTeam:
     """
     A class used to represent a team of robots
     
+    Class Attributes
+    ----------------
+    local_interaction_dist (float): the maximum pixel distance between robots to be considered
+        a local interaction
+    local_interaction_path_length (int): the maximum path length between robots to be considered
+        a local interaction
+
     Instance Attributes
     -------------------
     robots (dict): a dictionary storing the RobotStates of each robot 
@@ -22,6 +30,10 @@ class RobotTeam:
     add_robot(robot): adds a Robot to the team
     explore(world):  given the world the robot is exploring, iteratively explores the area
     """
+
+    # Tunable parameter
+    local_interaction_dist = 100.0
+    local_interaction_path_length = 8
 
     def __init__(self, world_size, communication_range = float('inf'), blocked_by_obstacles = False):
         self._robots = {}
@@ -69,6 +81,34 @@ class RobotTeam:
         return message
 
 
+    def _local_interaction(self, robot_states):
+        """
+        Checks if any two robots are too close to one another
+
+        Parameters
+        ----------
+        robot_states (dict): a dictionary storing the RobotStates of each robot
+    
+        Returns
+        -------
+        is_local_interaction (bool): whether a local interaction occured
+        """
+
+        for robot in robot_states.values():
+            for second_robot in robot_states.values():
+                vector_between_robots = np.array(robot.pixel_position) - np.array(second_robot.pixel_position)
+                dist_between_robots = np.linalg.norm(vector_between_robots)
+
+                if robot != second_robot and dist_between_robots < self.local_interaction_dist:
+                    robot_hex = self._hex_map.find_hex(desired_hex=self._hex_map.hex_at(point=robot.pixel_position))
+                    clear_path = check_distance_to_other_robot(hex_map=self._hex_map, robot_states=robot_states.values(), start_hex=robot_hex, max_hex_distance=self.local_interaction_path_length)
+                    
+                    if clear_path:
+                        return True
+
+        return False
+
+
     # Public Methods
     def add_robot(self, robot):
         """
@@ -103,16 +143,17 @@ class RobotTeam:
 
         while self._robots.values()[0].hex_map.has_rewards():
             print(iteration)
-            if iteration < 10:
-                for robot in self._robots.values():
-                    robot.communicate(message = self._generate_message(robot_id=robot.robot_id,  world=world), iteration=iteration)
+            for robot in self._robots.values():
+                robot.communicate(message = self._generate_message(robot_id=robot.robot_id,  world=world), iteration=iteration)
             
             for robot in self._robots.values():
                 robot.explore_1_timestep(world=world, iteration=iteration)
                 self._pixel_map = merge_map(hex_map=self._hex_map, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
+                self._hex_map.propagate_rewards()
 
                 hex_states = [h.state for h in self._hex_map.all_hexes.values()]
-                grid_statistics =  [hex_states.count(-1), hex_states.count(0), hex_states.count(1)]
+                grid_statistics =  [hex_states.count(-1), hex_states.count(0), hex_states.count(1), self._local_interaction(robot_states=world.robot_states)]
+                print(grid_statistics)
                 explored_per_iteration.append(grid_statistics)
 
                 plot_grid(grid=self._hex_map, plot=ax, robot_states=world.robot_states, mode='reward')

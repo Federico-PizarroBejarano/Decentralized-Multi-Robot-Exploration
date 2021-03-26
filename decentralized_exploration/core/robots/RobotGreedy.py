@@ -39,6 +39,11 @@ class RobotGreedy(AbstractRobot):
             next_state = get_new_state(current_state, action)
         else:
             next_position = closest_reward(current_hex, self.hex_map)
+
+            # All rewards have been found
+            if next_position == None:
+                return current_state
+
             state_forward = get_new_state(current_state, Actions.FORWARD)
 
             if state_forward[0] == next_position[0] and state_forward[1] == next_position[1]:

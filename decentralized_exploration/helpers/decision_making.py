@@ -336,6 +336,7 @@ def closest_reward(current_hex, hex_map):
         hexagon.visited = False
         hexagon.previous_hex = None
         
+    current_hex.visited = True
     current_hex.distance_from_start = 0
 
     neighbours = hex_map.hex_neighbours(center_hex=current_hex, radius=1)
@@ -358,5 +359,52 @@ def closest_reward(current_hex, hex_map):
                     neighbour.previous_hex = curr_hex
                     neighbour.distance_from_start = curr_hex.distance_from_start + 1
                     hexes_to_explore.append(neighbour)
+    
+
+def check_distance_to_other_robot(hex_map, robot_states, start_hex, max_hex_distance):
+    """
+    Checks if there is another robot within the max_hex_distance of the start_hex
+
+    Parameters
+    ----------
+    hex_map (Grid): the Grid object representing the hex_map 
+    robot_states (dict): a dictionary storing the RobotStates of each robot
+    start_hex (Hex): the Hex which currently has a robot
+    max_hex_distance (int): the maximum path length between the two robots
+
+    Returns
+    -------
+    is_local_interaction (bool): whether a local interaction occured
+    """
+
+    robot_hexes = [hex_map.hex_at(point=robot.pixel_position) for robot in robot_states]
+    robot_hex_positions = [(robot_hex.q, robot_hex.r) for robot_hex in robot_hexes]   
+
+    for hexagon in hex_map.all_hexes.values():
+        hexagon.distance_from_start = float('inf')
+        hexagon.visited = False
+        
+    start_hex.visited = True
+    start_hex.distance_from_start = 0
+
+    neighbours = hex_map.hex_neighbours(center_hex=start_hex, radius=1)
+    for neighbour in neighbours:
+        neighbour.distance_from_start = start_hex.distance_from_start + 1
+
+    hexes_to_explore = neighbours
+
+    while(len(hexes_to_explore) != 0):
+        curr_hex = hexes_to_explore.pop(0)
+        if (curr_hex.q, curr_hex.r) in robot_hex_positions:
+            return True
+        elif curr_hex.state == 0 and curr_hex.visited == False:
+            new_neighbours = hex_map.hex_neighbours(center_hex=curr_hex, radius=1)
+            for neighbour in new_neighbours:
+                if curr_hex.distance_from_start + 1 < neighbour.distance_from_start and neighbour.state == 0:
+                    neighbour.distance_from_start = curr_hex.distance_from_start + 1
+                    if neighbour.distance_from_start <= max_hex_distance:
+                        hexes_to_explore.append(neighbour)
+    
+    return False
 
                     

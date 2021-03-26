@@ -20,7 +20,8 @@ class RobotGreedy_MapMerger(RobotGreedy):
 
         for robot_id in message:
             self.__pixel_map = merge_map(hex_map=self.hex_map, pixel_map=self.pixel_map, pixel_map_to_merge=message[robot_id]['pixel_map'])
-        
+            self.hex_map.propagate_rewards()
+
         self._known_robots[self.robot_id] = {
             'last_updated': iteration,
         }

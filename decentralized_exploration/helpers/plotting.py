@@ -11,7 +11,7 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
     ----------
     grid (Grid): the grid to be plotted
     plot (matplotlib.axes): a matplotlib axes object to be plotted on
-    robot_states (list): an optional dictionary where the keys are the robot_ids and the values are RobotStates
+    robot_states (dict): an optional dictionary where the keys are the robot_ids and the values are RobotStates
     mode (str) = either 'value' to show the value of each hex, 'reward' to show the reward at each hex, or neither to show nothing
     """
 

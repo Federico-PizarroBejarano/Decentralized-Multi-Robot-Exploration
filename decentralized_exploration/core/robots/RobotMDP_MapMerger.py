@@ -71,7 +71,8 @@ class RobotMDP_MapMerger(RobotMDP):
             self._known_robots[robot_id]['last_known_position'] = message[robot_id]['robot_position']
 
             self.__pixel_map = merge_map(hex_map=self.hex_map, pixel_map=self.pixel_map, pixel_map_to_merge=message[robot_id]['pixel_map'])
-        
+            self.hex_map.propagate_rewards()
+
         self._known_robots[self.robot_id] = {
             'last_updated': iteration,
             'V': self._V,
