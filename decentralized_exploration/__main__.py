@@ -17,7 +17,7 @@ if __name__ == "__main__":
     completed_grid = convert_pixelmap_to_grid(pixel_map=world_map, size=RobotGreedy.hexagon_size)
 
     num_of_robots = 3
-    robot_team = RobotTeam(world_size=world_map.shape)
+    robot_team = RobotTeam(world_size=world_map.shape, blocked_by_obstacles=True)
     starting_hexes = random.sample(population=[h for h in completed_grid.all_hexes.values() if h.state == 0], k=num_of_robots)
     starting_poses = [completed_grid.hex_center(hexagon=h) for h in starting_hexes]
     robot_states = {}
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     robot_team.explore(world=world)
 
-    with open('./decentralized_exploration/results/greedy.pkl', 'rb') as infile:
+    with open('./decentralized_exploration/results/greedy_blocked.pkl', 'rb') as infile:
         all_results = pickle.load(infile)
     
     plot_all_results(all_results)
