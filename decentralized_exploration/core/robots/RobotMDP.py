@@ -156,10 +156,19 @@ class RobotMDP(AbstractRobot):
         
         if on_reward_hex:
             next_hex = self.hex_map.find_closest_unknown(center_hex=current_hex)
-            is_clockwise = find_new_orientation(current_hex=current_hex, current_orientation=current_orientation, next_hex=next_hex)
-            action = Actions.CLOCKWISE if is_clockwise else Actions.COUNTER_CLOCKWISE
-            next_state = get_new_state(current_state, action)
-            return next_state
+            is_clockwise, new_orientation = find_new_orientation(current_hex=current_hex, current_orientation=current_orientation, next_hex=next_hex)
+            
+            if new_orientation == current_orientation:
+                if next_hex.state == 0:
+                    action = Actions.FORWARD
+                    next_state = get_new_state(current_state, action)
+                    return next_state
+                else:
+                    current_hex.reward = 0
+            else:
+                action = Actions.CLOCKWISE if is_clockwise else Actions.COUNTER_CLOCKWISE
+                next_state = get_new_state(current_state, action)
+                return next_state
 
         DVF = self._compute_DVF(current_hex=current_hex_pos, iteration=iteration)
         

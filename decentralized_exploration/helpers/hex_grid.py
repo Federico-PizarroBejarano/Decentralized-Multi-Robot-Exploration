@@ -29,7 +29,7 @@ class Hex:
     """
 
     # Tunable Parameter
-    Tr = 0.9
+    Tr = 0.85
 
     # Starting value for nOccupied should not be 0
     def __init__(self, q, r, nUnknown=0.0, nFree=0.0, nOccupied=0.0, reward=0.0):

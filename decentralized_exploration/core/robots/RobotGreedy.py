@@ -34,25 +34,32 @@ class RobotGreedy(AbstractRobot):
         
         if on_reward_hex:
             next_hex = self.hex_map.find_closest_unknown(center_hex=current_hex)
-            is_clockwise = find_new_orientation(current_hex=current_hex, current_orientation=current_orientation, next_hex=next_hex)
-            action = Actions.CLOCKWISE if is_clockwise else Actions.COUNTER_CLOCKWISE
-            next_state = get_new_state(current_state, action)
-        else:
-            next_position = closest_reward(current_hex, self.hex_map)
+            is_clockwise, new_orientation = find_new_orientation(current_hex=current_hex, current_orientation=current_orientation, next_hex=next_hex)
 
-            # All rewards have been found
-            if next_position == None:
-                return current_state
-
-            state_forward = get_new_state(current_state, Actions.FORWARD)
-
-            if state_forward[0] == next_position[0] and state_forward[1] == next_position[1]:
-                next_state = state_forward
+            if new_orientation == current_orientation:
+                if next_hex.state == 0:
+                    action = Actions.FORWARD
+                    next_state = get_new_state(current_state, action)
+                    return next_state
             else:
-                next_hex = Hex(next_position[0], next_position[1])
-                is_clockwise = find_new_orientation(current_hex=current_hex, current_orientation=current_orientation, next_hex=next_hex)
                 action = Actions.CLOCKWISE if is_clockwise else Actions.COUNTER_CLOCKWISE
                 next_state = get_new_state(current_state, action)
+                return next_state
+        
+        next_position = closest_reward(current_hex, self.hex_map)
+
+        # All rewards have been found
+        if next_position == None:
+            return current_state
+
+        next_hex = Hex(next_position[0], next_position[1])
+        is_clockwise, new_orientation = find_new_orientation(current_hex=current_hex, current_orientation=current_orientation, next_hex=next_hex)
+
+        if new_orientation == current_orientation:
+            action = Actions.FORWARD
+        else:
+            action = Actions.CLOCKWISE if is_clockwise else Actions.COUNTER_CLOCKWISE
+        next_state = get_new_state(current_state, action)
 
         return next_state
     

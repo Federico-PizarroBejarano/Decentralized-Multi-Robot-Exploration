@@ -1,8 +1,6 @@
 import numpy as np
 
 from decentralized_exploration.core.robots.RobotMDP import RobotMDP
-from decentralized_exploration.core.constants import Actions
-from decentralized_exploration.helpers.decision_making import find_new_orientation, possible_actions, get_new_state, solve_MDP, compute_probability
 from decentralized_exploration.helpers.hex_grid import Hex, Grid, merge_map
 
 
