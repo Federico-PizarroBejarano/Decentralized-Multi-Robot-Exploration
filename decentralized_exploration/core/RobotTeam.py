@@ -20,8 +20,7 @@ class RobotTeam:
 
     Instance Attributes
     -------------------
-    robots (dict): a dictionary storing the RobotStates of each robot 
-        using their robot_ids as keys
+    robots (dict): a dictionary storing the robots using their robot_ids as keys
     communication_range (float): the maximum range each robot can broadcast its position and map
     blocked_by_obstacles (bool): whether messages are blocked by obstacles
 
@@ -55,6 +54,7 @@ class RobotTeam:
         self._pixel_map = -np.ones(world_size)
         self._hex_map = convert_pixelmap_to_grid(pixel_map=self._pixel_map, size=AbstractRobot.hexagon_size)
 
+
     def _generate_message(self, robot_id, world):
         """
         Generates the message that a given robot with robot_id will receive
@@ -74,10 +74,12 @@ class RobotTeam:
                 distance = np.linalg.norm(robot_position - other_robot_position) * world.pixel_size
 
                 if distance < self._communication_range:
-                    message[robot.robot_id] = { 
-                        'robot_position': other_robot_position,
-                        'pixel_map': robot.pixel_map
-                    }
+                    if self._blocked_by_obstacles == False or world.clear_path_between_robots(robot1=robot.robot_id, robot2=robot_id):
+                        message[robot.robot_id] = { 
+                            'robot_position': other_robot_position,
+                            'pixel_map': robot.pixel_map
+                        }
+        
         return message
 
 
@@ -168,10 +170,10 @@ class RobotTeam:
             
             iteration += 1
         
-        with open('./decentralized_exploration/results/greedy_mapmerger_no_comm.pkl', 'rb') as infile:
+        with open('./decentralized_exploration/results/greedy.pkl', 'rb') as infile:
             all_results = pickle.load(infile)
         
         all_results.append(np.array(explored_per_iteration))
 
-        with open('./decentralized_exploration/results/greedy_mapmerger_no_comm.pkl', 'wb') as outfile:
+        with open('./decentralized_exploration/results/greedy.pkl', 'wb') as outfile:
             pickle.dump(all_results, outfile, pickle.HIGHEST_PROTOCOL)

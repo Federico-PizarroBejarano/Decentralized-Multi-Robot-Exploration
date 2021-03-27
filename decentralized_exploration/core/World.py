@@ -1,5 +1,6 @@
 import numpy as np
 
+from decentralized_exploration.helpers.field_of_view import bresenham
 
 class World:
     """
@@ -67,6 +68,23 @@ class World:
         """
 
         return self._robot_states[robot_id].orientation
+
+    
+    def clear_path_between_robots(self, robot1, robot2):
+        robot1_pos = self.get_position(robot1)
+        robot1_pos = [int(coord) for coord in robot1_pos]
+        robot2_pos = self.get_position(robot2)
+        robot2_pos = [int(coord) for coord in robot2_pos]
+
+        coords_of_line = bresenham(world_map=self._map, start=robot1_pos, end=robot2_pos)
+        Y = [c[0] for c in coords_of_line]
+        X = [c[1] for c in coords_of_line]
+        points_in_line = self._map[Y, X]
+
+        if np.any(points_in_line == 1):
+            return False
+        else:
+            return True
 
 
     def move_robot(self, robot_id, new_position, new_orientation):

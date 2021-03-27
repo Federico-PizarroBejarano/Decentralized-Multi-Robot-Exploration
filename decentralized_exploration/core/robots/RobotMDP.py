@@ -196,3 +196,35 @@ class RobotMDP(AbstractRobot):
 
         return next_state
 
+
+    # Public Methods
+    def communicate(self, message, iteration):
+        """
+        Communicates with the other robots in the team. Receives a message and updates the 
+        last known position and last updated time of every robot that transmitted a message. 
+        Additionally, merges in all their pixel maps.
+
+        Parameters
+        ----------
+        message (dict): a dictionary containing the robot position and pixel map of the other robots
+        iteration (int): the current iteration
+        """
+
+        for robot_id in message:
+            if robot_id not in self._known_robots:
+                self._known_robots[robot_id] = {
+                    'V': {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self._all_states},
+                    'repulsive_V': {state : 0 for state in self._all_states}
+                }
+            
+            self._known_robots[robot_id]['last_updated'] = iteration
+            self._known_robots[robot_id]['last_known_position'] = message[robot_id]['robot_position']
+
+            self.__pixel_map = merge_map(hex_map=self.hex_map, pixel_map=self.pixel_map, pixel_map_to_merge=message[robot_id]['pixel_map'])
+            self.hex_map.propagate_rewards()
+
+        self._known_robots[self.robot_id] = {
+            'last_updated': iteration,
+            'V': self._V,
+            'repulsive_V': self._repulsive_V
+        }

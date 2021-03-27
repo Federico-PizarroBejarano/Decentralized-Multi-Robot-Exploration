@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     robot_team.explore(world=world)
 
-    with open('./decentralized_exploration/results/greedy_mapmerger_no_comm.pkl', 'rb') as infile:
+    with open('./decentralized_exploration/results/greedy.pkl', 'rb') as infile:
         all_results = pickle.load(infile)
     
     plot_all_results(all_results)
