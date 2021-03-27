@@ -1,11 +1,11 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import cPickle as pickle
+# import matplotlib.pyplot as plt
 
 from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
 from decentralized_exploration.helpers.hex_grid import convert_pixelmap_to_grid, merge_map
 from decentralized_exploration.helpers.decision_making import check_distance_to_other_robot
-from decentralized_exploration.helpers.plotting import plot_grid
+# from decentralized_exploration.helpers.plotting import plot_grid
 
 class RobotTeam:
     """
@@ -94,13 +94,15 @@ class RobotTeam:
         is_local_interaction (bool): whether a local interaction occured
         """
 
-        for robot in robot_states.values():
-            for second_robot in robot_states.values():
-                vector_between_robots = np.array(robot.pixel_position) - np.array(second_robot.pixel_position)
+        for robot in robot_states.keys():
+            for second_robot in robot_states.keys():
+                vector_between_robots = np.array(robot_states[robot].pixel_position) - np.array(robot_states[second_robot].pixel_position)
                 dist_between_robots = np.linalg.norm(vector_between_robots)
 
-                if robot != second_robot and dist_between_robots < self.local_interaction_dist:
-                    robot_hex = self._hex_map.find_hex(desired_hex=self._hex_map.hex_at(point=robot.pixel_position))
+                if robot != second_robot and dist_between_robots < 1.0:
+                    return True
+                elif robot != second_robot and dist_between_robots < self.local_interaction_dist:
+                    robot_hex = self._hex_map.find_hex(desired_hex=self._hex_map.hex_at(point=robot_states[robot].pixel_position))
                     clear_path = check_distance_to_other_robot(hex_map=self._hex_map, robot_states=robot_states.values(), start_hex=robot_hex, max_hex_distance=self.local_interaction_path_length)
                     
                     if clear_path:
@@ -132,16 +134,19 @@ class RobotTeam:
         world (World): a World object that the robot will explore
         """
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111)
 
         for robot in self._robots.values():
             robot.complete_rotation(world=world)
+            self._pixel_map = merge_map(hex_map=self._hex_map, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
+
+        self._hex_map.propagate_rewards()
         
         iteration = 0
         explored_per_iteration = []
 
-        while self._robots.values()[0].hex_map.has_rewards():
+        while self._hex_map.has_rewards():
             print(iteration)
             
             for robot in self._robots.values():
@@ -152,9 +157,9 @@ class RobotTeam:
                 robot.explore_1_timestep(world=world, iteration=iteration)
                 self._pixel_map = merge_map(hex_map=self._hex_map, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
 
-                self._hex_map.propagate_rewards()
-                plot_grid(grid=self._hex_map, plot=ax, robot_states=world.robot_states, mode='reward')
-                plt.pause(0.05)
+            self._hex_map.propagate_rewards()
+            # plot_grid(grid=self._hex_map, plot=ax, robot_states=world.robot_states, mode='reward')
+            # plt.pause(0.05)
             
             grid_statistics =  [self._hex_map.percent_explored(), self._local_interaction(robot_states=world.robot_states)]
             explored_per_iteration.append(grid_statistics)

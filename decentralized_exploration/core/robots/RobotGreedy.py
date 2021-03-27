@@ -32,7 +32,7 @@ class RobotGreedy(AbstractRobot):
         # Checking if on reward hexagon
         on_reward_hex = current_hex.reward > 0
         
-        if on_reward_hex:
+        if on_reward_hex and not self._escaping_dead_reward:
             next_hex = self.hex_map.find_closest_unknown(center_hex=current_hex)
             is_clockwise, new_orientation = find_new_orientation(current_hex=current_hex, current_orientation=current_orientation, next_hex=next_hex)
 
@@ -41,6 +41,8 @@ class RobotGreedy(AbstractRobot):
                     action = Actions.FORWARD
                     next_state = get_new_state(current_state, action)
                     return next_state
+                else:
+                    self._escaping_dead_reward = True
             else:
                 action = Actions.CLOCKWISE if is_clockwise else Actions.COUNTER_CLOCKWISE
                 next_state = get_new_state(current_state, action)
@@ -57,6 +59,7 @@ class RobotGreedy(AbstractRobot):
 
         if new_orientation == current_orientation:
             action = Actions.FORWARD
+            self._escaping_dead_reward = False
         else:
             action = Actions.CLOCKWISE if is_clockwise else Actions.COUNTER_CLOCKWISE
         next_state = get_new_state(current_state, action)
