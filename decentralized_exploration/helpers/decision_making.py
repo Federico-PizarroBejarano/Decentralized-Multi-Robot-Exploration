@@ -313,7 +313,7 @@ def compute_probability(start_hex, time_increment, exploration_horizon, hex_map)
                     
     for hexagon in hex_map.all_hexes.values():
         if hexagon.visited:
-            hexagon.probability /= num_possible_hexes * max(1, Grid.hex_distance(start_hex, hexagon)**0.5)
+            hexagon.probability = 1/(num_possible_hexes * max(1.0, Grid.hex_distance(start_hex, hexagon)**0.5))
 
 
 def closest_reward(current_hex, hex_map):
@@ -329,6 +329,7 @@ def closest_reward(current_hex, hex_map):
     -------
     next_state (tuple): the next state the robot should go to as a tuple of 
         q and r coordinates of the new position
+    reward_hex (Hex): the closest Hex that has a reward
     """
 
     for hexagon in hex_map.all_hexes.values():
@@ -349,9 +350,10 @@ def closest_reward(current_hex, hex_map):
     while(len(hexes_to_explore) != 0):
         curr_hex = hexes_to_explore.pop(0)
         if curr_hex.reward > 0:
+            reward_hex = curr_hex
             while curr_hex.previous_hex != current_hex and curr_hex.previous_hex != None:
                 curr_hex = curr_hex.previous_hex
-            return (curr_hex.q, curr_hex.r)
+            return (curr_hex.q, curr_hex.r), reward_hex
         elif curr_hex.state == 0 and curr_hex.visited == False:
             new_neighbours = hex_map.hex_neighbours(center_hex=curr_hex, radius=1)
             for neighbour in new_neighbours:

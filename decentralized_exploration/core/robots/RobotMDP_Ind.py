@@ -71,7 +71,7 @@ class RobotMDP_Ind(RobotMDP):
             
             robot_hex = self.hex_map.find_hex(self.hex_map.hex_at(point=self._known_robots[robot]['last_known_position']))
             compute_probability(start_hex=robot_hex,
-                                time_increment=iteration - self._known_robots[robot]['last_updated'],
+                                time_increment=0,
                                 exploration_horizon=self.exploration_horizon,
                                 hex_map=self.hex_map)
 

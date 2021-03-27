@@ -2,7 +2,7 @@ import numpy as np
 
 from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
 from decentralized_exploration.core.constants import Actions
-from decentralized_exploration.helpers.decision_making import find_new_orientation, possible_actions, get_new_state, solve_MDP, compute_probability
+from decentralized_exploration.helpers.decision_making import find_new_orientation, possible_actions, get_new_state, solve_MDP, compute_probability, closest_reward
 from decentralized_exploration.helpers.hex_grid import Hex, Grid, merge_map
 
 
@@ -76,27 +76,39 @@ class RobotMDP(AbstractRobot):
     
 
     def _calculate_V(self, current_robot):
-            current_hex_pos = self.hex_map.hex_at(point=self._known_robots[current_robot]['last_known_position'])
-            current_hex = self.hex_map.find_hex(desired_hex=current_hex_pos)
+        """
+        Calculates the probable value function for another robot
 
-            close_robots = [robot_id for (robot_id, robot) in self._known_robots.items() if Grid.hex_distance(self.hex_map.hex_at(robot['last_known_position']), current_hex_pos) < self.horizon and robot_id != current_robot]            
-            close_robot_states = [self.hex_map.hex_at(self._known_robots[robot]['last_known_position']) for robot in close_robots]
-            close_robot_states = [(hex_position.q, hex_position.r) for hex_position in close_robot_states]
+        Parameters
+        ----------
+        current_robot (str): the robot_id of the robot whose value function will be estimated
+        """
 
-            initial_repulsive_rewards = { key: self.rho if key in close_robot_states else 0 for key in self.hex_map.all_hexes.keys() }
+        current_hex_pos = self.hex_map.hex_at(point=self._known_robots[current_robot]['last_known_position'])
+        current_hex = self.hex_map.find_hex(desired_hex=current_hex_pos)
 
-            self._known_robots[current_robot]['repulsive_V'] = {state : 0 for state in self._all_states}
-            solve_MDP(self.hex_map, self._known_robots[current_robot]['repulsive_V'], initial_repulsive_rewards, self.noise, self.discount_factor, self.minimum_change_repulsive, self.max_iterations, self.horizon, current_hex)
+        close_robots = [robot_id for (robot_id, robot) in self._known_robots.items() if Grid.hex_distance(self.hex_map.hex_at(robot['last_known_position']), current_hex_pos) < self.horizon and robot_id != current_robot]            
+        close_robot_states = [self.hex_map.hex_at(self._known_robots[robot]['last_known_position']) for robot in close_robots]
+        close_robot_states = [(hex_position.q, hex_position.r) for hex_position in close_robot_states]
 
-            repulsive_reward = { key:0 for key in self.hex_map.all_hexes.keys() }
-        
-            for state in self._all_states:
-                repulsive_reward[(state[0], state[1])] += self._known_robots[current_robot]['repulsive_V'][state]
+        initial_repulsive_rewards = { key: self.rho if key in close_robot_states else 0 for key in self.hex_map.all_hexes.keys() }
 
-            rewards = { key:hexagon.reward - repulsive_reward[key] for (key, hexagon) in self.hex_map.all_hexes.items() }
+        self._known_robots[current_robot]['repulsive_V'] = {state : 0 for state in self._all_states}
+        solve_MDP(self.hex_map, self._known_robots[current_robot]['repulsive_V'], initial_repulsive_rewards, self.noise, self.discount_factor, self.minimum_change_repulsive, self.max_iterations, self.horizon, current_hex)
 
-            self._known_robots[current_robot]['V'] = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self._all_states}
-            solve_MDP(self.hex_map, self._known_robots[current_robot]['V'], rewards, self.noise, self.discount_factor, self.minimum_change, self.max_iterations, self.horizon, current_hex)
+        repulsive_reward = { key:0 for key in self.hex_map.all_hexes.keys() }
+    
+        for state in self._all_states:
+            repulsive_reward[(state[0], state[1])] += self._known_robots[current_robot]['repulsive_V'][state]
+
+        rewards = { key:hexagon.reward - repulsive_reward[key] for (key, hexagon) in self.hex_map.all_hexes.items() }
+
+        self._known_robots[current_robot]['V'] = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self._all_states}
+
+        closest_reward_hex = closest_reward(current_hex=current_hex, hex_map=self.hex_map)[1]
+        closest_reward_dist = Grid.hex_distance(start_hex=current_hex, end_hex=closest_reward_hex)
+        modified_horizon = max(self.horizon, closest_reward_dist+1)
+        solve_MDP(self.hex_map, self._known_robots[current_robot]['V'], rewards, self.noise, self.discount_factor, self.minimum_change, self.max_iterations, modified_horizon, current_hex)
 
 
     def _compute_DVF(self, current_hex, iteration):
@@ -179,8 +191,12 @@ class RobotMDP(AbstractRobot):
         rewards = { key:hexagon.reward for (key, hexagon) in self.hex_map.all_hexes.items() }
         
         self._V = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self._all_states}
-        policy = solve_MDP(self.hex_map, self._V, rewards, self.noise, self.discount_factor, self.minimum_change, self.max_iterations, self.horizon, current_hex, DVF)
-        
+
+        closest_reward_hex = closest_reward(current_hex=current_hex, hex_map=self.hex_map)[1]
+        closest_reward_dist = Grid.hex_distance(start_hex=current_hex, end_hex=closest_reward_hex)
+        modified_horizon = max(self.horizon, closest_reward_dist+1)
+        policy = solve_MDP(self.hex_map, self._V, rewards, self.noise, self.discount_factor, self.minimum_change, self.max_iterations, modified_horizon, current_hex, DVF)
+
         action = policy[current_state]
         if action == Actions.FORWARD:
             self._escaping_dead_reward = False

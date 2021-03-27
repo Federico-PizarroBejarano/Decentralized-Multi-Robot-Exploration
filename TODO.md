@@ -10,7 +10,7 @@ This is a list of tasks that need to be done as well as possible enhancements
     - [x] Change Robot.choose_next_pose to choose based on rewards 
 - [ ] Allow for robots of varying sizes
 - [ ] Asynchronously scan and update map while choosing actions in another thread
-- [ ] Dynamically increase horizon if no reward within horizon
+- [x] Dynamically increase horizon if no reward within horizon
 
 ### Multi-Robot Exploration
 
@@ -19,9 +19,9 @@ This is a list of tasks that need to be done as well as possible enhancements
     - [x] Design basic collision avoidance
     - [x] Update Markov Decision Process for all robots to operate synchronously
 - [ ] Allow robots to operate asynchronously
-- [ ] Modify MDP to allow for imperfect communication
+- [x] Modify MDP to allow for imperfect communication
     - [x] Create Voronoi diagram of map
-    - [ ] Modify MDP using distributed value functions for imperfect communication
+    - [x] Modify MDP using distributed value functions for imperfect communication
 
 ### Enhancements
 

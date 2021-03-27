@@ -48,7 +48,7 @@ class RobotGreedy(AbstractRobot):
                 next_state = get_new_state(current_state, action)
                 return next_state
         
-        next_position = closest_reward(current_hex, self.hex_map)
+        next_position = closest_reward(current_hex, self.hex_map)[0]
 
         # All rewards have been found
         if next_position == None:
