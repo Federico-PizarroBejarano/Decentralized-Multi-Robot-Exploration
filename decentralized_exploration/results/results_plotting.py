@@ -27,10 +27,10 @@ def plot_all_results(results):
         to_75_pc.append(iterations_to_75_pc)
         total_iterations.append(test.shape[0])
 
-    local_interactions = ax.plot(range(1, len(results)+1), local_interactions, label='Cumulated iterations with local interactions')
-    to_50_pc = ax.plot(range(1, len(results)+1), to_50_pc, label='Iterations until 50% explored')
-    to_75_pc = ax.plot(range(1, len(results)+1), to_75_pc, label='Iterations until 75% explored')
-    total_iterations = ax.plot(range(1, len(results)+1), total_iterations, label='Iterations until 100% explored')
+    local_interactions, = ax.plot(range(1, len(results)+1), local_interactions, marker='o', linestyle='dashed', linewidth=2, markersize=12, label='Cumulated iterations with local interactions')
+    to_50_pc, = ax.plot(range(1, len(results)+1), to_50_pc, marker='o', linewidth=2, markersize=12, label='Iterations until 50% explored')
+    to_75_pc, = ax.plot(range(1, len(results)+1), to_75_pc, marker='o', linewidth=2, markersize=12, label='Iterations until 75% explored')
+    total_iterations, = ax.plot(range(1, len(results)+1), total_iterations, marker='o', linewidth=2, markersize=12, label='Iterations until 100% explored')
 
     plt.legend(handles=[local_interactions, to_50_pc, to_75_pc, total_iterations])
     ax.set_ylim(ymin=0)

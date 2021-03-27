@@ -445,13 +445,15 @@ def merge_map(hex_map, pixel_map, pixel_map_to_merge):
         for y in range(pixel_map.shape[0]):
             for x in range(pixel_map.shape[1]):
                 if pixel_map[y, x] == -1:
-                    pixel_map[y, x] = pixel_map_to_merge[y, x]
-                    desired_hex = hex_map.hex_at(point=[y, x])
-                    found_hex = hex_map.find_hex(desired_hex=desired_hex)
-
                     if pixel_map_to_merge[y, x] == 0:
+                        pixel_map[y, x] = pixel_map_to_merge[y, x]
+                        desired_hex = hex_map.hex_at(point=[y, x])
+                        found_hex = hex_map.find_hex(desired_hex=desired_hex)
                         found_hex.update_hex(dFree=1, dUnknown=-1)
                     elif pixel_map_to_merge[y, x] == 1:
+                        pixel_map[y, x] = pixel_map_to_merge[y, x]
+                        desired_hex = hex_map.hex_at(point=[y, x])
+                        found_hex = hex_map.find_hex(desired_hex=desired_hex)
                         found_hex.update_hex(dOccupied=1, dUnknown=-1)
 
         return pixel_map

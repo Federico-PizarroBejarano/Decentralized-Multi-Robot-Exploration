@@ -5,7 +5,7 @@ import cPickle as pickle
 from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
 from decentralized_exploration.helpers.hex_grid import convert_pixelmap_to_grid, merge_map
 from decentralized_exploration.helpers.decision_making import check_distance_to_other_robot
-from decentralized_exploration.helpers.plotting import plot_grid
+# from decentralized_exploration.helpers.plotting import plot_grid
 
 class RobotTeam:
     """
@@ -143,20 +143,23 @@ class RobotTeam:
 
         while self._robots.values()[0].hex_map.has_rewards():
             print(iteration)
-            for robot in self._robots.values():
-                robot.communicate(message = self._generate_message(robot_id=robot.robot_id,  world=world), iteration=iteration)
             
+            for robot in self._robots.values():
+                message = self._generate_message(robot_id=robot.robot_id,  world=world)
+                robot.communicate(message=message, iteration=iteration)
+
             for robot in self._robots.values():
                 robot.explore_1_timestep(world=world, iteration=iteration)
                 self._pixel_map = merge_map(hex_map=self._hex_map, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
-                
+
                 # self._hex_map.propagate_rewards()
                 # plot_grid(grid=self._hex_map, plot=ax, robot_states=world.robot_states, mode='reward')
                 # plt.pause(0.05)
             
             grid_statistics =  [self._hex_map.percent_explored(), self._local_interaction(robot_states=world.robot_states)]
-            print(grid_statistics)
             explored_per_iteration.append(grid_statistics)
+
+            print(grid_statistics)
             
             iteration += 1
         
