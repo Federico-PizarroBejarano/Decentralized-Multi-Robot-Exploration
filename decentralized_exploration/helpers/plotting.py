@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import RegularPolygon
+import cPickle as pickle
 
 
 def plot_grid(grid, plot, robot_states = {}, mode='value'):
@@ -59,12 +60,12 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
     plot.set_aspect('equal')
 
     hex_robot_states = {}
-    for robot_state in robot_states.values():
-        robot_hex = grid.hex_at(point=robot_state.pixel_position)
+    for robot in robot_states.keys():
+        robot_hex = grid.hex_at(point=robot_states[robot].pixel_position)
         hex_x = robot_hex.q
         hex_y = 2.*np.sin(np.radians(60)) * (robot_hex.r - robot_hex.s)/3.
 
-        hex_robot_states[(hex_x, hex_y)] = robot_state.orientation
+        hex_robot_states[(hex_x, hex_y)] = (robot_states[robot].orientation, robot)
 
     # Add some coloured hexagons
     for x, y, c in zip(hcoord, vcoord, colors):  
@@ -79,20 +80,21 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
                 alpha = rewards[(x, y)]/min_reward
 
         if (x, y) in hex_robot_states:
-            alpha = 0.5
+            alpha = 0.8
             c = 'yellow'
+            plot.text(x, y, hex_robot_states[(x, y)][1][-1], ha='center', va='center', size=8)
 
-            if hex_robot_states[(x, y)] == 1:
+            if hex_robot_states[(x, y)][0] == 1:
                 plot.plot(x, y-0.3, 'bo')
-            if hex_robot_states[(x, y)] == 2:
+            if hex_robot_states[(x, y)][0] == 2:
                 plot.plot(x-0.25, y-0.15, 'bo')
-            if hex_robot_states[(x, y)] == 3:
+            if hex_robot_states[(x, y)][0] == 3:
                 plot.plot(x-0.25, y+0.15, 'bo')
-            if hex_robot_states[(x, y)] == 4:
+            if hex_robot_states[(x, y)][0] == 4:
                 plot.plot(x, y+0.3, 'bo')
-            if hex_robot_states[(x, y)] == 5:
+            if hex_robot_states[(x, y)][0] == 5:
                 plot.plot(x+0.25, y+0.15, 'bo')
-            if hex_robot_states[(x, y)] == 6:
+            if hex_robot_states[(x, y)][0] == 6:
                 plot.plot(x+0.25, y-0.15, 'bo')
 
 
@@ -127,3 +129,71 @@ def plot_map(pixel_map, plot, robot_pos=[]):
 
     if len(robot_pos) == 2:
         plot.plot(robot_pos[1], robot_pos[0], 'ro')
+
+
+def plot_one_set(results, plot=True):
+    local_interactions = []
+    to_75_pc = []
+    to_90_pc = []
+    total_iterations = []
+
+    for test in results:
+        num_of_local_interactions = np.sum(test[:, 1])
+        
+        iterations_to_90_pc = 0
+        iterations_to_75_pc = 0
+
+        for iteration in range(test.shape[0]):
+            if test[iteration][0]*1773.0/(1773.0-83.0) > 0.90 and iterations_to_90_pc == 0:
+                iterations_to_90_pc = iteration
+            elif test[iteration][0]*1773.0/(1773.0-83.0) > 0.75 and iterations_to_75_pc == 0:
+                iterations_to_75_pc = iteration
+        
+        local_interactions.append(num_of_local_interactions)
+        to_75_pc.append(iterations_to_75_pc)
+        to_90_pc.append(iterations_to_90_pc)
+        total_iterations.append(test.shape[0])
+
+    if plot:
+        fig = plt.figure()
+        ax = fig.add_subplot('111')
+
+        local_interactions, = ax.plot(range(1, len(results)+1), local_interactions, marker='o', linestyle='dashed', linewidth=2, markersize=12, label='Cumulated iterations with local interactions')
+        to_75_pc, = ax.plot(range(1, len(results)+1), to_75_pc, marker='o', linewidth=2, markersize=12, label='Iterations until 75% explored')
+        to_90_pc, = ax.plot(range(1, len(results)+1), to_90_pc, marker='o', linewidth=2, markersize=12, label='Iterations until 90% explored')
+        total_iterations, = ax.plot(range(1, len(results)+1), total_iterations, marker='o', linewidth=2, markersize=12, label='Iterations until 100% explored')
+
+        plt.legend(handles=[local_interactions, to_75_pc, to_90_pc, total_iterations])
+        ax.set_ylim(ymin=0)
+        plt.show()
+    else:
+        cumulated_results = {}
+        cumulated_results['local_interactions'] = sum(local_interactions)/len(results)
+        cumulated_results['to_75_pc'] = sum(to_75_pc)/len(results)
+        cumulated_results['to_90_pc'] = sum(to_90_pc)/len(results)
+        cumulated_results['total_iterations'] = sum(total_iterations)/len(results)
+
+        return cumulated_results
+
+
+def plot_all_results():
+    filenames = ['greedy.pkl', 'greedy_blocked.pkl', 'greedy_no_comm.pkl', 'mdp.pkl']
+    x_axis = ['Greedy', 'Greedy - Blocked', 'Greedy - No Comm.', 'MDP']
+
+    all_results = []
+    for file in filenames:
+        with open('./decentralized_exploration/results/'+file, 'rb') as infile:
+            all_results.append(plot_one_set(results=pickle.load(infile), plot=False))
+            print(all_results[-1].items())
+    
+    fig = plt.figure()
+    ax = fig.add_subplot('111')
+    
+    local_interactions, = ax.plot(x_axis, [results['local_interactions'] for results in all_results], marker='o', linestyle='dashed', linewidth=2, markersize=12, label='Cumulated iterations with local interactions')
+    to_75_pc, = ax.plot(x_axis, [results['to_75_pc'] for results in all_results], marker='o', linewidth=2, markersize=12, label='Iterations until 75% explored')
+    to_90_pc, = ax.plot(x_axis, [results['to_90_pc'] for results in all_results], marker='o', linewidth=2, markersize=12, label='Iterations until 90% explored')
+    total_iterations, = ax.plot(x_axis, [results['total_iterations'] for results in all_results], marker='o', linewidth=2, markersize=12, label='Iterations until 100% explored')
+
+    plt.legend(handles=[local_interactions, to_75_pc, to_90_pc, total_iterations])
+    ax.set_ylim(ymin=0)
+    plt.show()

@@ -1,6 +1,7 @@
 import numpy as np
 import cPickle as pickle
 import matplotlib.pyplot as plt
+from time import time
 
 from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
 from decentralized_exploration.helpers.hex_grid import convert_pixelmap_to_grid, merge_map
@@ -32,7 +33,7 @@ class RobotTeam:
 
     # Tunable parameter
     local_interaction_dist = 100.0
-    local_interaction_path_length = 8
+    local_interaction_path_length = 6
 
     def __init__(self, world_size, communication_range = float('inf'), blocked_by_obstacles = False):
         self._robots = {}
@@ -136,32 +137,38 @@ class RobotTeam:
         world (World): a World object that the robot will explore
         """
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
+        # fig1 = plt.figure()
+        # ax1 = fig1.add_subplot(111)
+
+        # fig2 = plt.figure()
+        # ax2 = fig2.add_subplot(111)
 
         for robot in self._robots.values():
             robot.complete_rotation(world=world)
             self._pixel_map = merge_map(hex_map=self._hex_map, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
 
         self._hex_map.propagate_rewards()
-        
+
         iteration = 0
         explored_per_iteration = []
 
-        while self._hex_map.has_rewards():
+        while self._hex_map.has_rewards() and iteration < 300:
             print(iteration)
             
             for robot in self._robots.values():
                 message = self._generate_message(robot_id=robot.robot_id,  world=world)
                 robot.communicate(message=message, iteration=iteration)
 
+            t0 = time()
             for robot in self._robots.values():
                 robot.explore_1_timestep(world=world, iteration=iteration)
                 self._pixel_map = merge_map(hex_map=self._hex_map, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
+            print("Explore time", time()-t0)
 
             self._hex_map.propagate_rewards()
-            plot_grid(grid=self._hex_map, plot=ax, robot_states=world.robot_states, mode='reward')
-            plt.pause(0.05)
+            # plot_grid(grid=self._robots['robot_1'].hex_map, plot=ax1, robot_states=world.robot_states, mode='reward')
+            # plot_grid(grid=self._robots['robot_2'].hex_map, plot=ax2, robot_states=world.robot_states, mode='reward')
+            # plt.pause(0.05)
             
             grid_statistics =  [self._hex_map.percent_explored(), self._local_interaction(robot_states=world.robot_states)]
             explored_per_iteration.append(grid_statistics)
@@ -170,10 +177,10 @@ class RobotTeam:
             
             iteration += 1
         
-        with open('./decentralized_exploration/results/mdp_ind.pkl', 'rb') as infile:
+        with open('./decentralized_exploration/results/greedy_2.pkl', 'rb') as infile:
             all_results = pickle.load(infile)
         
         all_results.append(np.array(explored_per_iteration))
 
-        with open('./decentralized_exploration/results/mdp_ind.pkl', 'wb') as outfile:
+        with open('./decentralized_exploration/results/greedy_2.pkl', 'wb') as outfile:
             pickle.dump(all_results, outfile, pickle.HIGHEST_PROTOCOL)

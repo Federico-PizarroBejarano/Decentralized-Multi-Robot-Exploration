@@ -44,15 +44,15 @@ class RobotMDP(AbstractRobot):
     """
 
     # Tunable Parameters
-    discount_factor = 0.9
-    noise = 0.1
-    minimum_change = 0.1
-    minimum_change_repulsive = 0.1
+    discount_factor = 0.8
+    noise = 0.0
+    minimum_change = 1.0
+    minimum_change_repulsive = 0.01
     max_iterations = 50
     rho = 0.10
-    horizon = 15
-    exploration_horizon = 5
-    weighing_factor = 15.0
+    horizon = 30
+    exploration_horizon = 6
+    weighing_factor = 20.0
 
     def __init__(self, robot_id, range_finder, width, length, world_size):
         super(RobotMDP, self).__init__(robot_id, range_finder, width, length, world_size)
@@ -93,7 +93,7 @@ class RobotMDP(AbstractRobot):
 
         initial_repulsive_rewards = { key: self.rho if key in close_robot_states else 0 for key in self.hex_map.all_hexes.keys() }
 
-        self._known_robots[current_robot]['repulsive_V'] = {state : 0 for state in self._all_states}
+        # self._known_robots[current_robot]['repulsive_V'] = {state : 0 for state in self._all_states}
         solve_MDP(self.hex_map, self._known_robots[current_robot]['repulsive_V'], initial_repulsive_rewards, self.noise, self.discount_factor, self.minimum_change_repulsive, self.max_iterations, self.horizon, current_hex)
 
         repulsive_reward = { key:0 for key in self.hex_map.all_hexes.keys() }
@@ -103,7 +103,7 @@ class RobotMDP(AbstractRobot):
 
         rewards = { key:hexagon.reward - repulsive_reward[key] for (key, hexagon) in self.hex_map.all_hexes.items() }
 
-        self._known_robots[current_robot]['V'] = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self._all_states}
+        # self._known_robots[current_robot]['V'] = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self._all_states}
 
         closest_reward_hex = closest_reward(current_hex=current_hex, hex_map=self.hex_map)[1]
         closest_reward_dist = Grid.hex_distance(start_hex=current_hex, end_hex=closest_reward_hex)
@@ -187,7 +187,7 @@ class RobotMDP(AbstractRobot):
             current_hex.reward = 0
 
         DVF = self._compute_DVF(current_hex=current_hex_pos, iteration=iteration)
-        
+
         rewards = { key:hexagon.reward for (key, hexagon) in self.hex_map.all_hexes.items() }
         
         self._V = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self._all_states}
@@ -198,10 +198,28 @@ class RobotMDP(AbstractRobot):
         policy = solve_MDP(self.hex_map, self._V, rewards, self.noise, self.discount_factor, self.minimum_change, self.max_iterations, modified_horizon, current_hex, DVF)
 
         action = policy[current_state]
+        next_state = get_new_state(state=current_state, action=action)
+
+        if abs(self._V[current_state] - self._V[next_state]) < 0.001 or self._V[next_state] < 0:
+            print(self.robot_id, ' MDP is stuck, using greedy')
+            next_position = closest_reward(current_hex, self.hex_map)[0]
+
+            # All rewards have been found
+            if next_position == None:
+                return current_state
+
+            next_hex = Hex(next_position[0], next_position[1])
+            is_clockwise, new_orientation = find_new_orientation(current_hex=current_hex, current_orientation=current_orientation, next_hex=next_hex)
+
+            if new_orientation == current_orientation:
+                action = Actions.FORWARD
+                self._escaping_dead_reward = False
+            else:
+                action = Actions.CLOCKWISE if is_clockwise else Actions.COUNTER_CLOCKWISE
+            next_state = get_new_state(current_state, action)
+
         if action == Actions.FORWARD:
             self._escaping_dead_reward = False
-
-        next_state = get_new_state(state=current_state, action=action)
 
         # Plotting
         for state in self._all_states:

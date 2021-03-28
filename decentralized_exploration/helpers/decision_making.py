@@ -205,12 +205,12 @@ def solve_MDP(hex_map, V, rewards, noise, discount_factor, minimum_change, max_i
     if not DVF:
         DVF = {key:0 for key in V.keys()}
 
-    while (biggest_change >= minimum_change) and (iterations < max_iterations):
+    while (biggest_change >= minimum_change or iterations < max_iterations/500.0) and (iterations < max_iterations):
         biggest_change = 0
         iterations += 1
         
         for state in all_states:
-            if (hex_map.all_hexes[(state[0], state[1])].state != 0) or (Grid.hex_distance(current_hex, Hex(state[0], state[1])) > horizon):
+            if (hex_map.all_hexes[(state[0], state[1])].state == 1) or (Grid.hex_distance(current_hex, Hex(state[0], state[1])) > horizon):
                 continue
 
             old_value = V[state]
@@ -219,14 +219,16 @@ def solve_MDP(hex_map, V, rewards, noise, discount_factor, minimum_change, max_i
             for action in possible_actions(state, hex_map):
                 next_state = get_new_state(state, action)
 
-                # Choose a random action to do with probability self.noise
-                random_action = np.random.choice([rand_act for rand_act in possible_actions(state, hex_map) if rand_act != action])
-                random_state = get_new_state(state, random_action)
+                # Choose a random action to do with probability noise
+                random_state = next_state
+                if noise > 0.0:
+                    random_action = np.random.choice([rand_act for rand_act in possible_actions(state, hex_map) if rand_act != action])
+                    random_state = get_new_state(state, random_action)
 
                 value = rewards[(state[0], state[1])] + discount_factor * ( ((1 - noise)* V[next_state] + (noise * V[random_state])) - DVF[next_state])
                 
                 # Keep best action so far
-                if value >= new_value:
+                if value > new_value:
                     new_value = value
                     policy[state] = action
 
