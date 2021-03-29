@@ -140,8 +140,8 @@ def plot_one_set(results, plot=True):
     for test in results:
         num_of_local_interactions = np.sum(test[:, 1])
         
-        iterations_to_90_pc = 0
-        iterations_to_75_pc = 0
+        iterations_to_90_pc = float('inf')
+        iterations_to_75_pc = float('inf')
 
         for iteration in range(test.shape[0]):
             if test[iteration][0]*1773.0/(1773.0-83.0) > 0.90 and iterations_to_90_pc == 0:

@@ -166,24 +166,30 @@ class RobotMDP(AbstractRobot):
         # Checking if on reward hexagon
         on_reward_hex = current_hex.reward > 0
         
-        if on_reward_hex and not self._escaping_dead_reward:
+        if on_reward_hex and not self._escaping_dead_reward['escaping_dead_reward']:          
             next_hex = self.hex_map.find_closest_unknown(center_hex=current_hex)
             is_clockwise, new_orientation = find_new_orientation(current_hex=current_hex, current_orientation=current_orientation, next_hex=next_hex)
-            
+
             if new_orientation == current_orientation:
                 if next_hex.state == 0:
                     action = Actions.FORWARD
                     next_state = get_new_state(current_state, action)
                     return next_state
                 else:
-                    self._escaping_dead_reward = True
+                    self._escaping_dead_reward['escaping_dead_reward'] = True
                     current_hex.reward = 0
             else:
-                action = Actions.CLOCKWISE if is_clockwise else Actions.COUNTER_CLOCKWISE
-                next_state = get_new_state(current_state, action)
-                return next_state
+                if self._escaping_dead_reward['was_just_on_reward'] == True and new_orientation == self._escaping_dead_reward['previous_orientation']:
+                    self._escaping_dead_reward['escaping_dead_reward'] = True 
+                else:
+                    self._escaping_dead_reward['was_just_on_reward'] = True
+                    self._escaping_dead_reward['previous_orientation'] = current_orientation
+                    action = Actions.CLOCKWISE if is_clockwise else Actions.COUNTER_CLOCKWISE
+                    next_state = get_new_state(current_state, action)
+                    return next_state
         
-        if self._escaping_dead_reward:
+        self._escaping_dead_reward['was_just_on_reward'] = False
+        if self._escaping_dead_reward['escaping_dead_reward']:
             current_hex.reward = 0
 
         DVF = self._compute_DVF(current_hex=current_hex_pos, iteration=iteration)
@@ -213,13 +219,12 @@ class RobotMDP(AbstractRobot):
 
             if new_orientation == current_orientation:
                 action = Actions.FORWARD
-                self._escaping_dead_reward = False
             else:
                 action = Actions.CLOCKWISE if is_clockwise else Actions.COUNTER_CLOCKWISE
             next_state = get_new_state(current_state, action)
 
         if action == Actions.FORWARD:
-            self._escaping_dead_reward = False
+            self._escaping_dead_reward['escaping_dead_reward'] = False
 
         # Plotting
         for state in self._all_states:

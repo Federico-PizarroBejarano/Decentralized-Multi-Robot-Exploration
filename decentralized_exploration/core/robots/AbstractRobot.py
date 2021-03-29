@@ -39,7 +39,11 @@ class AbstractRobot:
         self._range_finder = range_finder
         self._width = width
         self._length = length
-        self._escaping_dead_reward = False
+        self._escaping_dead_reward = {
+            'was_just_on_reward': False, 
+            'previous_orientation': 1,
+            'escaping_dead_reward': False
+        }
 
         self._known_robots = { robot_id: {}}
 
