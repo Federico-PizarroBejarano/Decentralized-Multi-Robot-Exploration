@@ -45,8 +45,12 @@ if __name__ == "__main__":
 
             robot_team.explore(world=world)
             count += 1
+        except Exception as e:
+            print("FAILURE!!!!")
+            print(e)
         except:
             print("FAILURE!!!!")
+            print("Keyboard interrupt")
 
     with open('./decentralized_exploration/results/two_robots_map_4/mdp.pkl', 'rb') as infile:
         all_results = pickle.load(infile)

@@ -27,7 +27,8 @@ This is a list of tasks that need to be done as well as possible enhancements
 
 - [ ] Add RangeFinder that works more realistically
 - [ ] Make dynamically growing map i.e. no previous knowledge of map size
-- [ ] Add negative reward to obstacles so robots stays away from them
+- [ ] Add negative reward to obstacles so robots stays away from them (by adding noise to movements in MDP)
+- [ ] Add collision checking to world so robots don't accidentally enter objects
 - [ ] Improve efficiency
 - [ ] Add comprehensive unit testing
 - [ ] Add comprehensive integration testing

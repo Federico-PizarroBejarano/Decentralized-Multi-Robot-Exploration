@@ -152,7 +152,7 @@ class RobotTeam:
         iteration = 0
         explored_per_iteration = []
 
-        while self._hex_map.has_rewards() and iteration < 1000:
+        while self._hex_map.has_rewards() and iteration < 1000 and self._hex_map.percent_explored/0.93 < 0.95:
             print(iteration)
             
             for robot in self._robots.values():

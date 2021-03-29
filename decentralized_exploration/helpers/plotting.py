@@ -24,32 +24,29 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
     colors = [colors_list[h.state+1] for h in all_hexes]
 
     rewards = {}
-    max_reward = -float('inf')
-    min_reward = float('inf')
+    max_value = -float('inf')
 
     if mode == 'value':
         for hexagon in all_hexes:
             if hexagon.V != 0 and hexagon.state == 0:
                 y = 2. * np.sin(np.radians(60)) * (hexagon.r - hexagon.s) / 3.
                 rewards[(hexagon.q, y)] = round(hexagon.V, 1)
-                if round(hexagon.V, 1) > max_reward:
-                    max_reward = round(hexagon.V, 1)
-                if round(hexagon.V, 1) < min_reward:
-                    min_reward = round(hexagon.V, 1)
+                if abs(round(hexagon.V, 1)) > max_value:
+                    max_value = abs(round(hexagon.V, 1))
     elif mode == 'reward':
         for hexagon in all_hexes:
             if hexagon.reward != 0:
                 y = 2. * np.sin(np.radians(60)) * (hexagon.r - hexagon.s) / 3.
                 rewards[(hexagon.q, y)] = round(hexagon.reward, 1)
-                if round(hexagon.reward, 1) > max_reward:
-                    max_reward = round(hexagon.reward, 1)
+                if abs(round(hexagon.reward, 1)) > max_value:
+                    max_value = abs(round(hexagon.reward, 1))
     if mode == 'probability':
         for hexagon in all_hexes:
             if hexagon.probability != 0:
                 y = 2. * np.sin(np.radians(60)) * (hexagon.r - hexagon.s) / 3.
                 rewards[(hexagon.q, y)] = round(hexagon.probability*100, 2)
-                if round(hexagon.probability*100, 2) > max_reward:
-                    max_reward = round(hexagon.probability*100, 2)
+                if abs(round(hexagon.probability*100, 2)) > max_value:
+                    max_value = abs(round(hexagon.probability*100, 2))
 
     # Horizontal cartesian coords
     hcoord = [c[0] for c in coord]
@@ -71,13 +68,12 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
     for x, y, c in zip(hcoord, vcoord, colors):  
         alpha = 0.5      
         if (x, y) in rewards:
-            # plot.text(x, y, rewards[(x, y)], ha='center', va='center', size=8)
+            plot.text(x, y, int(round(rewards[(x, y)])), ha='center', va='center', size=8)
+            alpha = abs(rewards[(x, y)]/max_value)
             if rewards[(x, y)] > 0:
                 c = 'green'
-                alpha = rewards[(x, y)]/max_reward
             elif rewards[(x, y)] < 0:
                 c = 'red'
-                alpha = rewards[(x, y)]/min_reward
 
         if (x, y) in hex_robot_states:
             alpha = 0.8
@@ -144,9 +140,9 @@ def plot_one_set(results, plot=True):
         iterations_to_75_pc = float('inf')
 
         for iteration in range(test.shape[0]):
-            if test[iteration][0]*1773.0/(1773.0-83.0) > 0.90 and iterations_to_90_pc == 0:
+            if test[iteration][0]/0.93 > 0.90 and iterations_to_90_pc == 0:
                 iterations_to_90_pc = iteration
-            elif test[iteration][0]*1773.0/(1773.0-83.0) > 0.75 and iterations_to_75_pc == 0:
+            elif test[iteration][0]/0.93 > 0.75 and iterations_to_75_pc == 0:
                 iterations_to_75_pc = iteration
         
         local_interactions.append(num_of_local_interactions)

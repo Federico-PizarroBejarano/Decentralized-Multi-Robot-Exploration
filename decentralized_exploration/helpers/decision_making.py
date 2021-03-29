@@ -174,7 +174,7 @@ def get_new_state(state, action):
     return new_state
 
 
-def solve_MDP(hex_map, V, rewards, noise, discount_factor, minimum_change, max_iterations, horizon, current_hex, DVF=None):
+def solve_MDP(hex_map, V, rewards, noise, discount_factor, minimum_change, max_iterations, min_iterations, horizon, current_hex, DVF=None):
     """
     Solves an MDP given the states, rewards, transition function, and actions. 
 
@@ -188,6 +188,7 @@ def solve_MDP(hex_map, V, rewards, noise, discount_factor, minimum_change, max_i
     discount_factor (float): a float less than or equal to 1 that discounts distant values in the MDP
     minimum_change (float): the MDP exits when the largest change in Value is less than this
     max_iterations (int): the maximum number of iterations before the MDP returns
+    min_iterations (int): the minimum number of iterations before the MDP returns
     horizon (int): how near a state is from the current state to be considered in the MD
     current_hex (Hex): the hex of where the robot currently is
 
@@ -205,7 +206,7 @@ def solve_MDP(hex_map, V, rewards, noise, discount_factor, minimum_change, max_i
     if not DVF:
         DVF = {key:0 for key in V.keys()}
 
-    while (biggest_change >= minimum_change or iterations < max_iterations/500.0) and (iterations < max_iterations):
+    while (biggest_change >= minimum_change or iterations < max(min_iterations, horizon) + 1) and (iterations < max(min_iterations, horizon, max_iterations) + 1):
         biggest_change = 0
         iterations += 1
         
