@@ -209,7 +209,7 @@ class RobotMDP(AbstractRobot):
         cumulative_DVF = sum(DVF.values())
         cumulative_reward = sum([ reward for reward in rewards.values() ]) + 0.01
 
-        reward_multiplier = max(1, max_DVF/max_reward, cumulative_DVF/cumulative_reward)        
+        reward_multiplier = max(2, 2*max_DVF/max_reward, 2*cumulative_DVF/cumulative_reward)        
         modified_discount_factor = 1.0 - 80.0/(max(self.horizon, min_iterations)**2.0)
 
         print('Reward multiplier: {}, Modified gamma: {}'.format(reward_multiplier, modified_discount_factor))

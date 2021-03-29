@@ -131,24 +131,28 @@ def plot_one_set(results, plot=True):
     local_interactions = []
     to_75_pc = []
     to_90_pc = []
-    total_iterations = []
+    to_99_pc = []
 
     for test in results:
-        num_of_local_interactions = np.sum(test[:, 1])
-        
-        iterations_to_90_pc = float('inf')
-        iterations_to_75_pc = float('inf')
+        total_iterations = test.shape[0] 
+        iterations_to_99_pc = total_iterations
+        iterations_to_90_pc = total_iterations
+        iterations_to_75_pc = total_iterations
 
         for iteration in range(test.shape[0]):
-            if test[iteration][0]/0.93 > 0.90 and iterations_to_90_pc == 0:
+            if test[iteration][0]/0.93 > 0.99 and iterations_to_75_pc == total_iterations:
+                iterations_to_99_pc = iteration
+            elif test[iteration][0]/0.93 > 0.90 and iterations_to_90_pc == total_iterations:
                 iterations_to_90_pc = iteration
-            elif test[iteration][0]/0.93 > 0.75 and iterations_to_75_pc == 0:
+            elif test[iteration][0]/0.93 > 0.75 and iterations_to_75_pc == total_iterations:
                 iterations_to_75_pc = iteration
-        
+
+        print(iterations_to_99_pc==total_iterations)
+        num_of_local_interactions = np.sum(test[:iterations_to_99_pc, 1])
         local_interactions.append(num_of_local_interactions)
         to_75_pc.append(iterations_to_75_pc)
         to_90_pc.append(iterations_to_90_pc)
-        total_iterations.append(test.shape[0])
+        to_99_pc.append(iterations_to_99_pc)
 
     if plot:
         fig = plt.figure()
@@ -157,9 +161,9 @@ def plot_one_set(results, plot=True):
         local_interactions, = ax.plot(range(1, len(results)+1), local_interactions, marker='o', linestyle='dashed', linewidth=2, markersize=12, label='Cumulated iterations with local interactions')
         to_75_pc, = ax.plot(range(1, len(results)+1), to_75_pc, marker='o', linewidth=2, markersize=12, label='Iterations until 75% explored')
         to_90_pc, = ax.plot(range(1, len(results)+1), to_90_pc, marker='o', linewidth=2, markersize=12, label='Iterations until 90% explored')
-        total_iterations, = ax.plot(range(1, len(results)+1), total_iterations, marker='o', linewidth=2, markersize=12, label='Iterations until 100% explored')
+        to_99_pc, = ax.plot(range(1, len(results)+1), to_99_pc, marker='o', linewidth=2, markersize=12, label='Iterations until 99% explored')
 
-        plt.legend(handles=[local_interactions, to_75_pc, to_90_pc, total_iterations])
+        plt.legend(handles=[local_interactions, to_75_pc, to_90_pc, to_99_pc])
         ax.set_ylim(ymin=0)
         plt.show()
     else:
@@ -167,7 +171,7 @@ def plot_one_set(results, plot=True):
         cumulated_results['local_interactions'] = sum(local_interactions)/len(results)
         cumulated_results['to_75_pc'] = sum(to_75_pc)/len(results)
         cumulated_results['to_90_pc'] = sum(to_90_pc)/len(results)
-        cumulated_results['total_iterations'] = sum(total_iterations)/len(results)
+        cumulated_results['to_99_pc'] = sum(to_99_pc)/len(results)
 
         return cumulated_results
 
@@ -188,8 +192,8 @@ def plot_all_results():
     local_interactions, = ax.plot(x_axis, [results['local_interactions'] for results in all_results], marker='o', linestyle='dashed', linewidth=2, markersize=12, label='Cumulated iterations with local interactions')
     to_75_pc, = ax.plot(x_axis, [results['to_75_pc'] for results in all_results], marker='o', linewidth=2, markersize=12, label='Iterations until 75% explored')
     to_90_pc, = ax.plot(x_axis, [results['to_90_pc'] for results in all_results], marker='o', linewidth=2, markersize=12, label='Iterations until 90% explored')
-    total_iterations, = ax.plot(x_axis, [results['total_iterations'] for results in all_results], marker='o', linewidth=2, markersize=12, label='Iterations until 100% explored')
+    to_99_pc, = ax.plot(x_axis, [results['to_99_pc'] for results in all_results], marker='o', linewidth=2, markersize=12, label='Iterations until 99% explored')
 
-    plt.legend(handles=[local_interactions, to_75_pc, to_90_pc, total_iterations])
+    plt.legend(handles=[local_interactions, to_75_pc, to_90_pc, to_99_pc])
     ax.set_ylim(ymin=0)
     plt.show()
