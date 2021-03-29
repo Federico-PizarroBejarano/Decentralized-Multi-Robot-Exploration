@@ -171,8 +171,8 @@ class RobotTeam:
                 text = reader.read()
                 
                 if 'TRUE' in text:
-                    plot_grid(grid=self._robots['robot_1'].hex_map, plot=ax1, robot_states=world.robot_states, mode='reward')
-                    plot_grid(grid=self._robots['robot_2'].hex_map, plot=ax2, robot_states=world.robot_states, mode='reward')
+                    plot_grid(grid=self._robots['robot_1'].hex_map, plot=ax1, robot_states=world.robot_states, mode='value')
+                    plot_grid(grid=self._robots['robot_2'].hex_map, plot=ax2, robot_states=world.robot_states, mode='value')
                     plt.pause(0.05)
             
             grid_statistics =  [self._hex_map.percent_explored(), self._local_interaction(robot_states=world.robot_states)]
@@ -182,10 +182,10 @@ class RobotTeam:
             
             iteration += 1
         
-        with open('./decentralized_exploration/results/two_robots_map_4/greedy.pkl', 'rb') as infile:
+        with open('./decentralized_exploration/results/two_robots_map_4/mdp.pkl', 'rb') as infile:
             all_results = pickle.load(infile)
         
         all_results.append(np.array(explored_per_iteration))
 
-        with open('./decentralized_exploration/results/two_robots_map_4/greedy.pkl', 'wb') as outfile:
+        with open('./decentralized_exploration/results/two_robots_map_4/mdp.pkl', 'wb') as outfile:
             pickle.dump(all_results, outfile, pickle.HIGHEST_PROTOCOL)

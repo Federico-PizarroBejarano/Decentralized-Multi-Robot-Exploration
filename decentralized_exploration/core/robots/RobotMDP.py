@@ -136,7 +136,7 @@ class RobotMDP(AbstractRobot):
                                 hex_map=self.hex_map)
 
             for state in self._all_states:
-                DVF[state] +=  self.weighing_factor * self.hex_map.all_hexes[(state[0], state[1])].probability * self._known_robots[robot]['V'][state]
+                DVF[state] +=  self.weighing_factor * self.hex_map.all_hexes[(state[0], state[1])].probability * self._known_robots[robot]['V'][state] + self.weighing_factor**3 * self.hex_map.all_hexes[(state[0], state[1])].probability**2
         
         for state in self._all_states:
             DVF[state] = abs(DVF[state])
