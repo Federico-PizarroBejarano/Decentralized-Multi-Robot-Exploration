@@ -177,10 +177,10 @@ class RobotTeam:
             
             iteration += 1
         
-        with open('./decentralized_exploration/results/greedy_2.pkl', 'rb') as infile:
+        with open('./decentralized_exploration/results/two_robots_map_4/mdp.pkl', 'rb') as infile:
             all_results = pickle.load(infile)
         
         all_results.append(np.array(explored_per_iteration))
 
-        with open('./decentralized_exploration/results/greedy_2.pkl', 'wb') as outfile:
+        with open('./decentralized_exploration/results/two_robots_map_4/mdp.pkl', 'wb') as outfile:
             pickle.dump(all_results, outfile, pickle.HIGHEST_PROTOCOL)

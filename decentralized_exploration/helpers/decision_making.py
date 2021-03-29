@@ -364,6 +364,8 @@ def closest_reward(current_hex, hex_map):
                     neighbour.distance_from_start = curr_hex.distance_from_start + 1
                     hexes_to_explore.append(neighbour)
     
+    return None, None
+    
 
 def check_distance_to_other_robot(hex_map, robot_states, start_hex, max_hex_distance):
     """

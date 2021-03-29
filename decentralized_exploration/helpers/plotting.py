@@ -177,12 +177,12 @@ def plot_one_set(results, plot=True):
 
 
 def plot_all_results():
-    filenames = ['greedy.pkl', 'greedy_blocked.pkl', 'greedy_no_comm.pkl', 'mdp.pkl']
-    x_axis = ['Greedy', 'Greedy - Blocked', 'Greedy - No Comm.', 'MDP']
+    filenames = ['greedy.pkl', 'mdp.pkl']
+    x_axis = ['Greedy', 'MDP']
 
     all_results = []
     for file in filenames:
-        with open('./decentralized_exploration/results/'+file, 'rb') as infile:
+        with open('./decentralized_exploration/results/two_robots_map_4/'+file, 'rb') as infile:
             all_results.append(plot_one_set(results=pickle.load(infile), plot=False))
             print(all_results[-1].items())
     
