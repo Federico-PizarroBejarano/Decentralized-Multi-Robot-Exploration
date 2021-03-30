@@ -176,8 +176,8 @@ def plot_one_set(results, plot=True):
 
 
 def plot_all_results():
-    filenames = ['greedy.pkl', 'mdp.pkl', 'greedy_blocked.pkl', 'mdp_blocked.pkl', 'greedy_no_comm.pkl']
-    x_axis = ['Greedy', 'MDP', 'Greedy - Blocked', 'MDP - Blocked.pkl', 'Greedy - No Comm.']
+    filenames = ['greedy.pkl', 'mdp.pkl', 'greedy_blocked.pkl', 'mdp_blocked.pkl', 'mdp_blocked_ind.pkl', 'greedy_no_comm.pkl']
+    x_axis = ['Greedy', 'MDP', 'Greedy - Blocked', 'MDP - Blocked.pkl', 'MDP Independent - Blocked', 'Greedy - No Comm.']
 
     all_results = []
     for file in filenames:
