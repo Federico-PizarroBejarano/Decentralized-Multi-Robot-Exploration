@@ -157,10 +157,10 @@ def plot_one_set(results, plot=True):
         fig = plt.figure()
         ax = fig.add_subplot('111')
 
-        local_interactions, = ax.plot(range(1, len(results)+1), local_interactions, marker='o', linestyle='dashed', linewidth=2, markersize=12, label='Cumulated iterations with local interactions')
-        to_75_pc, = ax.plot(range(1, len(results)+1), to_75_pc, marker='o', linewidth=2, markersize=12, label='Iterations until 75% explored')
-        to_90_pc, = ax.plot(range(1, len(results)+1), to_90_pc, marker='o', linewidth=2, markersize=12, label='Iterations until 90% explored')
-        to_99_pc, = ax.plot(range(1, len(results)+1), to_99_pc, marker='o', linewidth=2, markersize=12, label='Iterations until 99% explored')
+        local_interactions, = ax.plot(range(1, len(results)+1), local_interactions, marker='o', linestyle='dashed', linewidth=1.1, markersize=12, label='Cumulated iterations with local interactions')
+        to_75_pc, = ax.plot(range(1, len(results)+1), to_75_pc, marker='o', linewidth=1.1, markersize=12, label='Iterations until 75% explored')
+        to_90_pc, = ax.plot(range(1, len(results)+1), to_90_pc, marker='o', linewidth=1.1, markersize=12, label='Iterations until 90% explored')
+        to_99_pc, = ax.plot(range(1, len(results)+1), to_99_pc, marker='o', linewidth=1.1, markersize=12, label='Iterations until 99% explored')
 
         plt.legend(handles=[local_interactions, to_75_pc, to_90_pc, to_99_pc])
         ax.set_ylim(ymin=0)
@@ -188,11 +188,63 @@ def plot_all_results():
     fig = plt.figure()
     ax = fig.add_subplot('111')
     
-    local_interactions, = ax.plot(x_axis, [results['local_interactions'] for results in all_results], marker='o', linestyle='dashed', linewidth=2, markersize=12, label='Cumulated iterations with local interactions')
-    to_75_pc, = ax.plot(x_axis, [results['to_75_pc'] for results in all_results], marker='o', linewidth=2, markersize=12, label='Iterations until 75% explored')
-    to_90_pc, = ax.plot(x_axis, [results['to_90_pc'] for results in all_results], marker='o', linewidth=2, markersize=12, label='Iterations until 90% explored')
-    to_99_pc, = ax.plot(x_axis, [results['to_99_pc'] for results in all_results], marker='o', linewidth=2, markersize=12, label='Iterations until 99% explored')
+    ax.plot(x_axis, [results['local_interactions'] for results in all_results], marker='o', linestyle='dashed', linewidth=2, markersize=12, label='Cumulated iterations with local interactions')
+    ax.plot(x_axis, [results['to_75_pc'] for results in all_results], marker='o', linewidth=2, markersize=12, label='Iterations until 75% explored')
+    ax.plot(x_axis, [results['to_90_pc'] for results in all_results], marker='o', linewidth=2, markersize=12, label='Iterations until 90% explored')
+    ax.plot(x_axis, [results['to_99_pc'] for results in all_results], marker='o', linewidth=2, markersize=12, label='Iterations until 99% explored')
 
-    plt.legend(handles=[local_interactions, to_75_pc, to_90_pc, to_99_pc])
+    plt.legend()
+    ax.set_ylim(ymin=0)
+    plt.show()
+
+
+def plot_all_results_bar():
+    greedy_filenames = ['greedy.pkl', 'greedy_blocked.pkl', 'greedy_no_comm.pkl']
+    mdp_filenames = ['mdp.pkl', 'mdp_blocked.pkl', 'mdp_no_comm.pkl']
+    x_axis = ['', 'Full Communication', '', 'Blocked by Obstacles', '', 'No Communication']
+
+    greedy_results = []
+    for file in greedy_filenames:
+        with open('./decentralized_exploration/results/two_robots_map_4/'+file, 'rb') as infile:
+            greedy_results.append(plot_one_set(results=pickle.load(infile), plot=False))
+            print('{}: {}'.format(file, greedy_results[-1].items()))
+    
+    mdp_results = []
+    for file in mdp_filenames:
+        with open('./decentralized_exploration/results/two_robots_map_4/'+file, 'rb') as infile:
+            mdp_results.append(plot_one_set(results=pickle.load(infile), plot=False))
+            print('{}: {}'.format(file, mdp_results[-1].items()))
+    
+    with open('./decentralized_exploration/results/two_robots_map_4/mdp_ind_blocked.pkl', 'rb') as infile:
+        mdp_ind_results = plot_one_set(results=pickle.load(infile), plot=False)
+        print('mdp_ind_blocked.pkl: {}'.format(mdp_ind_results))
+    
+    fig = plt.figure()
+    ax = fig.add_subplot('111')
+
+    width = 0.2
+
+    greedy_indices = [-0.1, 0.8, 1.9]
+    mdp_indices = [0.1, 1, 2.1]
+    
+    ax.bar(greedy_indices, [results['to_75_pc'] for results in greedy_results], width=width, color='g', edgecolor='k', linewidth=1.1, label='Iterations until 75% explored')
+    ax.bar(greedy_indices, [results['to_90_pc'] - results['to_75_pc'] for results in greedy_results], bottom=[results['to_75_pc'] for results in greedy_results], width=width, color='b', edgecolor='k', linewidth=1.1, label='Iterations until 90% explored')
+    ax.bar(greedy_indices, [results['to_99_pc'] - results['to_90_pc'] for results in greedy_results], bottom=[results['to_90_pc'] for results in greedy_results], width=width, color='r', edgecolor='k', linewidth=1.1, label='Iterations until 99% explored')
+    
+    ax.bar(mdp_indices, [results['to_75_pc'] for results in mdp_results], width=width, color='g', edgecolor='k', linewidth=1.1)
+    ax.bar(mdp_indices, [results['to_90_pc'] - results['to_75_pc'] for results in mdp_results], bottom=[results['to_75_pc'] for results in mdp_results], width=width, color='b', edgecolor='k', linewidth=1.1)
+    ax.bar(mdp_indices, [results['to_99_pc'] - results['to_90_pc'] for results in mdp_results], bottom=[results['to_90_pc'] for results in mdp_results], width=width, color='r', edgecolor='k', linewidth=1.1)
+    
+    ax.bar(1.2, mdp_ind_results['to_75_pc'], width=width, color='g', edgecolor='k', linewidth=1.1)
+    ax.bar(1.2, mdp_ind_results['to_90_pc'] - mdp_ind_results['to_75_pc'], bottom=mdp_ind_results['to_75_pc'], width=width, color='b', edgecolor='k', linewidth=1.1)
+    ax.bar(1.2, mdp_ind_results['to_99_pc'] - mdp_ind_results['to_90_pc'], bottom=mdp_ind_results['to_90_pc'], width=width, color='r', edgecolor='k', linewidth=1.1)
+
+    li_str = 'local_interactions'
+    li = [greedy_results[0][li_str], mdp_results[0][li_str], greedy_results[1][li_str], mdp_results[1][li_str], mdp_ind_results[li_str], greedy_results[2][li_str], mdp_results[2][li_str]]
+    ax.scatter([-0.1, 0.1, 0.8, 1.0, 1.2, 1.9, 2.1], li, marker='o', color='y', label='Cumulated local interactions', zorder=1000)
+
+    ax.axes.set_xticklabels(x_axis)
+
+    plt.legend()
     ax.set_ylim(ymin=0)
     plt.show()

@@ -202,6 +202,7 @@ def solve_MDP(hex_map, V, rewards, noise, discount_factor, minimum_change, max_i
     iterations = 0
 
     all_states = V.keys()
+    current_state = (current_hex.q, current_hex.r)
 
     if not DVF:
         DVF = {key:0 for key in V.keys()}
@@ -211,7 +212,7 @@ def solve_MDP(hex_map, V, rewards, noise, discount_factor, minimum_change, max_i
         iterations += 1
         
         for state in all_states:
-            if (hex_map.all_hexes[(state[0], state[1])].state == 1) or (Grid.hex_distance(current_hex, Hex(state[0], state[1])) > horizon):
+            if ((state[0], state[1]) != current_state) and ( (hex_map.all_hexes[(state[0], state[1])].state == 1) or (Grid.hex_distance(current_hex, Hex(state[0], state[1])) > horizon) ):
                 continue
 
             old_value = V[state]
