@@ -105,9 +105,8 @@ class RobotMDP(AbstractRobot):
 
         self._known_robots[current_robot]['V'] = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self._all_states}
 
-        closest_reward_hex = closest_reward(current_hex=current_hex, hex_map=self.hex_map)[1]
-        closest_reward_dist = Grid.hex_distance(start_hex=current_hex, end_hex=closest_reward_hex)
-        modified_horizon = max(self.horizon, closest_reward_dist+1)
+        closest_reward_hex, max_path_distance = closest_reward(current_hex=current_hex, hex_map=self.hex_map)[1:]
+        modified_horizon = max(self.horizon, max_path_distance+1)
         min_iterations = closest_reward_hex.distance_from_start
 
         modified_discount_factor = 1.0 - 80.0/(max(self.horizon, min_iterations)**2.0)
@@ -197,9 +196,8 @@ class RobotMDP(AbstractRobot):
 
         DVF = self._compute_DVF(current_hex=current_hex_pos, iteration=iteration)
 
-        closest_reward_hex = closest_reward(current_hex=current_hex, hex_map=self.hex_map)[1]
-        closest_reward_dist = Grid.hex_distance(start_hex=current_hex, end_hex=closest_reward_hex)
-        modified_horizon = max(self.horizon, closest_reward_dist+1)
+        closest_reward_hex, max_path_distance = closest_reward(current_hex=current_hex, hex_map=self.hex_map)[1:]
+        modified_horizon = max(self.horizon, max_path_distance+1)
         min_iterations = closest_reward_hex.distance_from_start
 
         rewards = { key:hexagon.reward for (key, hexagon) in self.hex_map.all_hexes.items() if Grid.hex_distance(hexagon, current_hex) < modified_horizon + 1}

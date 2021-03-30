@@ -333,6 +333,8 @@ def closest_reward(current_hex, hex_map):
     next_state (tuple): the next state the robot should go to as a tuple of 
         q and r coordinates of the new position
     reward_hex (Hex): the closest Hex that has a reward
+    max_distance (int): the largest distance between the current_hex and a hex 
+        in the path to the reward_hex. Used to calculate the necessary horizon
     """
 
     for hexagon in hex_map.all_hexes.values():
@@ -354,9 +356,12 @@ def closest_reward(current_hex, hex_map):
         curr_hex = hexes_to_explore.pop(0)
         if curr_hex.reward > 0:
             reward_hex = curr_hex
+            max_distance = Grid.hex_distance(start_hex=current_hex, end_hex=curr_hex)
             while curr_hex.previous_hex != current_hex and curr_hex.previous_hex != None:
                 curr_hex = curr_hex.previous_hex
-            return (curr_hex.q, curr_hex.r), reward_hex
+                if Grid.hex_distance(start_hex=current_hex, end_hex=curr_hex) > max_distance:
+                    max_distance = Grid.hex_distance(start_hex=current_hex, end_hex=curr_hex)
+            return (curr_hex.q, curr_hex.r), reward_hex, max_distance
         elif curr_hex.state == 0 and curr_hex.visited == False:
             new_neighbours = hex_map.hex_neighbours(center_hex=curr_hex, radius=1)
             for neighbour in new_neighbours:
@@ -365,7 +370,7 @@ def closest_reward(current_hex, hex_map):
                     neighbour.distance_from_start = curr_hex.distance_from_start + 1
                     hexes_to_explore.append(neighbour)
     
-    return None, None
+    return None, None, 0
     
 
 def check_distance_to_other_robot(hex_map, robot_states, start_hex, max_hex_distance):
