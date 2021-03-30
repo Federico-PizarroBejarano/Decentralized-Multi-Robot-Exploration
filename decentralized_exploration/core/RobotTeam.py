@@ -155,9 +155,9 @@ class RobotTeam:
         while self._hex_map.has_rewards() and iteration < 1000 and self._hex_map.percent_explored()/0.93 < 0.99:
             print(iteration)
             
-            for robot in self._robots.values():
-                message = self._generate_message(robot_id=robot.robot_id,  world=world)
-                robot.communicate(message=message, iteration=iteration)
+            # for robot in self._robots.values():
+            #     message = self._generate_message(robot_id=robot.robot_id,  world=world)
+            #     robot.communicate(message=message, iteration=iteration)
 
             t0 = time()
             for robot in self._robots.values():
@@ -182,10 +182,12 @@ class RobotTeam:
             
             iteration += 1
         
-        with open('./decentralized_exploration/results/two_robots_map_4/greedy_blocked.pkl', 'rb') as infile:
+        with open('./decentralized_exploration/results/two_robots_map_4/greedy_no_comm.pkl', 'rb') as infile:
             all_results = pickle.load(infile)
         
         all_results.append(np.array(explored_per_iteration))
 
-        with open('./decentralized_exploration/results/two_robots_map_4/greedy_blocked.pkl', 'wb') as outfile:
+        with open('./decentralized_exploration/results/two_robots_map_4/greedy_no_comm.pkl', 'wb') as outfile:
             pickle.dump(all_results, outfile, pickle.HIGHEST_PROTOCOL)
+        
+        plt.close('all')

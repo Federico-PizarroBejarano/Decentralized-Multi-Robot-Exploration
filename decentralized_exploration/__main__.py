@@ -9,7 +9,7 @@ from decentralized_exploration.core.RobotTeam import RobotTeam
 from decentralized_exploration.helpers.RobotState import RobotState
 from decentralized_exploration.helpers.hex_grid import convert_pixelmap_to_grid
 
-from decentralized_exploration.helpers.plotting import plot_one_set
+from decentralized_exploration.helpers.plotting import plot_one_set, plot_all_results
 
 
 if __name__ == "__main__":
@@ -52,7 +52,8 @@ if __name__ == "__main__":
             print("FAILURE!!!!")
             print("Keyboard interrupt")
 
-    with open('./decentralized_exploration/results/two_robots_map_4/greedy_blocked.pkl', 'rb') as infile:
+    with open('./decentralized_exploration/results/two_robots_map_4/greedy_no_comm.pkl', 'rb') as infile:
         all_results = pickle.load(infile)
     
     plot_one_set(all_results)
+    plot_all_results()

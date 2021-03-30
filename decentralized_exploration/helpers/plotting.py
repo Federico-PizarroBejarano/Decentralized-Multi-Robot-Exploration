@@ -147,7 +147,6 @@ def plot_one_set(results, plot=True):
             elif test[iteration][0]/0.93 > 0.75 and iterations_to_75_pc == total_iterations:
                 iterations_to_75_pc = iteration
 
-        print(iterations_to_99_pc==total_iterations)
         num_of_local_interactions = np.sum(test[:iterations_to_99_pc, 1])
         local_interactions.append(num_of_local_interactions)
         to_75_pc.append(iterations_to_75_pc)
@@ -177,8 +176,8 @@ def plot_one_set(results, plot=True):
 
 
 def plot_all_results():
-    filenames = ['greedy.pkl', 'mdp.pkl']
-    x_axis = ['Greedy', 'MDP']
+    filenames = ['greedy.pkl', 'mdp.pkl', 'greedy_blocked.pkl', 'greedy_no_comm.pkl']
+    x_axis = ['Greedy', 'MDP', 'Greedy - Blocked', 'Greedy - No Comm.']
 
     all_results = []
     for file in filenames:
