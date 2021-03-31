@@ -174,8 +174,8 @@ class RobotTeam:
 
             self._hex_map.propagate_rewards()
 
-            plot_grid(grid=self._robots['robot_1'].hex_map, plot=ax1, robot_states=world.robot_states, mode='reward')
-            plot_grid(grid=self._robots['robot_2'].hex_map, plot=ax2, robot_states=world.robot_states, mode='reward')
+            plot_grid(grid=self._robots['robot_1'].hex_map, plot=ax1, robot_states=world.robot_states, mode='value')
+            plot_grid(grid=self._robots['robot_2'].hex_map, plot=ax2, robot_states=world.robot_states, mode='value')
             plt.pause(0.05)
             
             grid_statistics =  [self._hex_map.percent_explored(), self._local_interaction(robot_states=world.robot_states), world.get_position('robot_1'), world.get_position('robot_2')]
@@ -185,7 +185,7 @@ class RobotTeam:
             
             iteration += 1
 
-        with open('./decentralized_exploration/results/trajectories/greedy_no_comm.pkl', 'wb') as outfile:
+        with open('./decentralized_exploration/results/trajectories/mdp_no_comm.pkl', 'wb') as outfile:
             pickle.dump(explored_per_iteration, outfile, pickle.HIGHEST_PROTOCOL)
         
         plt.close('all')

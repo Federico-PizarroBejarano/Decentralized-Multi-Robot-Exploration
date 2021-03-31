@@ -4,7 +4,7 @@ import cPickle as pickle
 
 from decentralized_exploration.core.World import World
 from decentralized_exploration.core.RangeFinder import RangeFinder
-from decentralized_exploration.core.robots.RobotGreedy import RobotGreedy
+from decentralized_exploration.core.robots.RobotMDP import RobotMDP
 from decentralized_exploration.core.RobotTeam import RobotTeam
 from decentralized_exploration.helpers.RobotState import RobotState
 from decentralized_exploration.helpers.hex_grid import convert_pixelmap_to_grid
@@ -12,7 +12,7 @@ from decentralized_exploration.helpers.hex_grid import convert_pixelmap_to_grid
 
 if __name__ == "__main__":
     world_map = np.load('./decentralized_exploration/maps/large_map_4.npy')
-    completed_grid = convert_pixelmap_to_grid(pixel_map=world_map, size=RobotGreedy.hexagon_size)
+    completed_grid = convert_pixelmap_to_grid(pixel_map=world_map, size=RobotMDP.hexagon_size)
     hexes_near_entrance = completed_grid.hex_neighbours(completed_grid.find_hex(completed_grid.hex_at(point=[500, 300])), radius=5)
 
     num_of_robots = 2
@@ -28,7 +28,7 @@ if __name__ == "__main__":
         starting_pos = [int(pos) for pos in starting_poses[r]]
         range_finder = RangeFinder(full_range=10, frequency=0.7)
 
-        robot = RobotGreedy(robot_id="robot_" + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
+        robot = RobotMDP(robot_id="robot_" + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
         robot_state = RobotState(starting_pos, np.random.randint(1, 7))
 
         robot_team.add_robot(robot)
