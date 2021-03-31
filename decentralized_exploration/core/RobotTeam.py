@@ -143,9 +143,16 @@ class RobotTeam:
         fig2 = plt.figure(2)
         ax2 = fig2.add_subplot(111)
 
+        plot_grid(grid=self._robots['robot_1'].hex_map, plot=ax1, robot_states=world.robot_states, mode='value')
+        plot_grid(grid=self._robots['robot_2'].hex_map, plot=ax2, robot_states=world.robot_states, mode='value')
+        plt.pause(0.05)
+
         for robot in self._robots.values():
             robot.complete_rotation(world=world)
             self._pixel_map = merge_map(hex_map=self._hex_map, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
+            plot_grid(grid=self._robots['robot_1'].hex_map, plot=ax1, robot_states=world.robot_states, mode='value')
+            plot_grid(grid=self._robots['robot_2'].hex_map, plot=ax2, robot_states=world.robot_states, mode='value')
+            plt.pause(0.05)
 
         self._hex_map.propagate_rewards()
 
@@ -167,27 +174,18 @@ class RobotTeam:
 
             self._hex_map.propagate_rewards()
 
-            with open('./plot_grids.txt', 'r') as reader:
-                text = reader.read()
-                
-                if 'TRUE' in text:
-                    plot_grid(grid=self._robots['robot_1'].hex_map, plot=ax1, robot_states=world.robot_states, mode='value')
-                    plot_grid(grid=self._robots['robot_2'].hex_map, plot=ax2, robot_states=world.robot_states, mode='value')
-                    plt.pause(0.05)
+            plot_grid(grid=self._robots['robot_1'].hex_map, plot=ax1, robot_states=world.robot_states, mode='reward')
+            plot_grid(grid=self._robots['robot_2'].hex_map, plot=ax2, robot_states=world.robot_states, mode='reward')
+            plt.pause(0.05)
             
-            grid_statistics =  [self._hex_map.percent_explored(), self._local_interaction(robot_states=world.robot_states)]
+            grid_statistics =  [self._hex_map.percent_explored(), self._local_interaction(robot_states=world.robot_states), world.get_position('robot_1'), world.get_position('robot_2')]
             explored_per_iteration.append(grid_statistics)
 
             print(grid_statistics)
             
             iteration += 1
-        
-        with open('./decentralized_exploration/results/two_robots_map_4/mdp_no_comm.pkl', 'rb') as infile:
-            all_results = pickle.load(infile)
-        
-        all_results.append(np.array(explored_per_iteration))
 
-        with open('./decentralized_exploration/results/two_robots_map_4/mdp_no_comm.pkl', 'wb') as outfile:
-            pickle.dump(all_results, outfile, pickle.HIGHEST_PROTOCOL)
+        with open('./decentralized_exploration/results/trajectories/greedy_no_comm.pkl', 'wb') as outfile:
+            pickle.dump(explored_per_iteration, outfile, pickle.HIGHEST_PROTOCOL)
         
         plt.close('all')

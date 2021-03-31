@@ -68,7 +68,7 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
     for x, y, c in zip(hcoord, vcoord, colors):  
         alpha = 0.5      
         if (x, y) in rewards:
-            plot.text(x, y, int(round(rewards[(x, y)])), ha='center', va='center', size=8)
+            # plot.text(x, y, int(round(rewards[(x, y)])), ha='center', va='center', size=8)
             alpha = abs(rewards[(x, y)]/max_value)
             if rewards[(x, y)] > 0:
                 c = 'green'
@@ -76,9 +76,9 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
                 c = 'red'
 
         if (x, y) in hex_robot_states:
-            alpha = 0.8
+            alpha = 1.0
             c = 'yellow'
-            plot.text(x, y, hex_robot_states[(x, y)][1][-1], ha='center', va='center', size=8)
+            # plot.text(x, y, hex_robot_states[(x, y)][1][-1], ha='center', va='center', size=8)
 
             if hex_robot_states[(x, y)][0] == 1:
                 plot.plot(x, y-0.3, 'bo')
@@ -127,7 +127,10 @@ def plot_map(pixel_map, plot, robot_pos=[]):
         plot.plot(robot_pos[1], robot_pos[0], 'ro')
 
 
-def plot_one_set(results, plot=True):
+def plot_one_set(filename, plot=True):
+    with open('./decentralized_exploration/results/{}.pkl'.format(filename), 'rb') as infile:
+        results = pickle.load(infile)
+
     local_interactions = []
     to_75_pc = []
     to_90_pc = []
@@ -181,9 +184,8 @@ def plot_all_results():
 
     all_results = []
     for file in filenames:
-        with open('./decentralized_exploration/results/two_robots_map_4/'+file, 'rb') as infile:
-            all_results.append(plot_one_set(results=pickle.load(infile), plot=False))
-            print(all_results[-1].items())
+        all_results.append(plot_one_set(filename=file, plot=False))
+        print(all_results[-1].items())
     
     fig = plt.figure()
     ax = fig.add_subplot('111')
@@ -201,23 +203,20 @@ def plot_all_results():
 def plot_all_results_bar():
     greedy_filenames = ['greedy.pkl', 'greedy_blocked.pkl', 'greedy_no_comm.pkl']
     mdp_filenames = ['mdp.pkl', 'mdp_blocked.pkl', 'mdp_no_comm.pkl']
-    x_axis = ['', 'Full Communication', '', 'Blocked by Obstacles', '', 'No Communication']
+    x_axis = ['', 'Full Communication', '', 'Limited Communication', '', 'No Communication']
 
     greedy_results = []
     for file in greedy_filenames:
-        with open('./decentralized_exploration/results/two_robots_map_4/'+file, 'rb') as infile:
-            greedy_results.append(plot_one_set(results=pickle.load(infile), plot=False))
-            print('{}: {}'.format(file, greedy_results[-1].items()))
+        greedy_results.append(plot_one_set(filename=file, plot=False))
+        print('{}: {}'.format(file, greedy_results[-1].items()))
     
     mdp_results = []
     for file in mdp_filenames:
-        with open('./decentralized_exploration/results/two_robots_map_4/'+file, 'rb') as infile:
-            mdp_results.append(plot_one_set(results=pickle.load(infile), plot=False))
-            print('{}: {}'.format(file, mdp_results[-1].items()))
+        mdp_results.append(plot_one_set(filename=file, plot=False))
+        print('{}: {}'.format(file, mdp_results[-1].items()))
     
-    with open('./decentralized_exploration/results/two_robots_map_4/mdp_ind_blocked.pkl', 'rb') as infile:
-        mdp_ind_results = plot_one_set(results=pickle.load(infile), plot=False)
-        print('mdp_ind_blocked.pkl: {}'.format(mdp_ind_results))
+    mdp_ind_results = plot_one_set(filename='mdp_ind_blocked', plot=False)
+    print('mdp_ind_blocked.pkl: {}'.format(mdp_ind_results))
     
     fig = plt.figure()
     ax = fig.add_subplot('111')
@@ -247,4 +246,24 @@ def plot_all_results_bar():
 
     plt.legend()
     ax.set_ylim(ymin=0)
+    plt.show()
+
+
+def plot_trajectory(filename, map_file='large_map_4'):
+    pixel_map = np.load('./decentralized_exploration/maps/{}.npy'.format(map_file))
+    with open('./decentralized_exploration/results/{}.pkl'.format(filename), 'rb') as infile:
+        results = pickle.load(infile)
+        
+    robot_1_traj = np.array([r[2] for r in results])
+    robot_2_traj = np.array([r[3] for r in results])
+
+    fig = plt.figure()
+    ax = fig.add_subplot('111')
+
+    shaded_map = -1*pixel_map - (pixel_map == -1).astype(int)*1.5
+    ax.imshow(shaded_map, cmap='gray')
+
+    ax.plot(robot_1_traj[:, 1], robot_1_traj[:, 0], c='r')
+    ax.plot(robot_2_traj[:, 1], robot_2_traj[:, 0], c='b')
+
     plt.show()
