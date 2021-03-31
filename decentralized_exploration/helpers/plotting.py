@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import cm
 from matplotlib.patches import RegularPolygon
 import cPickle as pickle
 
@@ -179,31 +180,9 @@ def plot_one_set(filename, plot=True):
 
 
 def plot_all_results():
-    filenames = ['greedy.pkl', 'mdp.pkl', 'greedy_blocked.pkl', 'mdp_blocked.pkl', 'mdp_ind_blocked.pkl', 'greedy_no_comm.pkl', 'mdp_no_comm.pkl']
-    x_axis = ['Greedy', 'MDP', 'Greedy - Blocked', 'MDP - Blocked', 'MDP Independent - Blocked', 'Greedy - No Comm.', 'MDP - No Comm']
-
-    all_results = []
-    for file in filenames:
-        all_results.append(plot_one_set(filename=file, plot=False))
-        print(all_results[-1].items())
-    
-    fig = plt.figure()
-    ax = fig.add_subplot('111')
-    
-    ax.plot(x_axis, [results['local_interactions'] for results in all_results], marker='o', linestyle='dashed', linewidth=2, markersize=12, label='Cumulated iterations with local interactions')
-    ax.plot(x_axis, [results['to_75_pc'] for results in all_results], marker='o', linewidth=2, markersize=12, label='Iterations until 75% explored')
-    ax.plot(x_axis, [results['to_90_pc'] for results in all_results], marker='o', linewidth=2, markersize=12, label='Iterations until 90% explored')
-    ax.plot(x_axis, [results['to_99_pc'] for results in all_results], marker='o', linewidth=2, markersize=12, label='Iterations until 99% explored')
-
-    plt.legend()
-    ax.set_ylim(ymin=0)
-    plt.show()
-
-
-def plot_all_results_bar():
-    greedy_filenames = ['greedy.pkl', 'greedy_blocked.pkl', 'greedy_no_comm.pkl']
-    mdp_filenames = ['mdp.pkl', 'mdp_blocked.pkl', 'mdp_no_comm.pkl']
-    x_axis = ['', 'Full Communication', '', 'Limited Communication', '', 'No Communication']
+    greedy_filenames = ['greedy', 'greedy_blocked', 'greedy_no_comm']
+    mdp_filenames = ['mdp', 'mdp_blocked', 'mdp_no_comm']
+    x_axis = ['', 'Greedy', 'MDP', '', 'Greedy', 'MDP', '', 'Greedy', 'MDP']
 
     greedy_results = []
     for file in greedy_filenames:
@@ -214,56 +193,145 @@ def plot_all_results_bar():
     for file in mdp_filenames:
         mdp_results.append(plot_one_set(filename=file, plot=False))
         print('{}: {}'.format(file, mdp_results[-1].items()))
-    
-    mdp_ind_results = plot_one_set(filename='mdp_ind_blocked', plot=False)
-    print('mdp_ind_blocked.pkl: {}'.format(mdp_ind_results))
-    
+
     fig = plt.figure()
     ax = fig.add_subplot('111')
 
-    width = 0.2
+    width = 1
 
-    greedy_indices = [-0.1, 0.8, 1.9]
-    mdp_indices = [0.1, 1, 2.1]
+    greedy_indices = [1, 4, 7]
+    mdp_indices = [2, 5, 8]
     
-    ax.bar(greedy_indices, [results['to_75_pc'] for results in greedy_results], width=width, color='g', edgecolor='k', linewidth=1.1, label='Iterations until 75% explored')
-    ax.bar(greedy_indices, [results['to_90_pc'] - results['to_75_pc'] for results in greedy_results], bottom=[results['to_75_pc'] for results in greedy_results], width=width, color='b', edgecolor='k', linewidth=1.1, label='Iterations until 90% explored')
-    ax.bar(greedy_indices, [results['to_99_pc'] - results['to_90_pc'] for results in greedy_results], bottom=[results['to_90_pc'] for results in greedy_results], width=width, color='r', edgecolor='k', linewidth=1.1, label='Iterations until 99% explored')
+    ax.bar(greedy_indices, [results['to_75_pc'] for results in greedy_results], width=width, color='yellow', alpha=0.8, edgecolor='k', linewidth=1.1, label='Iterations until 75% explored')
+    ax.bar(greedy_indices, [results['to_90_pc'] - results['to_75_pc'] for results in greedy_results], bottom=[results['to_75_pc'] for results in greedy_results], width=width, color='orange', alpha=0.9, edgecolor='k', linewidth=1.1, label='Iterations until 90% explored')
+    ax.bar(greedy_indices, [results['to_99_pc'] - results['to_90_pc'] for results in greedy_results], bottom=[results['to_90_pc'] for results in greedy_results], width=width, color='red', alpha=0.85, edgecolor='k', linewidth=1.1, label='Iterations until 99% explored')
     
-    ax.bar(mdp_indices, [results['to_75_pc'] for results in mdp_results], width=width, color='g', edgecolor='k', linewidth=1.1)
-    ax.bar(mdp_indices, [results['to_90_pc'] - results['to_75_pc'] for results in mdp_results], bottom=[results['to_75_pc'] for results in mdp_results], width=width, color='b', edgecolor='k', linewidth=1.1)
-    ax.bar(mdp_indices, [results['to_99_pc'] - results['to_90_pc'] for results in mdp_results], bottom=[results['to_90_pc'] for results in mdp_results], width=width, color='r', edgecolor='k', linewidth=1.1)
+    ax.bar(mdp_indices, [results['to_75_pc'] for results in mdp_results], width=width, color='yellow', alpha=0.8, edgecolor='k', linewidth=1.1)
+    ax.bar(mdp_indices, [results['to_90_pc'] - results['to_75_pc'] for results in mdp_results], bottom=[results['to_75_pc'] for results in mdp_results], width=width, color='orange', alpha=0.9, edgecolor='k', linewidth=1.1)
+    ax.bar(mdp_indices, [results['to_99_pc'] - results['to_90_pc'] for results in mdp_results], bottom=[results['to_90_pc'] for results in mdp_results], width=width, color='red', alpha=0.85, edgecolor='k', linewidth=1.1)
     
-    ax.bar(1.2, mdp_ind_results['to_75_pc'], width=width, color='g', edgecolor='k', linewidth=1.1)
-    ax.bar(1.2, mdp_ind_results['to_90_pc'] - mdp_ind_results['to_75_pc'], bottom=mdp_ind_results['to_75_pc'], width=width, color='b', edgecolor='k', linewidth=1.1)
-    ax.bar(1.2, mdp_ind_results['to_99_pc'] - mdp_ind_results['to_90_pc'], bottom=mdp_ind_results['to_90_pc'], width=width, color='r', edgecolor='k', linewidth=1.1)
-
     li_str = 'local_interactions'
-    li = [greedy_results[0][li_str], mdp_results[0][li_str], greedy_results[1][li_str], mdp_results[1][li_str], mdp_ind_results[li_str], greedy_results[2][li_str], mdp_results[2][li_str]]
-    ax.scatter([-0.1, 0.1, 0.8, 1.0, 1.2, 1.9, 2.1], li, marker='o', color='y', label='Cumulated local interactions', zorder=1000)
+    li = [greedy_results[0][li_str], mdp_results[0][li_str], greedy_results[1][li_str], mdp_results[1][li_str], greedy_results[2][li_str], mdp_results[2][li_str]]
+    ax.scatter([1, 2, 4, 5, 7, 8], li, marker='o', color='mediumblue', label='Cumulated local interactions', s=100, zorder=1000)
 
-    ax.axes.set_xticklabels(x_axis)
+    ax.text(0.9, -20, "Full Communication", weight="bold", fontsize=11)
+    ax.text(3.8, -20, "Limited Communication", weight="bold", fontsize=11)
+    ax.text(6.9, -20, "No Communication", weight="bold", fontsize=11)
+
+    plt.xticks(range(9), x_axis)
+    ax.set_ylabel('Number of Iterations', weight = 'bold', fontsize=11)
 
     plt.legend()
     ax.set_ylim(ymin=0)
     plt.show()
 
 
+def plot_exploration_rate(list_of_files, labels):
+    results = []
+    to_99_pc = []
+    for file in list_of_files:
+        with open('./decentralized_exploration/results/{}.pkl'.format(file), 'rb') as infile:
+            results.append(pickle.load(infile))
+            to_99_pc.append(plot_one_set(filename=file, plot=False)['to_99_pc'])
+    
+    fig = plt.figure()
+    ax = fig.add_subplot('111')
+
+    for result in range(len(results)):
+        percent_explored = [0 for i in range(to_99_pc[result])]
+        runs_hit = [0 for i in range(to_99_pc[result])]
+        print(labels[result], to_99_pc[result])
+        for i in range(10):
+            for it in range(to_99_pc[result]):
+                if it < results[result][i].shape[0]:
+                    percent_explored[it] += results[result][i][it, 0]
+                    runs_hit[it] += 1
+        
+        percent_explored = [percent_explored[i]/runs_hit[i]*100 for i in range(len(percent_explored))]
+
+        ax.plot(range(1, len(percent_explored)+1), percent_explored, label=labels[result])
+
+    plt.legend()
+    ax.set_xlabel('Number of Iterations', weight = 'bold', fontsize=11)
+    ax.set_ylabel('Percent Explored (%)', weight = 'bold', fontsize=11)
+    plt.show()
+
+
 def plot_trajectory(filename, map_file='large_map_4'):
     pixel_map = np.load('./decentralized_exploration/maps/{}.npy'.format(map_file))
-    with open('./decentralized_exploration/results/{}.pkl'.format(filename), 'rb') as infile:
+
+    with open('./decentralized_exploration/results/trajectories/{}.pkl'.format(filename), 'rb') as infile:
         results = pickle.load(infile)
-        
-    robot_1_traj = np.array([r[2] for r in results])
-    robot_2_traj = np.array([r[3] for r in results])
+    
+    interactions = [r[1] for r in results]
+    robot_1_traj = [r[2] for r in results]
+    robot_2_traj = [r[3] for r in results]
+
+    robot_1_interactions = []
+    robot_2_interactions = []
 
     fig = plt.figure()
     ax = fig.add_subplot('111')
 
+    for i in range(len(interactions)):
+        if interactions[i] == True:
+            robot_1_interactions.append(robot_1_traj[i])
+            robot_2_interactions.append(robot_2_traj[i])
+        else:
+            if len(robot_1_interactions) != 0:
+                robot_1_interactions = np.array(robot_1_interactions)
+                robot_2_interactions = np.array(robot_2_interactions)
+                ax.plot(robot_1_interactions[:, 1], robot_1_interactions[:, 0], c='yellow', linewidth=8)
+                ax.plot(robot_2_interactions[:, 1]+2.5, robot_2_interactions[:, 0]+2.5, c='yellow', linewidth=8)
+                robot_1_interactions = []
+                robot_2_interactions = []
+            
+
+    robot_1_traj = np.array(robot_1_traj)
+    robot_2_traj = np.array(robot_2_traj)
+
+    if interactions[0] == True:
+        ax.plot(robot_1_traj[0, 1], robot_1_traj[0, 0], marker='o', markersize=15, color='yellow')
+        ax.plot(robot_2_traj[0, 1]+2.5, robot_2_traj[0, 0]+2.5, marker='o', markersize=15, color='yellow')
+
     shaded_map = -1*pixel_map - (pixel_map == -1).astype(int)*1.5
     ax.imshow(shaded_map, cmap='gray')
 
-    ax.plot(robot_1_traj[:, 1], robot_1_traj[:, 0], c='r')
-    ax.plot(robot_2_traj[:, 1], robot_2_traj[:, 0], c='b')
+    NPOINTS = robot_1_traj[:, 1].shape[0]
+
+    cm = plt.get_cmap('Reds')
+    ax.set_color_cycle([cm(1.*i/(NPOINTS*2)) for i in range(NPOINTS, NPOINTS*2)])
+    for i in range(NPOINTS-1):
+        plt.plot(list(robot_1_traj[:, 1])[i:i+2], list(robot_1_traj[:, 0])[i:i+2], linewidth=3)
+
+    ax.plot(robot_1_traj[0, 1], robot_1_traj[0, 0], marker='o', markersize=10, color=cm(1/2.0))
+    ax.plot(robot_1_traj[-1, 1], robot_1_traj[-1, 0], marker='*', markersize=13, color=cm(1.0))
+
+    cm = plt.get_cmap('Blues')
+    ax.set_color_cycle([cm(1.*i/(NPOINTS*2)) for i in range(NPOINTS, NPOINTS*2)])
+    for i in range(NPOINTS-1):
+        plt.plot(list(robot_2_traj[:, 1]+2.5)[i:i+2], list(robot_2_traj[:, 0]+2.5)[i:i+2], linewidth=3)
+
+    ax.plot(robot_2_traj[0, 1]+2.5, robot_2_traj[0, 0]+2.5, marker='o', markersize=10, color=cm(1/2.0))
+    ax.plot(robot_2_traj[-1, 1]+2.5, robot_2_traj[-1, 0]+2.5, marker='*', markersize=13, color=cm(1.0))
+
+    ax.axes.xaxis.set_visible(False)
+    ax.axes.yaxis.set_visible(False)
 
     plt.show()
+
+
+if __name__ == '__main__':
+    plot_all_results()
+
+    plot_trajectory('greedy')
+    plot_trajectory('greedy_blocked')
+    plot_trajectory('greedy_no_comm')
+
+    plot_trajectory('mdp')
+    plot_trajectory('mdp_blocked')
+    plot_trajectory('mdp_no_comm')
+
+    list_of_files = ['mdp', 'mdp_blocked', 'mdp_no_comm', 'greedy', 'greedy_blocked', 'greedy_no_comm']
+    list_of_labels = ['MDP - Full Communication', 'MDP - Limited Communication', 'MDP - No Communication', 'Greedy - Full Communication', 'Greedy - Limited Communication', 'Greedy - No Communication']
+    plot_exploration_rate(list_of_files, list_of_labels)
