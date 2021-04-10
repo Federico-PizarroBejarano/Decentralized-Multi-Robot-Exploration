@@ -16,9 +16,10 @@ if __name__ == "__main__":
     hexes_near_entrance = completed_grid.hex_neighbours(completed_grid.find_hex(completed_grid.hex_at(point=[500, 300])), radius=5)
 
     num_of_robots = 2
-    robot_team = RobotTeam(world_size=world_map.shape, blocked_by_obstacles=True)
+    robot_team = RobotTeam(world_size=world_map.shape, blocked_by_obstacles=False)
     starting_hexes = random.sample(population=[h for h in hexes_near_entrance if h.state == 0], k=num_of_robots)
     starting_poses = [completed_grid.hex_center(hexagon=h) for h in starting_hexes]
+    # starting_poses = [[230, 110], [170, 230]]
 
     print('Starting poses: ', starting_poses)
 

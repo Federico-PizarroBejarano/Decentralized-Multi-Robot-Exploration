@@ -75,26 +75,27 @@ class RobotMDP(AbstractRobot):
         self._V = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self._all_states}
     
 
-    def _calculate_V(self, current_robot):
+    def _calculate_V(self, current_robot, horizon):
         """
         Calculates the probable value function for another robot
 
         Parameters
         ----------
         current_robot (str): the robot_id of the robot whose value function will be estimated
+        horizon (int): how near a state is from the current state to be considered in the MDP
         """
 
         current_hex_pos = self.hex_map.hex_at(point=self._known_robots[current_robot]['last_known_position'])
         current_hex = self.hex_map.find_hex(desired_hex=current_hex_pos)
 
-        close_robots = [robot_id for (robot_id, robot) in self._known_robots.items() if Grid.hex_distance(self.hex_map.hex_at(robot['last_known_position']), current_hex_pos) < self.horizon and robot_id != current_robot]            
+        close_robots = [robot_id for (robot_id, robot) in self._known_robots.items() if Grid.hex_distance(self.hex_map.hex_at(robot['last_known_position']), current_hex_pos) < horizon and robot_id != current_robot]            
         close_robot_states = [self.hex_map.hex_at(self._known_robots[robot]['last_known_position']) for robot in close_robots]
         close_robot_states = [(hex_position.q, hex_position.r) for hex_position in close_robot_states]
 
         initial_repulsive_rewards = { key: self.rho if key in close_robot_states else 0 for key in self.hex_map.all_hexes.keys() }
 
         self._known_robots[current_robot]['repulsive_V'] = {state : 0 for state in self._all_states}
-        solve_MDP(self.hex_map, self._known_robots[current_robot]['repulsive_V'], initial_repulsive_rewards, self.noise, self.discount_factor, self.minimum_change_repulsive, self.max_iterations, self.horizon, self.horizon, current_hex)
+        solve_MDP(self.hex_map, self._known_robots[current_robot]['repulsive_V'], initial_repulsive_rewards, self.noise, self.discount_factor, self.minimum_change_repulsive, self.max_iterations, horizon, horizon, current_hex)
 
         repulsive_reward = { key:0 for key in self.hex_map.all_hexes.keys() }
     
@@ -105,15 +106,14 @@ class RobotMDP(AbstractRobot):
 
         self._known_robots[current_robot]['V'] = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self._all_states}
 
-        closest_reward_hex, max_path_distance = closest_reward(current_hex=current_hex, hex_map=self.hex_map)[1:]
-        modified_horizon = max(self.horizon, max_path_distance+1)
+        closest_reward_hex = closest_reward(current_hex=current_hex, hex_map=self.hex_map)[1]
         min_iterations = closest_reward_hex.distance_from_start
 
         modified_discount_factor = 1.0 - 80.0/(max(self.horizon, min_iterations)**2.0)
-        solve_MDP(self.hex_map, self._known_robots[current_robot]['V'], rewards, self.noise, modified_discount_factor, self.minimum_change, self.max_iterations, min_iterations, modified_horizon, current_hex)
+        solve_MDP(self.hex_map, self._known_robots[current_robot]['V'], rewards, self.noise, modified_discount_factor, self.minimum_change, self.max_iterations, min_iterations, horizon, current_hex)
 
 
-    def _compute_DVF(self, current_hex, iteration):
+    def _compute_DVF(self, current_hex, iteration, horizon):
         """
         Updates the repulsive value at each state. This is then used in _choose_next_pose to avoid other robots
 
@@ -121,15 +121,16 @@ class RobotMDP(AbstractRobot):
         ----------
         current_position (tuple): tuple of integer pixel coordinates
         iteration (int): the current iteration of the algorithm
+        horizon (int): how near a state is from the current state to be considered in the MDP
         """
 
-        close_robots = [robot_id for (robot_id, robot) in self._known_robots.items() if Grid.hex_distance(self.hex_map.hex_at(robot['last_known_position']), current_hex) < self.horizon and robot_id != self.robot_id]
+        close_robots = [robot_id for (robot_id, robot) in self._known_robots.items() if Grid.hex_distance(self.hex_map.hex_at(robot['last_known_position']), current_hex) < horizon and robot_id != self.robot_id]
 
         DVF = {state : 0 for state in self._all_states}
 
         for robot in close_robots:
             if self._known_robots[robot]['last_updated'] == iteration:
-                self._calculate_V(current_robot=robot)
+                self._calculate_V(current_robot=robot, horizon=horizon)
             
             robot_hex = self.hex_map.find_hex(self.hex_map.hex_at(point=self._known_robots[robot]['last_known_position']))
             compute_probability(start_hex=robot_hex,
@@ -194,11 +195,11 @@ class RobotMDP(AbstractRobot):
         if self._escaping_dead_reward['escaping_dead_reward']:
             current_hex.reward = 0
 
-        DVF = self._compute_DVF(current_hex=current_hex_pos, iteration=iteration)
-
         closest_reward_hex, max_path_distance = closest_reward(current_hex=current_hex, hex_map=self.hex_map)[1:]
         modified_horizon = max(self.horizon, max_path_distance+1)
         min_iterations = closest_reward_hex.distance_from_start
+
+        DVF = self._compute_DVF(current_hex=current_hex_pos, iteration=iteration, horizon=modified_horizon)
 
         rewards = { key:hexagon.reward for (key, hexagon) in self.hex_map.all_hexes.items() if Grid.hex_distance(hexagon, current_hex) < modified_horizon + 1}
 

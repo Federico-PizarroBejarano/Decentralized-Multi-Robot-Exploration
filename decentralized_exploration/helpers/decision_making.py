@@ -267,9 +267,12 @@ def voronoi_paths(pixel_map):
 
             v0 = [int(round(coord)) for coord in v0]
             v1 = [int(round(coord)) for coord in v1]
-            if pixel_map[v0[0], v0[1]] == 0 and pixel_map[v1[0], v1[1]] == 0:
-                voronoi_path += bresenham(pixel_map, v0, v1)
-    
+            
+            try:
+                if pixel_map[v0[0], v0[1]] == 0 and pixel_map[v1[0], v1[1]] == 0:
+                    voronoi_path += bresenham(pixel_map, v0, v1)
+            except Exception as e:
+                print(e)
     return np.array(voronoi_path)
 
 

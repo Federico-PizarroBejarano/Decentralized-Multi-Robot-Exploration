@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
-from matplotlib.patches import RegularPolygon
+from matplotlib.patches import RegularPolygon, Circle
+from matplotlib.lines import Line2D
 import cPickle as pickle
 
 
@@ -102,6 +103,15 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
 
     plot.set_xlim([min(hcoord)-1, max(hcoord)+1])
     plot.set_ylim([min(vcoord)-1, max(vcoord)+1])
+
+    legend_elements = [Line2D([0], [0], marker='H', markerfacecolor='1', alpha=0.5, color='k', markersize=15, linewidth=0, label='Free Space'), 
+                        Line2D([0], [0], marker='H', markerfacecolor='0.5', alpha=0.5, color='k', markersize=15, linewidth=0,label='Unknown Space'),
+                        Line2D([0], [0], marker='H', markerfacecolor='0', alpha=0.5, color='k', markersize=15, linewidth=0, label='Occupied Space'),
+                        Line2D([0], [0], marker='H', markerfacecolor='g', alpha=0.7, color='k', markersize=15, linewidth=0, label='Value'),
+                        Line2D([0], [0], marker='H', markerfacecolor='yellow', alpha=1, color='k', markersize=15, linewidth=0, label='Robot')]
+
+    plot.legend(handles=legend_elements, framealpha=0.9, loc='lower right')
+
     plot.invert_yaxis()
 
 
@@ -176,6 +186,11 @@ def plot_one_set(filename, plot=True):
         cumulated_results['to_90_pc'] = sum(to_90_pc)/len(results)
         cumulated_results['to_99_pc'] = sum(to_99_pc)/len(results)
 
+        cumulated_results['local_interactions_std'] = np.std(np.array(local_interactions))
+        cumulated_results['to_75_pc_std'] = np.std(np.array(to_75_pc))
+        cumulated_results['to_90_pc_std'] = np.std(np.array(to_90_pc))
+        cumulated_results['to_99_pc_std'] = np.std(np.array(to_99_pc))
+
         return cumulated_results
 
 
@@ -226,10 +241,112 @@ def plot_all_results():
     plt.show()
 
 
-def plot_exploration_rate(list_of_files, labels):
+def plot_local_interactions():
+    greedy_filenames = ['greedy', 'greedy_blocked', 'greedy_no_comm']
+    mdp_filenames = ['mdp', 'mdp_blocked', 'mdp_no_comm']
+    x_axis = ['', 'Greedy', 'RL', '', 'Greedy', 'RL', 'RL - Ind', '', 'Greedy', 'RL']
+
+    greedy_results = []
+    for file in greedy_filenames:
+        greedy_results.append(plot_one_set(filename=file, plot=False))
+    
+    mdp_results = []
+    for file in mdp_filenames:
+        mdp_results.append(plot_one_set(filename=file, plot=False))
+
+    mdp_ind_results = plot_one_set(filename='mdp_ind_blocked', plot=False)
+
+    fig = plt.figure()
+    ax = fig.add_subplot('111')
+
+    li_str = 'local_interactions'
+    li = [greedy_results[0][li_str], mdp_results[0][li_str], greedy_results[1][li_str], mdp_results[1][li_str], mdp_ind_results[li_str], greedy_results[2][li_str], mdp_results[2][li_str]]
+
+    ax.bar([1, 2, 4, 5, 6, 8, 9], li, color='steelblue')
+
+    ax.text(0.8, -9, "Full Communication", weight="bold", fontsize=11)
+    ax.text(4.25, -9, "Limited Communication", weight="bold", fontsize=11)
+    ax.text(7.85, -9, "No Communication", weight="bold", fontsize=11)
+
+    plt.xticks(range(10), x_axis)
+    ax.set_ylabel('Cumulated Local Interactions\n(# of Iterations)', weight = 'bold', fontsize=13)
+
+    ax.set_ylim(ymin=0)
+    ax.yaxis.grid(True)
+    plt.show()
+
+
+def plot_computation_time():
+    x_axis = ['', 'Greedy', 'RL', '', 'Greedy', 'RL', 'RL - Ind', '', 'Greedy', 'RL']
+
+    fig = plt.figure()
+    ax = fig.add_subplot('111')
+
+    it_time = np.array([3.464, 8.747, 3.160, 6.241, 6.120, 3.164, 6.074]) - 2.213
+    ax.bar([1, 2, 4, 5, 6, 8, 9], it_time, color='plum')
+
+    ax.text(0.8, -0.5, "Full Communication", weight="bold", fontsize=11)
+    ax.text(4.25, -0.5, "Limited Communication", weight="bold", fontsize=11)
+    ax.text(7.85, -0.5, "No Communication", weight="bold", fontsize=11)
+
+    plt.xticks(range(10), x_axis)
+    ax.set_ylabel('Computation Time per Iteration (s)', weight = 'bold', fontsize=13)
+
+    ax.set_ylim(ymin=0)
+    ax.yaxis.grid(True)
+    plt.show()
+
+
+def plot_variation():
+    greedy_filenames = ['greedy', 'greedy_blocked', 'greedy_no_comm']
+    mdp_filenames = ['mdp', 'mdp_blocked', 'mdp_no_comm']
+    x_axis = ['', 'Greedy', 'RL', '', 'Greedy', 'RL', 'RL - Ind', '', 'Greedy', 'RL']
+
+    greedy_results = []
+    for file in greedy_filenames:
+        greedy_results.append(plot_one_set(filename=file, plot=False))
+    
+    mdp_results = []
+    for file in mdp_filenames:
+        mdp_results.append(plot_one_set(filename=file, plot=False))
+
+    mdp_ind_results = plot_one_set(filename='mdp_ind_blocked', plot=False)
+
+    fig = plt.figure()
+    ax = fig.add_subplot('111')
+
+    std_99_str = 'to_99_pc_std'
+    std_99 = [greedy_results[0][std_99_str], mdp_results[0][std_99_str], greedy_results[1][std_99_str], mdp_results[1][std_99_str], mdp_ind_results[std_99_str], greedy_results[2][std_99_str], mdp_results[2][std_99_str]]
+    li_str = 'local_interactions_std'
+    li = [greedy_results[0][li_str], mdp_results[0][li_str], greedy_results[1][li_str], mdp_results[1][li_str], mdp_ind_results[li_str], greedy_results[2][li_str], mdp_results[2][li_str]]
+
+    ax.bar(np.array([1, 2, 4, 5, 6, 8, 9])+0.2, std_99, width=0.4, color='tomato')
+    ax.bar(np.array([1, 2, 4, 5, 6, 8, 9])-0.2, li, width=0.4, color='cornflowerblue')
+
+    ax.text(0.8, -8, "Full Communication", weight="bold", fontsize=11)
+    ax.text(4.25, -8, "Limited Communication", weight="bold", fontsize=11)
+    ax.text(7.85, -8, "No Communication", weight="bold", fontsize=11)
+
+    plt.xticks(range(10), x_axis)
+    ax.set_ylabel('Number of Iterations', weight = 'bold', fontsize=13)
+
+    legend_elements = [ Line2D([0], [0], color='cornflowerblue', lw=3, label='STD of Local Interations'), 
+                        Line2D([0], [0], color='tomato', lw=3, label='STD of Mission Time'),]
+
+    ax.legend(handles=legend_elements, framealpha=0.95)
+
+    ax.set_ylim(ymin=0)
+    ax.yaxis.grid(True)
+    plt.show()
+
+
+def plot_exploration_rate():
+    files = ['mdp', 'mdp_blocked', 'mdp_ind_blocked', 'mdp_no_comm', 'greedy', 'greedy_blocked', 'greedy_no_comm']
+    labels = ['RL - Full Communication', 'RL - Limited Communication', 'RL Ind - Limited Communication', 'RL - No Communication', 'Greedy - Full Communication', 'Greedy - Limited Communication', 'Greedy - No Communication']
+
     results = []
     to_99_pc = []
-    for file in list_of_files:
+    for file in files:
         with open('./decentralized_exploration/results/{}.pkl'.format(file), 'rb') as infile:
             results.append(pickle.load(infile))
             to_99_pc.append(plot_one_set(filename=file, plot=False)['to_99_pc'])
@@ -243,17 +360,33 @@ def plot_exploration_rate(list_of_files, labels):
         print(labels[result], to_99_pc[result])
         for i in range(10):
             for it in range(to_99_pc[result]):
-                if it < results[result][i].shape[0]:
-                    percent_explored[it] += results[result][i][it, 0]
+                if it < results[result][i].shape[0] and results[result][i][it, 0]/0.93 < 0.99:
+                    percent_explored[it] += results[result][i][it, 0]/0.93
                     runs_hit[it] += 1
         
         percent_explored = [percent_explored[i]/runs_hit[i]*100 for i in range(len(percent_explored))]
+    
+        if 'Greedy' in labels[result]:
+            linestyle = 'dashed'
+        else:
+            linestyle = 'solid'
+        
+        if 'Ind' in labels[result]:
+            color = 'violet'
+        elif 'Full' in labels[result]:
+            color = 'r'
+        elif 'Limited' in labels[result]:
+            color = 'blue'
+        else:
+            color = 'green'
 
-        ax.plot(range(1, len(percent_explored)+1), percent_explored, label=labels[result])
+        ax.plot(range(1, len(percent_explored)+1), percent_explored, color=color, linestyle=linestyle, linewidth=2, label=labels[result])
 
     plt.legend()
+    ax.grid(True)
     ax.set_xlabel('Number of Iterations', weight = 'bold', fontsize=11)
     ax.set_ylabel('Percent Explored (%)', weight = 'bold', fontsize=11)
+
     plt.show()
 
 
@@ -272,6 +405,9 @@ def plot_trajectory(filename, map_file='large_map_4'):
 
     fig = plt.figure()
     ax = fig.add_subplot('111')
+
+    starting_area = Circle([300, 500], radius=75, color='g', alpha=0.2, label='Starting area')
+    ax.add_patch(starting_area)
 
     for i in range(len(interactions)):
         if interactions[i] == True:
@@ -299,29 +435,42 @@ def plot_trajectory(filename, map_file='large_map_4'):
 
     NPOINTS = robot_1_traj[:, 1].shape[0]
 
-    cm = plt.get_cmap('Reds')
-    ax.set_color_cycle([cm(1.*i/(NPOINTS*2)) for i in range(NPOINTS, NPOINTS*2)])
+    cm_red = plt.get_cmap('Reds')
+    ax.set_color_cycle([cm_red(1.*i/(NPOINTS*2)) for i in range(NPOINTS, NPOINTS*2)])
     for i in range(NPOINTS-1):
         plt.plot(list(robot_1_traj[:, 1])[i:i+2], list(robot_1_traj[:, 0])[i:i+2], linewidth=3)
 
-    ax.plot(robot_1_traj[0, 1], robot_1_traj[0, 0], marker='o', markersize=10, color=cm(1/2.0))
-    ax.plot(robot_1_traj[-1, 1], robot_1_traj[-1, 0], marker='*', markersize=13, color=cm(1.0))
+    start_loc, = ax.plot(robot_1_traj[0, 1], robot_1_traj[0, 0], marker='o', markersize=10, color=cm_red(1/2.0), linewidth=0, label='Start location')
+    end_loc, = ax.plot(robot_1_traj[-1, 1], robot_1_traj[-1, 0], marker='*', markersize=13, color=cm_red(1.0), linewidth=0, label='End location')
 
-    cm = plt.get_cmap('Blues')
-    ax.set_color_cycle([cm(1.*i/(NPOINTS*2)) for i in range(NPOINTS, NPOINTS*2)])
+    cm_blue = plt.get_cmap('Blues')
+    ax.set_color_cycle([cm_blue(1.*i/(NPOINTS*2)) for i in range(NPOINTS, NPOINTS*2)])
     for i in range(NPOINTS-1):
-        plt.plot(list(robot_2_traj[:, 1]+2.5)[i:i+2], list(robot_2_traj[:, 0]+2.5)[i:i+2], linewidth=3)
+        plt.plot(list(robot_2_traj[:, 1]+2.5)[i:i+2], list(robot_2_traj[:, 0]+2.5)[i:i+2], linewidth=3, linestyle='dashed')
 
-    ax.plot(robot_2_traj[0, 1]+2.5, robot_2_traj[0, 0]+2.5, marker='o', markersize=10, color=cm(1/2.0))
-    ax.plot(robot_2_traj[-1, 1]+2.5, robot_2_traj[-1, 0]+2.5, marker='*', markersize=13, color=cm(1.0))
+    ax.plot(robot_2_traj[0, 1]+2.5, robot_2_traj[0, 0]+2.5, marker='o', markersize=10, color=cm_blue(1/2.0))
+    ax.plot(robot_2_traj[-1, 1]+2.5, robot_2_traj[-1, 0]+2.5, marker='*', markersize=13, color=cm_blue(1.0))
 
     ax.axes.xaxis.set_visible(False)
     ax.axes.yaxis.set_visible(False)
+
+    legend_elements = [ Line2D([0], [0], color=cm_red(1/2.0), lw=3, label='Robot 1'),
+                        Line2D([0], [0], color=cm_blue(1/2.0), lw=3, linestyle='dashed', label='Robot 2'),
+                        Line2D([0], [0], color='yellow', lw=8, label='Local interactions'),
+                        start_loc, 
+                        end_loc,
+                        starting_area]
+
+    ax.legend(handles=legend_elements, framealpha=0.95, bbox_to_anchor=(1, 1), loc='upper left',)
+    ax.set_ylim(pixel_map.shape[0])
 
     plt.show()
 
 
 if __name__ == '__main__':
+    plot_computation_time()
+    plot_variation()
+    plot_local_interactions()
     plot_all_results()
 
     plot_trajectory('greedy')
@@ -332,6 +481,4 @@ if __name__ == '__main__':
     plot_trajectory('mdp_blocked')
     plot_trajectory('mdp_no_comm')
 
-    list_of_files = ['mdp', 'mdp_blocked', 'mdp_no_comm', 'greedy', 'greedy_blocked', 'greedy_no_comm']
-    list_of_labels = ['MDP - Full Communication', 'MDP - Limited Communication', 'MDP - No Communication', 'Greedy - Full Communication', 'Greedy - Limited Communication', 'Greedy - No Communication']
-    plot_exploration_rate(list_of_files, list_of_labels)
+    plot_exploration_rate()
