@@ -19,7 +19,6 @@ if __name__ == "__main__":
     robot_team = RobotTeam(world_size=world_map.shape, blocked_by_obstacles=False)
     starting_hexes = random.sample(population=[h for h in hexes_near_entrance if h.state == 0], k=num_of_robots)
     starting_poses = [completed_grid.hex_center(hexagon=h) for h in starting_hexes]
-    # starting_poses = [[230, 110], [170, 230]]
 
     print('Starting poses: ', starting_poses)
 
