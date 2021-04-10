@@ -194,53 +194,6 @@ def plot_one_set(filename, plot=True):
         return cumulated_results
 
 
-def plot_all_results():
-    greedy_filenames = ['greedy', 'greedy_blocked', 'greedy_no_comm']
-    mdp_filenames = ['mdp', 'mdp_blocked', 'mdp_no_comm']
-    x_axis = ['', 'Greedy', 'MDP', '', 'Greedy', 'MDP', '', 'Greedy', 'MDP']
-
-    greedy_results = []
-    for file in greedy_filenames:
-        greedy_results.append(plot_one_set(filename=file, plot=False))
-        print('{}: {}'.format(file, greedy_results[-1].items()))
-    
-    mdp_results = []
-    for file in mdp_filenames:
-        mdp_results.append(plot_one_set(filename=file, plot=False))
-        print('{}: {}'.format(file, mdp_results[-1].items()))
-
-    fig = plt.figure()
-    ax = fig.add_subplot('111')
-
-    width = 1
-
-    greedy_indices = [1, 4, 7]
-    mdp_indices = [2, 5, 8]
-    
-    ax.bar(greedy_indices, [results['to_75_pc'] for results in greedy_results], width=width, color='yellow', alpha=0.8, edgecolor='k', linewidth=1.1, label='Iterations until 75% explored')
-    ax.bar(greedy_indices, [results['to_90_pc'] - results['to_75_pc'] for results in greedy_results], bottom=[results['to_75_pc'] for results in greedy_results], width=width, color='orange', alpha=0.9, edgecolor='k', linewidth=1.1, label='Iterations until 90% explored')
-    ax.bar(greedy_indices, [results['to_99_pc'] - results['to_90_pc'] for results in greedy_results], bottom=[results['to_90_pc'] for results in greedy_results], width=width, color='red', alpha=0.85, edgecolor='k', linewidth=1.1, label='Iterations until 99% explored')
-    
-    ax.bar(mdp_indices, [results['to_75_pc'] for results in mdp_results], width=width, color='yellow', alpha=0.8, edgecolor='k', linewidth=1.1)
-    ax.bar(mdp_indices, [results['to_90_pc'] - results['to_75_pc'] for results in mdp_results], bottom=[results['to_75_pc'] for results in mdp_results], width=width, color='orange', alpha=0.9, edgecolor='k', linewidth=1.1)
-    ax.bar(mdp_indices, [results['to_99_pc'] - results['to_90_pc'] for results in mdp_results], bottom=[results['to_90_pc'] for results in mdp_results], width=width, color='red', alpha=0.85, edgecolor='k', linewidth=1.1)
-    
-    li_str = 'local_interactions'
-    li = [greedy_results[0][li_str], mdp_results[0][li_str], greedy_results[1][li_str], mdp_results[1][li_str], greedy_results[2][li_str], mdp_results[2][li_str]]
-    ax.scatter([1, 2, 4, 5, 7, 8], li, marker='o', color='mediumblue', label='Cumulated local interactions', s=100, zorder=1000)
-
-    ax.text(0.9, -20, "Full Communication", weight="bold", fontsize=11)
-    ax.text(3.8, -20, "Limited Communication", weight="bold", fontsize=11)
-    ax.text(6.9, -20, "No Communication", weight="bold", fontsize=11)
-
-    plt.xticks(range(9), x_axis)
-    ax.set_ylabel('Number of Iterations', weight = 'bold', fontsize=11)
-
-    plt.legend()
-    ax.set_ylim(ymin=0)
-    plt.show()
-
-
 def plot_local_interactions():
     greedy_filenames = ['greedy', 'greedy_blocked', 'greedy_no_comm']
     mdp_filenames = ['mdp', 'mdp_blocked', 'mdp_no_comm']
@@ -471,7 +424,6 @@ if __name__ == '__main__':
     plot_computation_time()
     plot_variation()
     plot_local_interactions()
-    plot_all_results()
 
     plot_trajectory('greedy')
     plot_trajectory('greedy_blocked')
