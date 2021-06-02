@@ -104,13 +104,13 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
     plot.set_xlim([min(hcoord)-1, max(hcoord)+1])
     plot.set_ylim([min(vcoord)-1, max(vcoord)+1])
 
-    legend_elements = [Line2D([0], [0], marker='H', markerfacecolor='1', alpha=0.5, color='k', markersize=15, linewidth=0, label='Free Space'), 
-                        Line2D([0], [0], marker='H', markerfacecolor='0.5', alpha=0.5, color='k', markersize=15, linewidth=0,label='Unknown Space'),
-                        Line2D([0], [0], marker='H', markerfacecolor='0', alpha=0.5, color='k', markersize=15, linewidth=0, label='Occupied Space'),
-                        Line2D([0], [0], marker='H', markerfacecolor='g', alpha=0.7, color='k', markersize=15, linewidth=0, label='Value'),
-                        Line2D([0], [0], marker='H', markerfacecolor='yellow', alpha=1, color='k', markersize=15, linewidth=0, label='Robot')]
+    # legend_elements = [Line2D([0], [0], marker='H', markerfacecolor='1', alpha=0.5, color='k', markersize=15, linewidth=0, label='Free Space'), 
+    #                     Line2D([0], [0], marker='H', markerfacecolor='0.5', alpha=0.5, color='k', markersize=15, linewidth=0,label='Unknown Space'),
+    #                     Line2D([0], [0], marker='H', markerfacecolor='0', alpha=0.5, color='k', markersize=15, linewidth=0, label='Occupied Space'),
+    #                     Line2D([0], [0], marker='H', markerfacecolor='g', alpha=0.7, color='k', markersize=15, linewidth=0, label='Value'),
+    #                     Line2D([0], [0], marker='H', markerfacecolor='yellow', alpha=1, color='k', markersize=15, linewidth=0, label='Robot')]
 
-    plot.legend(handles=legend_elements, framealpha=0.9, loc='lower right')
+    # plot.legend(handles=legend_elements, framealpha=0.9, loc='lower right')
 
     plot.invert_yaxis()
 
@@ -197,7 +197,7 @@ def plot_one_set(filename, plot=True):
 def plot_local_interactions():
     greedy_filenames = ['greedy', 'greedy_blocked', 'greedy_no_comm']
     mdp_filenames = ['mdp', 'mdp_blocked', 'mdp_no_comm']
-    x_axis = ['', 'Greedy', 'RL', '', 'Greedy', 'RL', 'RL - Ind', '', 'Greedy', 'RL']
+    x_axis = ['', 'Greedy', 'MDP', '', 'Greedy', 'MDP', 'MDP - Ind', '', 'Greedy', 'MDP']
 
     greedy_results = []
     for file in greedy_filenames:
@@ -217,12 +217,12 @@ def plot_local_interactions():
 
     ax.bar([1, 2, 4, 5, 6, 8, 9], li, color='steelblue')
 
-    ax.text(0.8, -9, "Full Communication", weight="bold", fontsize=11)
-    ax.text(4.25, -9, "Limited Communication", weight="bold", fontsize=11)
-    ax.text(7.85, -9, "No Communication", weight="bold", fontsize=11)
+    ax.text(0.6, -10, "Full Communication", weight="bold", fontsize=15)
+    ax.text(3.95, -10, "Limited Communication", weight="bold", fontsize=15)
+    ax.text(7.55, -10, "No Communication", weight="bold", fontsize=15)
 
-    plt.xticks(range(10), x_axis)
-    ax.set_ylabel('Cumulated Local Interactions\n(# of Iterations)', weight = 'bold', fontsize=13)
+    plt.xticks(range(10), x_axis, fontsize=14)
+    ax.set_ylabel('Cumulated Local Interactions\n(# of Iterations)', weight = 'bold', fontsize=17)
 
     ax.set_ylim(ymin=0)
     ax.yaxis.grid(True)
@@ -230,7 +230,7 @@ def plot_local_interactions():
 
 
 def plot_computation_time():
-    x_axis = ['', 'Greedy', 'RL', '', 'Greedy', 'RL', 'RL - Ind', '', 'Greedy', 'RL']
+    x_axis = ['', 'Greedy', 'MDP', '', 'Greedy', 'MDP', 'MDP - Ind', '', 'Greedy', 'MDP']
 
     fig = plt.figure()
     ax = fig.add_subplot('111')
@@ -238,12 +238,12 @@ def plot_computation_time():
     it_time = np.array([3.464, 8.747, 3.160, 6.241, 6.120, 3.164, 6.074]) - 2.213
     ax.bar([1, 2, 4, 5, 6, 8, 9], it_time, color='plum')
 
-    ax.text(0.8, -0.5, "Full Communication", weight="bold", fontsize=11)
-    ax.text(4.25, -0.5, "Limited Communication", weight="bold", fontsize=11)
-    ax.text(7.85, -0.5, "No Communication", weight="bold", fontsize=11)
+    ax.text(0.6, -0.65, "Full Communication", weight="bold", fontsize=15)
+    ax.text(3.95, -0.65, "Limited Communication", weight="bold", fontsize=15)
+    ax.text(7.55, -0.65, "No Communication", weight="bold", fontsize=15)
 
-    plt.xticks(range(10), x_axis)
-    ax.set_ylabel('Computation Time per Iteration (s)', weight = 'bold', fontsize=13)
+    plt.xticks(range(10), x_axis, fontsize=14)
+    ax.set_ylabel('Computation Time per Iteration (s)', weight='bold', fontsize=17, labelpad=10)
 
     ax.set_ylim(ymin=0)
     ax.yaxis.grid(True)
@@ -253,7 +253,7 @@ def plot_computation_time():
 def plot_variation():
     greedy_filenames = ['greedy', 'greedy_blocked', 'greedy_no_comm']
     mdp_filenames = ['mdp', 'mdp_blocked', 'mdp_no_comm']
-    x_axis = ['', 'Greedy', 'RL', '', 'Greedy', 'RL', 'RL - Ind', '', 'Greedy', 'RL']
+    x_axis = ['', 'Greedy', 'MDP', '', 'Greedy', 'MDP', 'MDP - Ind', '', 'Greedy', 'MDP']
 
     greedy_results = []
     for file in greedy_filenames:
@@ -276,17 +276,17 @@ def plot_variation():
     ax.bar(np.array([1, 2, 4, 5, 6, 8, 9])+0.2, std_99, width=0.4, color='tomato')
     ax.bar(np.array([1, 2, 4, 5, 6, 8, 9])-0.2, li, width=0.4, color='cornflowerblue')
 
-    ax.text(0.8, -8, "Full Communication", weight="bold", fontsize=11)
-    ax.text(4.25, -8, "Limited Communication", weight="bold", fontsize=11)
-    ax.text(7.85, -8, "No Communication", weight="bold", fontsize=11)
+    ax.text(0.6, -9, "Full Communication", weight="bold", fontsize=15)
+    ax.text(3.95, -9, "Limited Communication", weight="bold", fontsize=15)
+    ax.text(7.55, -9, "No Communication", weight="bold", fontsize=15)
 
-    plt.xticks(range(10), x_axis)
-    ax.set_ylabel('Number of Iterations', weight = 'bold', fontsize=13)
+    plt.xticks(range(10), x_axis, fontsize=14)
+    ax.set_ylabel('Number of Iterations', weight = 'bold', fontsize=17)
 
     legend_elements = [ Line2D([0], [0], color='cornflowerblue', lw=3, label='STD of Local Interations'), 
                         Line2D([0], [0], color='tomato', lw=3, label='STD of Mission Time'),]
 
-    ax.legend(handles=legend_elements, framealpha=0.95)
+    ax.legend(handles=legend_elements, framealpha=0.95, fontsize=13)
 
     ax.set_ylim(ymin=0)
     ax.yaxis.grid(True)
@@ -295,7 +295,7 @@ def plot_variation():
 
 def plot_exploration_rate():
     files = ['mdp', 'mdp_blocked', 'mdp_ind_blocked', 'mdp_no_comm', 'greedy', 'greedy_blocked', 'greedy_no_comm']
-    labels = ['RL - Full Communication', 'RL - Limited Communication', 'RL Ind - Limited Communication', 'RL - No Communication', 'Greedy - Full Communication', 'Greedy - Limited Communication', 'Greedy - No Communication']
+    labels = ['MDP - Full Communication', 'MDP - Limited Communication', 'MDP Ind - Limited Communication', 'MDP - No Communication', 'Greedy - Full Communication', 'Greedy - Limited Communication', 'Greedy - No Communication']
 
     results = []
     to_99_pc = []
@@ -335,10 +335,10 @@ def plot_exploration_rate():
 
         ax.plot(range(1, len(percent_explored)+1), percent_explored, color=color, linestyle=linestyle, linewidth=2, label=labels[result])
 
-    plt.legend()
+    plt.legend(loc='lower right', fontsize=13)
     ax.grid(True)
-    ax.set_xlabel('Number of Iterations', weight = 'bold', fontsize=11)
-    ax.set_ylabel('Percent Explored (%)', weight = 'bold', fontsize=11)
+    ax.set_xlabel('Number of Iterations', weight = 'bold', fontsize=17)
+    ax.set_ylabel('Percent Explored (%)', weight = 'bold', fontsize=17)
 
     plt.show()
 
@@ -414,7 +414,7 @@ def plot_trajectory(filename, map_file='large_map_4'):
                         end_loc,
                         starting_area]
 
-    ax.legend(handles=legend_elements, framealpha=0.95, bbox_to_anchor=(1, 1), loc='upper left',)
+    ax.legend(handles=legend_elements, framealpha=0.95, bbox_to_anchor=(1, 1), loc='upper left', fontsize=13)
     ax.set_ylim(pixel_map.shape[0])
 
     plt.show()

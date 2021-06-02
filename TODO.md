@@ -4,7 +4,7 @@ This is a list of tasks that need to be done as well as possible enhancements
 
 ### Single Robot Exploration
 
-- [x] Implement proper reinforcement learning algorithm
+- [x] Implement proper MDP algorithm
     - [x] Add reward propogation into hex_grid
     - [x] Define list of robot actions
     - [x] Change Robot.choose_next_pose to choose based on rewards 
