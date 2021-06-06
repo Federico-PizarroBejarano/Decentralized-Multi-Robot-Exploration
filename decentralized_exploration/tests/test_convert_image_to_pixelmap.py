@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 from ..helpers.convert_image_to_pixelmap import convert_image_to_pixelmap
 
@@ -7,7 +8,8 @@ def test_convert_image_to_pixelmap(file_path, pixel_map):
     calculated_map = convert_image_to_pixelmap(file_path)
 
     if np.all(calculated_map == pixel_map):
-        print(True)
+        plt.imshow(-calculated_map, cmap='gray')
+        plt.show()
     else:
         raise ValueError()
 

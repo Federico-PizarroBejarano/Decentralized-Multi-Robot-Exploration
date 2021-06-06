@@ -20,7 +20,7 @@ This is a list of tasks that need to be done as well as possible enhancements
     - [x] Update Markov Decision Process for all robots to operate synchronously
 - [ ] Allow robots to operate asynchronously
 - [x] Modify MDP to allow for imperfect communication
-    - [x] Create Voronoi diagram of map
+    - [x] Create Voronoi diagram of map (NO LONGER USED)
     - [x] Modify MDP using distributed value functions for imperfect communication
 
 ### Enhancements

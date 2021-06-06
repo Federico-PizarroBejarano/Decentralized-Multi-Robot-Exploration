@@ -191,6 +191,7 @@ def solve_MDP(hex_map, V, rewards, noise, discount_factor, minimum_change, max_i
     min_iterations (int): the minimum number of iterations before the MDP returns
     horizon (int): how near a state is from the current state to be considered in the MD
     current_hex (Hex): the hex of where the robot currently is
+    DVF (dict): the distributed value function to be subtracted from the value function
 
     Returns
     -------
@@ -278,7 +279,8 @@ def voronoi_paths(pixel_map):
 
 def compute_probability(start_hex, time_increment, exploration_horizon, hex_map):
     """
-    Calculates the probability that a robot has moved from start_hex to new_hex in time_increment. 
+    Calculates the probability that a robot has moved from start_hex to each other hex in time_increment. 
+    Updates this information in the hex_map
 
     Parameters
     ----------
@@ -286,10 +288,6 @@ def compute_probability(start_hex, time_increment, exploration_horizon, hex_map)
     time_increment (int): the number of iterations of the algorithm since the robot was last contacted
     exploration_horizon (int): how far another hex can be and still be considered to be potentially explored
     hex_map (Grid): the Grid object representing the hex_map 
-
-    Returns
-    -------
-    probability (float): the probability (from 0 - 1) that the robot is in the new state. 
     """
 
     for hexagon in hex_map.all_hexes.values():
@@ -422,5 +420,4 @@ def check_distance_to_other_robot(hex_map, robot_states, start_hex, max_hex_dist
                         hexes_to_explore.append(neighbour)
     
     return False
-
-                    
+               

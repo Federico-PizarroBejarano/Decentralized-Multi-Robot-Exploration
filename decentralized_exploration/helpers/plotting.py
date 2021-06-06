@@ -15,7 +15,8 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
     grid (Grid): the grid to be plotted
     plot (matplotlib.axes): a matplotlib axes object to be plotted on
     robot_states (dict): an optional dictionary where the keys are the robot_ids and the values are RobotStates
-    mode (str) = either 'value' to show the value of each hex, 'reward' to show the reward at each hex, or neither to show nothing
+    mode (str) = either 'value' to show the value of each hex, 'reward' to show the reward at each hex, 
+        'probability' to show the probability of each robot exploring neighboring states, or blank to show nothing
     """
 
     plot.cla()
@@ -117,7 +118,7 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
 
 def plot_map(pixel_map, plot, robot_pos=[]):
     """
-    Converts an image (represented as a numpy.ndarray) into a grid
+    Plots a pixel map
 
     Parameters
     ----------
@@ -138,7 +139,28 @@ def plot_map(pixel_map, plot, robot_pos=[]):
         plot.plot(robot_pos[1], robot_pos[0], 'ro')
 
 
-def plot_one_set(filename, plot=True):
+def process_one_test(filename):
+    """
+    Takes the filename of a test and outputs a dictionary of relevant test results
+
+    Parameters
+    ----------
+    filename (str): the filename of the test, without the file extension
+
+    Returns
+    -------
+    cumulated_results (dict): a dictionary containing:
+        'local_interactions': average number of local interactions
+        'to_75_pc': average number of iterations until 75% explored
+        'to_90_pc': average number of iterations until 90% explored
+        'to_99_pc': average number of iterations until 99% explored
+
+        'local_interactions_std': standard deviation in 'local_interactions'
+        'to_75_pc_std': standard deviation in 'to_75_pc'
+        'to_90_pc_std': standard deviation in 'to_90_pc'
+        'to_99_pc_std': standard deviation in 'to_99_pc'
+    """
+
     with open('./decentralized_exploration/results/{}.pkl'.format(filename), 'rb') as infile:
         results = pickle.load(infile)
 
@@ -167,47 +189,38 @@ def plot_one_set(filename, plot=True):
         to_90_pc.append(iterations_to_90_pc)
         to_99_pc.append(iterations_to_99_pc)
 
-    if plot:
-        fig = plt.figure()
-        ax = fig.add_subplot('111')
+    cumulated_results = {}
+    cumulated_results['local_interactions'] = sum(local_interactions)/len(results)
+    cumulated_results['to_75_pc'] = sum(to_75_pc)/len(results)
+    cumulated_results['to_90_pc'] = sum(to_90_pc)/len(results)
+    cumulated_results['to_99_pc'] = sum(to_99_pc)/len(results)
 
-        local_interactions, = ax.plot(range(1, len(results)+1), local_interactions, marker='o', linestyle='dashed', linewidth=1.1, markersize=12, label='Cumulated iterations with local interactions')
-        to_75_pc, = ax.plot(range(1, len(results)+1), to_75_pc, marker='o', linewidth=1.1, markersize=12, label='Iterations until 75% explored')
-        to_90_pc, = ax.plot(range(1, len(results)+1), to_90_pc, marker='o', linewidth=1.1, markersize=12, label='Iterations until 90% explored')
-        to_99_pc, = ax.plot(range(1, len(results)+1), to_99_pc, marker='o', linewidth=1.1, markersize=12, label='Iterations until 99% explored')
+    cumulated_results['local_interactions_std'] = np.std(np.array(local_interactions))
+    cumulated_results['to_75_pc_std'] = np.std(np.array(to_75_pc))
+    cumulated_results['to_90_pc_std'] = np.std(np.array(to_90_pc))
+    cumulated_results['to_99_pc_std'] = np.std(np.array(to_99_pc))
 
-        plt.legend(handles=[local_interactions, to_75_pc, to_90_pc, to_99_pc])
-        ax.set_ylim(ymin=0)
-        plt.show()
-    else:
-        cumulated_results = {}
-        cumulated_results['local_interactions'] = sum(local_interactions)/len(results)
-        cumulated_results['to_75_pc'] = sum(to_75_pc)/len(results)
-        cumulated_results['to_90_pc'] = sum(to_90_pc)/len(results)
-        cumulated_results['to_99_pc'] = sum(to_99_pc)/len(results)
-
-        cumulated_results['local_interactions_std'] = np.std(np.array(local_interactions))
-        cumulated_results['to_75_pc_std'] = np.std(np.array(to_75_pc))
-        cumulated_results['to_90_pc_std'] = np.std(np.array(to_90_pc))
-        cumulated_results['to_99_pc_std'] = np.std(np.array(to_99_pc))
-
-        return cumulated_results
+    return cumulated_results
 
 
 def plot_local_interactions():
+    """
+    Plots the average number of local interactions for every test
+    """
+
     greedy_filenames = ['greedy', 'greedy_blocked', 'greedy_no_comm']
     mdp_filenames = ['mdp', 'mdp_blocked', 'mdp_no_comm']
     x_axis = ['', 'Greedy', 'MDP', '', 'Greedy', 'MDP', 'MDP - Ind', '', 'Greedy', 'MDP']
 
     greedy_results = []
     for file in greedy_filenames:
-        greedy_results.append(plot_one_set(filename=file, plot=False))
+        greedy_results.append(process_one_test(filename=file))
     
     mdp_results = []
     for file in mdp_filenames:
-        mdp_results.append(plot_one_set(filename=file, plot=False))
+        mdp_results.append(process_one_test(filename=file))
 
-    mdp_ind_results = plot_one_set(filename='mdp_ind_blocked', plot=False)
+    mdp_ind_results = process_one_test(filename='mdp_ind_blocked')
 
     fig = plt.figure()
     ax = fig.add_subplot('111')
@@ -230,6 +243,10 @@ def plot_local_interactions():
 
 
 def plot_computation_time():
+    """
+    Plots the average computation time for every test
+    """
+
     x_axis = ['', 'Greedy', 'MDP', '', 'Greedy', 'MDP', 'MDP - Ind', '', 'Greedy', 'MDP']
 
     fig = plt.figure()
@@ -251,19 +268,23 @@ def plot_computation_time():
 
 
 def plot_variation():
+    """
+    Plots the average variation in number of local interactions and total mission time for every test
+    """
+
     greedy_filenames = ['greedy', 'greedy_blocked', 'greedy_no_comm']
     mdp_filenames = ['mdp', 'mdp_blocked', 'mdp_no_comm']
     x_axis = ['', 'Greedy', 'MDP', '', 'Greedy', 'MDP', 'MDP - Ind', '', 'Greedy', 'MDP']
 
     greedy_results = []
     for file in greedy_filenames:
-        greedy_results.append(plot_one_set(filename=file, plot=False))
+        greedy_results.append(process_one_test(filename=file))
     
     mdp_results = []
     for file in mdp_filenames:
-        mdp_results.append(plot_one_set(filename=file, plot=False))
+        mdp_results.append(process_one_test(filename=file))
 
-    mdp_ind_results = plot_one_set(filename='mdp_ind_blocked', plot=False)
+    mdp_ind_results = process_one_test(filename='mdp_ind_blocked')
 
     fig = plt.figure()
     ax = fig.add_subplot('111')
@@ -294,6 +315,10 @@ def plot_variation():
 
 
 def plot_exploration_rate():
+    """
+    Plots the average percent of area explored per number of iterations for every test
+    """
+
     files = ['mdp', 'mdp_blocked', 'mdp_ind_blocked', 'mdp_no_comm', 'greedy', 'greedy_blocked', 'greedy_no_comm']
     labels = ['MDP - Full Communication', 'MDP - Limited Communication', 'MDP Ind - Limited Communication', 'MDP - No Communication', 'Greedy - Full Communication', 'Greedy - Limited Communication', 'Greedy - No Communication']
 
@@ -302,7 +327,7 @@ def plot_exploration_rate():
     for file in files:
         with open('./decentralized_exploration/results/{}.pkl'.format(file), 'rb') as infile:
             results.append(pickle.load(infile))
-            to_99_pc.append(plot_one_set(filename=file, plot=False)['to_99_pc'])
+            to_99_pc.append(process_one_test(filename=file)['to_99_pc'])
     
     fig = plt.figure()
     ax = fig.add_subplot('111')
@@ -310,7 +335,7 @@ def plot_exploration_rate():
     for result in range(len(results)):
         percent_explored = [0 for i in range(to_99_pc[result])]
         runs_hit = [0 for i in range(to_99_pc[result])]
-        print(labels[result], to_99_pc[result])
+
         for i in range(10):
             for it in range(to_99_pc[result]):
                 if it < results[result][i].shape[0] and results[result][i][it, 0]/0.93 < 0.99:
@@ -344,6 +369,15 @@ def plot_exploration_rate():
 
 
 def plot_trajectory(filename, map_file='large_map_4'):
+    """
+    Plots the trajectories of the two robots in a sample run on the map
+
+    Parameters
+    ----------
+    filename (str): the filename of the sample test run, without the file extension
+    map_file (str): the name of the map to be plotted on
+    """
+
     pixel_map = np.load('./decentralized_exploration/maps/{}.npy'.format(map_file))
 
     with open('./decentralized_exploration/results/trajectories/{}.pkl'.format(filename), 'rb') as infile:

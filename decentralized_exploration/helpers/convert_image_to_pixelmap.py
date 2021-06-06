@@ -1,4 +1,3 @@
-import numpy as np
 from imageio import imread
 
 
@@ -9,7 +8,7 @@ def convert_image_to_pixelmap(file_path):
 
     Parameters
     ----------
-    file_path (str): the path to the desired file
+    file_path (str): the full path to the desired file, relative to directory where this is run
 
     Returns
     -------

@@ -20,6 +20,10 @@ class Hex:
     nOccupied (int): number of occupied pixels in this hexagon
     reward (int): the reward associated with this hex
     V (float): the true value of a Hex. Used for displaying computed values.
+    probability (float): the probability that another robot will visit a nearby hex
+    distance_from_start (int): shortest path length from this hex to the start hex, used to calculate probability
+    visited (bool): whether this hex was already visited, used to calculate probability
+    previous_hex (Hex): the previous hex in the path to the start hex, used to calculate probability
     state (int): the state of this hexagon as unknown (-1), free (0), or occupied (1)
 
     Public Methods
@@ -81,7 +85,7 @@ class Hex:
 class FractionalHex(Hex):
     """
     A subclass of Hex with float axial coordinates. 
-        Used to convert to nearest integer hex
+    Used to convert to nearest integer hex
 
     Public Methods
     --------------
@@ -143,9 +147,13 @@ class Grid():
     -------------------
     orientation (Orientation): an Orientation object whether 
         the grid is flat-topped or pointy-topped
-    origin (list) : a 2-element list of coordinates for the origin of the grid
-    size (float) : the size of the hexagons
+    origin (list): a 2-element list of coordinates for the origin of the grid
+    size (float): the size of the hexagons
     all_hexes (dictionary): the dictionary of all Hex objects in the grid, indexed by (q, r)
+
+    Static Methods
+    --------------
+    hex_distance(start_hex, end_hex): returns the hexagon distance between two hexes 
 
     Public Methods
     --------------
@@ -154,8 +162,12 @@ class Grid():
     add_hex(new_hex): adds a given Hex object to the grid. If that Hex already exists, does nothing. Returns Hex.
     hex_at(point): returns Hex with axial coordinates of Hex covering given pixel coordinate
     has_rewards(): returns True if there are Hexs with rewards in all_hexes
+    percent_explored(): returns the percentage of space explored
     hex_neighbours(center_hex): returns list of the adjacent neighbours of given Hex
     hex_center(hexagon): returns the sub-pixel coordinates of the center of a given Hex
+    propagate_rewards(): updates the reward of every hex
+    clear_path(start_hex, end_hex): returns whether there is a clear pixel path between two hexes
+    find_closest_unknown(center_hex): returns the closest Hex that is unknown
     """
 
     # Tunable Parameter
@@ -267,6 +279,13 @@ class Grid():
         return False
     
     def percent_explored(self):
+        """
+        Returns the percentage of hexes that are explored
+
+        Returns
+        -------
+        percent_explored (float): percentage (0-1) of hexes explored
+        """
         total_hexes = len(self.all_hexes.values())
         num_unknown = 0.0
         
@@ -323,8 +342,7 @@ class Grid():
     
     def propagate_rewards(self):
         """
-        Clears the reward from all hexes and then re-calculates the reward  at every
-        hex. Does not accept any arguments and does not return anything
+        Clears the reward from all hexes and then re-calculates the reward  at every hex
         """
 
         for hexagon in self.all_hexes.values():
@@ -378,7 +396,7 @@ class Grid():
 
         Returns
         -------
-        unknown_hex (Hex): a Hex representing the neighbouring unknown hex
+        unknown_hex (Hex): a Hex representing the neighbouring unknown hex, None if center_hex has no reward
         """
 
         if center_hex.reward == 0:
@@ -428,32 +446,32 @@ def convert_pixelmap_to_grid(pixel_map, size):
 
 
 def merge_map(hex_map, pixel_map, pixel_map_to_merge):
-        """
-        Merges the current pixel_map with another pixel map.
+    """
+    Merges the current pixel_map with another pixel map.
 
-        Parameters
-        ----------
-        hex_map (Grid): a Grid representing the hexagon layer to be updated
-        pixel_map (numpy.ndarry): numpy array of pixels representing the map to be updated
-        pixel_map_to_merge (numpy.ndarry): numpy array of pixels representing the map to be merged in 
-    
-        Returns
-        -------
-        pixel_map (numpy.ndarray): the updated pixel_map
-        """
+    Parameters
+    ----------
+    hex_map (Grid): a Grid representing the hexagon layer to be updated
+    pixel_map (numpy.ndarry): numpy array of pixels representing the map to be updated
+    pixel_map_to_merge (numpy.ndarry): numpy array of pixels representing the map to be merged in 
 
-        for y in range(pixel_map.shape[0]):
-            for x in range(pixel_map.shape[1]):
-                if pixel_map[y, x] == -1:
-                    if pixel_map_to_merge[y, x] == 0:
-                        pixel_map[y, x] = pixel_map_to_merge[y, x]
-                        desired_hex = hex_map.hex_at(point=[y, x])
-                        found_hex = hex_map.find_hex(desired_hex=desired_hex)
-                        found_hex.update_hex(dFree=1, dUnknown=-1)
-                    elif pixel_map_to_merge[y, x] == 1:
-                        pixel_map[y, x] = pixel_map_to_merge[y, x]
-                        desired_hex = hex_map.hex_at(point=[y, x])
-                        found_hex = hex_map.find_hex(desired_hex=desired_hex)
-                        found_hex.update_hex(dOccupied=1, dUnknown=-1)
+    Returns
+    -------
+    pixel_map (numpy.ndarray): the updated pixel_map
+    """
 
-        return pixel_map
+    for y in range(pixel_map.shape[0]):
+        for x in range(pixel_map.shape[1]):
+            if pixel_map[y, x] == -1:
+                if pixel_map_to_merge[y, x] == 0:
+                    pixel_map[y, x] = pixel_map_to_merge[y, x]
+                    desired_hex = hex_map.hex_at(point=[y, x])
+                    found_hex = hex_map.find_hex(desired_hex=desired_hex)
+                    found_hex.update_hex(dFree=1, dUnknown=-1)
+                elif pixel_map_to_merge[y, x] == 1:
+                    pixel_map[y, x] = pixel_map_to_merge[y, x]
+                    desired_hex = hex_map.hex_at(point=[y, x])
+                    found_hex = hex_map.find_hex(desired_hex=desired_hex)
+                    found_hex.update_hex(dOccupied=1, dUnknown=-1)
+
+    return pixel_map

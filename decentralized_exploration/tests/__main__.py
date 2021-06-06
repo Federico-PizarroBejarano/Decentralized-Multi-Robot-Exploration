@@ -7,7 +7,7 @@ import decentralized_exploration.tests.test_convert_image_to_pixelmap as test_co
 import decentralized_exploration.tests.test_decision_making as test_decision_making
 
 if __name__ == "__main__":
+    test_convert_image_to_pixelmap.main()
     test_field_of_view.main()
     test_hex_grid.main()
-    test_convert_image_to_pixelmap.main()
     test_decision_making.main()

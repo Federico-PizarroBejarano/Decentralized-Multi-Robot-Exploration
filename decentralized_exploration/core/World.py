@@ -17,7 +17,12 @@ class World:
 
     Public Methods
     --------------
-    move_robot(new_position, new_orientation): Updates robot position and orientation
+    get_position(robot_id): returns the pixel position of the robot with the specified robot_id
+    get_orientation(robot_id): returns the orientation of the robot with the specified robot_id
+    clear_path_between_robots(self, robot1, robot2): returns True if the path between two robots is 
+        composed entirely of free pixels
+    move_robot(robot_id, new_position, new_orientation): Updates the robot position and orientation
+        of the robot with the specified robot_id
     """
 
     def __init__(self, world_map, pixel_size, robot_states):
@@ -71,6 +76,19 @@ class World:
 
     
     def clear_path_between_robots(self, robot1, robot2):
+        """
+        Returns True if the path between two robots is composed entirely of free pixels
+
+        Parameters
+        ----------
+        robot1 (str): the robot_id of the first robot 
+        robot2 (str): the robot_id of the second robot 
+
+        Returns
+        -------
+        clear_path (bool): True is the line between the two robots is unoccupied, False otherwise
+        """
+        
         robot1_pos = self.get_position(robot1)
         robot1_pos = [int(coord) for coord in robot1_pos]
         robot2_pos = self.get_position(robot2)

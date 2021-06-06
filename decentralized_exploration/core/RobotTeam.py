@@ -1,7 +1,6 @@
 import numpy as np
 import cPickle as pickle
 import matplotlib.pyplot as plt
-from time import time
 
 from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
 from decentralized_exploration.helpers.hex_grid import convert_pixelmap_to_grid, merge_map
@@ -64,6 +63,11 @@ class RobotTeam:
         ----------
         robot_id (str): the unique id of the robot to receive the message
         world (World): the world which contains the positions of every robot
+
+        Returns
+        -------
+        message (dict): a dictionary of robot positions and pixel maps for each robot, 
+            indexed by their robot_ids
         """
 
         message = {}
@@ -159,18 +163,18 @@ class RobotTeam:
         iteration = 0
         explored_per_iteration = []
 
-        while self._hex_map.has_rewards() and iteration < 1000 and self._hex_map.percent_explored()/0.93 < 0.99:
-            print(iteration)
-            
-            # for robot in self._robots.values():
-            #     message = self._generate_message(robot_id=robot.robot_id,  world=world)
-            #     robot.communicate(message=message, iteration=iteration)
+        explorable_area_percentage = 0.93
 
-            t0 = time()
+        while self._hex_map.has_rewards() and iteration < 1000 and self._hex_map.percent_explored()/explorable_area_percentage < 0.99:
+            print("Iteration #", iteration)
+            
+            for robot in self._robots.values():
+                message = self._generate_message(robot_id=robot.robot_id,  world=world)
+                robot.communicate(message=message, iteration=iteration)
+
             for robot in self._robots.values():
                 robot.explore_1_timestep(world=world, iteration=iteration)
                 self._pixel_map = merge_map(hex_map=self._hex_map, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
-            print("Explore time", time()-t0)
 
             self._hex_map.propagate_rewards()
 
@@ -180,8 +184,6 @@ class RobotTeam:
             
             grid_statistics =  [self._hex_map.percent_explored(), self._local_interaction(robot_states=world.robot_states), world.get_position('robot_1'), world.get_position('robot_2')]
             explored_per_iteration.append(grid_statistics)
-
-            print(grid_statistics)
             
             iteration += 1
 

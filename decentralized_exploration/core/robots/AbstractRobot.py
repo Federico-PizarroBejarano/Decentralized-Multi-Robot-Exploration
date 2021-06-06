@@ -16,8 +16,8 @@ class AbstractRobot:
     -------------------
     robot_id (str): the unique id of this robot
     range_finder (RangeFinder): a RangeFinder object representing the sensor
-    width (float) : the width of the robot in meters
-    length (float) : the length of the robot in meters
+    width (float): the width of the robot in meters
+    length (float): the length of the robot in meters
     pixel_map (numpy.ndarry): numpy array of pixels representing the map. 
         -1 == unexplored
         0  == free
@@ -115,7 +115,8 @@ class AbstractRobot:
     @abstractmethod
     def _choose_next_pose(self, current_position, current_orientation, iteration):
         """
-        Given the current pos, decides on the next best position for the robot
+        Given the current pos, decides on the next best position for the robot. 
+        Overriden in each sub-class. 
 
         Parameters
         ----------
@@ -154,11 +155,10 @@ class AbstractRobot:
 
             count += 1
 
+    @abstractmethod
     def communicate(self, message, iteration):
         """
-        Communicates with the other robots in the team. Receives a message and updates the 
-        last known position and last updated time of every robot that transmitted a message. 
-        Additionally, merges in all their pixel maps.
+        Communicates with the other robots in the team. Overridden in each sub-class. 
 
         Parameters
         ----------
