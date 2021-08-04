@@ -10,7 +10,7 @@ class RobotGreedy(AbstractRobot):
 
 
     # Private Methods
-    def _choose_next_pose(self, current_position, iteration):
+    def _choose_next_pose(self, current_position, iteration, robot_states):
         """
         Given the current pos, decides on the next best position for the robot
 
@@ -26,7 +26,7 @@ class RobotGreedy(AbstractRobot):
 
         current_cell = self.grid.all_cells[current_position]
         
-        goal_position = closest_reward(current_cell, self.grid)[0]
+        goal_position = closest_reward(current_cell=current_cell, grid=self.grid, robot_states=robot_states)[0]
 
         # All rewards have been found
         if goal_position == None:
@@ -34,7 +34,7 @@ class RobotGreedy(AbstractRobot):
 
         goal_cell = Cell(goal_position[0], goal_position[1])
 
-        next_state = path_between_cells(current_cell, goal_cell, self.grid)
+        next_state = path_between_cells(current_cell=current_cell, goal_cell=goal_cell, grid=self.grid, robot_states=robot_states)
         
         return next_state
     

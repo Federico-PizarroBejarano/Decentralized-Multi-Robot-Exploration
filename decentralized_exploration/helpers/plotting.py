@@ -51,18 +51,15 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
 
     plot.set_aspect('equal')
 
-    pixel_robot_states = []
+    pixel_robot_states = {}
     for robot in robot_states.keys():
         point=robot_states[robot].pixel_position
-        pixel_robot_states += [point]
+        pixel_robot_states[point] = robot[-1]
     
-    print(pixel_robot_states)
-
     # Add some coloured cells
     for x, y, c in zip(x_coord, y_coord, colors):  
         alpha = 0.75      
         if (y, x) in rewards:
-            # plot.text(x, y, int(round(rewards[(x, y)])), ha='center', va='center', size=8)
             alpha = abs(rewards[(y, x)]/max_value)
             if rewards[(y, x)] > 0:
                 c = 'green'
@@ -71,8 +68,9 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
         if (y, x) in pixel_robot_states:
             c = 'y'
             alpha = 1
+            plot.text(x, y, pixel_robot_states[(y, x)], ha='center', va='center', size=8)
         
-        plt.scatter(x, y, color=c, alpha=alpha, marker='s', s=140)
+        plot.scatter(x, y, color=c, alpha=alpha, marker='s', s=140)
 
     plot.set_xlim(-0.5, 19.5)
     plot.set_ylim(-0.5, 19.5)

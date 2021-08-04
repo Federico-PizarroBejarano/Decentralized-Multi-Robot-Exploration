@@ -104,7 +104,7 @@ class AbstractRobot:
 
 
     @abstractmethod
-    def _choose_next_pose(self, current_position, iteration):
+    def _choose_next_pose(self, current_position, iteration, robot_states):
         """
         Given the current pos, decides on the next best position for the robot. 
         Overriden in each sub-class. 
@@ -156,7 +156,7 @@ class AbstractRobot:
 
         self._known_robots[self.robot_id]['last_known_position'] = world.get_position(self.robot_id)
         
-        new_position = self._choose_next_pose(current_position=world.get_position(self.robot_id), iteration=iteration)
+        new_position = self._choose_next_pose(current_position=world.get_position(self.robot_id), iteration=iteration, robot_states=world.robot_states)
 
         self.scan_environment(world=world)
 

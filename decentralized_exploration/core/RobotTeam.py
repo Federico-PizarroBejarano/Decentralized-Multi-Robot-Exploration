@@ -76,9 +76,9 @@ class RobotTeam:
         for robot in self._robots.values():
             if (robot.robot_id != robot_id):
                 other_robot_position = np.array(world.get_position(robot.robot_id))
-                distance = np.linalg.norm(robot_position - other_robot_position) * world.pixel_size
+                distance = max(abs(robot_position[1]-other_robot_position[1]), abs(robot_position[0]-other_robot_position[0]))
 
-                if distance < self._communication_range:
+                if distance <= self._communication_range:
                     if self._blocked_by_obstacles == False or world.clear_path_between_robots(robot1=robot.robot_id, robot2=robot_id):
                         message[robot.robot_id] = { 
                             'robot_position': other_robot_position,
@@ -142,29 +142,25 @@ class RobotTeam:
         """
 
         fig1 = plt.figure(1)
-        ax1 = fig1.add_subplot(111)
+        ax2 = fig1.add_subplot(111)
 
-        # fig2 = plt.figure(2)
-        # ax2 = fig2.add_subplot(111)
+        fig2 = plt.figure(2)
+        ax1 = fig2.add_subplot(111)
     
-        plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode='value')
-        # plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode='value')
+        plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode='reward')
+        plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode='reward')
         
         plt.pause(0.05)
 
         for robot in self._robots.values():
             robot.scan_environment(world=world)
             self._pixel_map = merge_map(grid=self._grid, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
-            plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode='value')
-            # plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode='value')
+            # plot_grid(grid=self._grid, plot=ax1, robot_states=world.robot_states, mode='reward')
+            plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode='reward')
+            plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode='reward')
             plt.pause(0.05)
 
         self._grid.propagate_rewards()
-
-        plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode='reward')
-        # plt.show()
-        # 1/0
-        plt.pause(0.05)
 
         iteration = 0
         # explored_per_iteration = []
@@ -182,9 +178,9 @@ class RobotTeam:
 
             self._grid.propagate_rewards()
 
+            # plot_grid(grid=self._grid, plot=ax1, robot_states=world.robot_states, mode='reward')
             plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode='reward')
-            # plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode='value')
-            # plt.show()
+            plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode='reward')
             plt.pause(0.5)
             
             # grid_statistics =  [self._grid.percent_explored(), self._local_interaction(robot_states=world.robot_states), world.get_position('robot_1'), world.get_position('robot_2')]

@@ -72,11 +72,9 @@ class World:
         """
         
         robot1_pos = self.get_position(robot1)
-        robot1_pos = [int(coord) for coord in robot1_pos]
         robot2_pos = self.get_position(robot2)
-        robot2_pos = [int(coord) for coord in robot2_pos]
 
-        coords_of_line = bresenham(start=robot1_pos, end=robot2_pos, world_map=self._map, )
+        coords_of_line = bresenham(start=robot1_pos, end=robot2_pos, world_map=self._map)
         Y = [c[0] for c in coords_of_line]
         X = [c[1] for c in coords_of_line]
         points_in_line = self._map[Y, X]

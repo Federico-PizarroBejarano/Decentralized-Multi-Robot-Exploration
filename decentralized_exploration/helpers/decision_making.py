@@ -4,7 +4,7 @@ from decentralized_exploration.core.constants import Actions
 from decentralized_exploration.helpers.grid import Cell, Grid
 
 
-def possible_actions(state, grid):
+def possible_actions(state, grid, robot_states):
     """
     Given a state and the grid, returns all possible actions 
 
@@ -17,26 +17,27 @@ def possible_actions(state, grid):
     -------
     poss_actions (list): a list of Actions (either up, down, left, right, up_left, up_right, down_left, down_right)
     """
+    other_robots = [robot_states[robot].pixel_position for robot in robot_states if robot_states[robot].pixel_position != state]
 
     poss_actions = []
 
     y, x = state[0], state[1]
     
-    if ((y+1, x) in grid.all_cells) and (grid.all_cells[(y+1, x)].state == 0):
+    if ((y+1, x) in grid.all_cells) and (grid.all_cells[(y+1, x)].state == 0) and ((y+1, x) not in other_robots):
         poss_actions.append(Actions.UP)
-    if ((y-1, x) in grid.all_cells) and (grid.all_cells[(y-1, x)].state == 0):
+    if ((y-1, x) in grid.all_cells) and (grid.all_cells[(y-1, x)].state == 0) and ((y-1, x) not in other_robots):
         poss_actions.append(Actions.DOWN)
-    if ((y, x+1) in grid.all_cells) and (grid.all_cells[(y, x+1)].state == 0):
+    if ((y, x+1) in grid.all_cells) and (grid.all_cells[(y, x+1)].state == 0) and ((y, x+1) not in other_robots):
         poss_actions.append(Actions.RIGHT)
-    if ((y, x-1) in grid.all_cells) and (grid.all_cells[(y, x-1)].state == 0):
+    if ((y, x-1) in grid.all_cells) and (grid.all_cells[(y, x-1)].state == 0) and ((y, x-1) not in other_robots):
         poss_actions.append(Actions.LEFT)
-    if ((y+1, x+1) in grid.all_cells) and (grid.all_cells[(y+1, x+1)].state == 0):
+    if ((y+1, x+1) in grid.all_cells) and (grid.all_cells[(y+1, x+1)].state == 0) and ((y+1, x+1)not in other_robots):
         poss_actions.append(Actions.UP_RIGHT)
-    if ((y+1, x-1) in grid.all_cells) and (grid.all_cells[(y+1, x-1)].state == 0):
+    if ((y+1, x-1) in grid.all_cells) and (grid.all_cells[(y+1, x-1)].state == 0) and ((y+1, x-1) not in other_robots):
         poss_actions.append(Actions.UP_LEFT)
-    if ((y-1, x+1) in grid.all_cells) and (grid.all_cells[(y-1, x+1)].state == 0):
+    if ((y-1, x+1) in grid.all_cells) and (grid.all_cells[(y-1, x+1)].state == 0) and ((y-1, x+1) not in other_robots):
         poss_actions.append(Actions.DOWN_RIGHT)
-    if ((y-1, x-1) in grid.all_cells) and (grid.all_cells[(y-1, x-1)].state == 0):
+    if ((y-1, x-1) in grid.all_cells) and (grid.all_cells[(y-1, x-1)].state == 0) and ((y-1, x-1) not in other_robots):
         poss_actions.append(Actions.DOWN_LEFT)
     
     return poss_actions
@@ -77,7 +78,7 @@ def get_new_state(state, action):
     return new_state
 
 
-def solve_MDP(grid, V, rewards, noise, discount_factor, minimum_change, max_iterations, min_iterations, horizon, current_cell, DVF=None):
+def solve_MDP(grid, V, rewards, noise, discount_factor, minimum_change, max_iterations, min_iterations, horizon, current_cell, robot_states, DVF=None):
     """
     Solves an MDP given the states, rewards, transition function, and actions. 
 
@@ -122,13 +123,13 @@ def solve_MDP(grid, V, rewards, noise, discount_factor, minimum_change, max_iter
             old_value = V[state]
             new_value = -float('inf')
             
-            for action in possible_actions(state, grid):
+            for action in possible_actions(state=state, grid=grid, robot_states=robot_states):
                 next_state = get_new_state(state, action)
 
                 # Choose a random action to do with probability noise
                 random_state = next_state
                 if noise > 0.0:
-                    random_action = np.random.choice([rand_act for rand_act in possible_actions(state, grid) if rand_act != action])
+                    random_action = np.random.choice([rand_act for rand_act in possible_actions(state=state, grid=grid, robot_states=robot_states) if rand_act != action])
                     random_state = get_new_state(state, random_action)
 
                 value = rewards[(state[0], state[1])] + discount_factor * ( ((1 - noise)* V[next_state] + (noise * V[random_state])) - DVF[next_state])
@@ -189,7 +190,7 @@ def compute_probability(start_cell, time_increment, exploration_horizon, grid):
             cell.probability = 1/(num_possible_cells * max(1.0, Grid.cell_distance(start_cell, cell)**0.5))
 
 
-def closest_reward(current_cell, grid):
+def closest_reward(current_cell, grid, robot_states):
     """
     Uses breadth first search to find the nearest free Cell with a reward.
 
@@ -206,6 +207,8 @@ def closest_reward(current_cell, grid):
     max_distance (int): the largest distance between the current_cell and a cell 
         in the path to the reward_cell. Used to calculate the necessary horizon
     """
+
+    other_robots = [robot_states[robot].pixel_position for robot in robot_states if robot_states[robot].pixel_position != current_cell.coord]
 
     for cell in grid.all_cells.values():
         cell.distance_from_start = float('inf')
@@ -224,7 +227,7 @@ def closest_reward(current_cell, grid):
 
     while(len(cells_to_explore) != 0):
         curr_cell = cells_to_explore.pop(0)
-        if curr_cell.reward > 0:
+        if curr_cell.reward > 0 and curr_cell.coord not in other_robots:
             reward_cell = curr_cell
             max_distance = Grid.cell_distance(start_cell=current_cell, end_cell=curr_cell)
             while curr_cell.previous_cell != current_cell and curr_cell.previous_cell != None:
@@ -232,7 +235,7 @@ def closest_reward(current_cell, grid):
                 if Grid.cell_distance(start_cell=current_cell, end_cell=curr_cell) > max_distance:
                     max_distance = Grid.cell_distance(start_cell=current_cell, end_cell=curr_cell)
             return curr_cell.coord, reward_cell, max_distance
-        elif curr_cell.state == 0 and curr_cell.visited == False:
+        elif curr_cell.state == 0 and curr_cell.visited == False and curr_cell.coord not in other_robots:
             new_neighbours = grid.cell_neighbours(center_cell=curr_cell, radius=1)
             for neighbour in new_neighbours:
                 if curr_cell.distance_from_start + 1 < neighbour.distance_from_start and neighbour.state == 0:
@@ -243,7 +246,7 @@ def closest_reward(current_cell, grid):
     return None, None, 0
 
 
-def path_between_cells(current_cell, goal_cell, grid):
+def path_between_cells(current_cell, goal_cell, grid, robot_states):
     """
     Uses breadth first search to find the nearest free Cell with a reward.
 
@@ -258,6 +261,8 @@ def path_between_cells(current_cell, goal_cell, grid):
     next_state (tuple): the next state the robot should go to as a tuple of 
         y and x coordinates of the new position
     """
+
+    other_robots = [robot_states[robot].pixel_position for robot in robot_states if robot_states[robot].pixel_position != current_cell.coord]
 
     for cell in grid.all_cells.values():
         cell.distance_from_start = float('inf')
@@ -280,7 +285,7 @@ def path_between_cells(current_cell, goal_cell, grid):
             while curr_cell.previous_cell != current_cell and curr_cell.previous_cell != None:
                 curr_cell = curr_cell.previous_cell
             return curr_cell.coord
-        elif curr_cell.state == 0 and curr_cell.visited == False:
+        elif curr_cell.state == 0 and curr_cell.visited == False and curr_cell.coord not in other_robots:
             new_neighbours = grid.cell_neighbours(center_cell=curr_cell, radius=1)
             for neighbour in new_neighbours:
                 if curr_cell.distance_from_start + 1 < neighbour.distance_from_start and neighbour.state == 0:

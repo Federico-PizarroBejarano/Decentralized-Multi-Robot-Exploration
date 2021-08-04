@@ -2,7 +2,7 @@ import numpy as np
 
 from decentralized_exploration.core.robots.RobotMDP import RobotMDP
 from decentralized_exploration.core.constants import Actions
-from decentralized_exploration.helpers.decision_making import possible_actions, get_new_state, solve_MDP, compute_probability
+from decentralized_exploration.helpers.decision_making import get_new_state, compute_probability
 from decentralized_exploration.helpers.grid import Cell, Grid, merge_map
 
 
@@ -12,7 +12,7 @@ class RobotMDP_Ind(RobotMDP):
 
 
     # Private methods
-    def _compute_DVF(self, current_cell, iteration, horizon):
+    def _compute_DVF(self, current_cell, iteration, horizon, robot_states):
         """
         Updates the repulsive value at each state. This is then used in _choose_next_pose to avoid other robots
 
@@ -31,7 +31,7 @@ class RobotMDP_Ind(RobotMDP):
             if self._known_robots[robot]['last_updated'] != iteration:
                 continue
             
-            self._calculate_V(current_robot=robot, horizon=horizon)
+            self._calculate_V(current_robot=robot, horizon=horizon, robot_states=robot_states)
             
             robot_cell = self.grid.all_cells[self._known_robots[robot]['last_known_position']]
             compute_probability(start_cell=robot_cell,
