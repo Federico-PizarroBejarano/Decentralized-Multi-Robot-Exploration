@@ -144,28 +144,32 @@ class RobotTeam:
         fig1 = plt.figure(1)
         ax1 = fig1.add_subplot(111)
 
-        fig2 = plt.figure(2)
-        ax2 = fig2.add_subplot(111)
-
+        # fig2 = plt.figure(2)
+        # ax2 = fig2.add_subplot(111)
+    
         plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode='value')
-        plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode='value')
+        # plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode='value')
+        
         plt.pause(0.05)
 
         for robot in self._robots.values():
-            robot.complete_rotation(world=world)
+            robot.scan_environment(world=world)
             self._pixel_map = merge_map(grid=self._grid, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
             plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode='value')
-            plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode='value')
+            # plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode='value')
             plt.pause(0.05)
 
         self._grid.propagate_rewards()
 
+        plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode='reward')
+        # plt.show()
+        # 1/0
+        plt.pause(0.05)
+
         iteration = 0
-        explored_per_iteration = []
+        # explored_per_iteration = []
 
-        explorable_area_percentage = 0.93
-
-        while self._grid.has_rewards() and iteration < 1000 and self._grid.percent_explored()/explorable_area_percentage < 0.99:
+        while self._grid.has_rewards() and iteration < 1000:
             print("Iteration #", iteration)
             
             for robot in self._robots.values():
@@ -178,16 +182,17 @@ class RobotTeam:
 
             self._grid.propagate_rewards()
 
-            plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode='value')
-            plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode='value')
-            plt.pause(0.05)
+            plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode='reward')
+            # plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode='value')
+            # plt.show()
+            plt.pause(0.5)
             
-            grid_statistics =  [self._grid.percent_explored(), self._local_interaction(robot_states=world.robot_states), world.get_position('robot_1'), world.get_position('robot_2')]
-            explored_per_iteration.append(grid_statistics)
+            # grid_statistics =  [self._grid.percent_explored(), self._local_interaction(robot_states=world.robot_states), world.get_position('robot_1'), world.get_position('robot_2')]
+            # explored_per_iteration.append(grid_statistics)
             
             iteration += 1
 
-        with open('./decentralized_exploration/results/trajectories/mdp_no_comm.pkl', 'wb') as outfile:
-            pickle.dump(explored_per_iteration, outfile, pickle.HIGHEST_PROTOCOL)
+        # with open('./decentralized_exploration/results/trajectories/mdp_no_comm.pkl', 'wb') as outfile:
+        #     pickle.dump(explored_per_iteration, outfile, pickle.HIGHEST_PROTOCOL)
         
         plt.close('all')

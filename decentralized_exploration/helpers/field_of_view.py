@@ -28,41 +28,39 @@ def field_of_view(world_map, robot_pos):
     all_free_points = set()
     all_occupied_points = set()
 
-    for yi in (y-radius, y+radius):
-        for xi in range(x-radius, x+radius+1):
-            if yi >= 0 and yi < world_size[0] and xi >= 0 and xi < world_size[1]:
-                all_points = bresenham(world_map=world_map, start=robot_pos, end=[yi, xi])
-                all_free_points = all_free_points.union(set(all_points[:-1]))
-                if world_map[all_points[-1][0], all_points[-1][1]] == 1: 
-                    all_occupied_points.add(all_points[-1])
-                else:
-                    all_free_points.add(all_points[-1])
+    for yi in (max(y-radius, 0), min(y+radius, world_size[0]-1)):
+        for xi in range(max(x-radius, 0), min(x+radius, world_size[1]-1)+1):
+            all_points = bresenham(start=robot_pos, end=[yi, xi], world_map=world_map)
+            all_free_points = all_free_points.union(set(all_points[:-1]))
+            if world_map[all_points[-1][0], all_points[-1][1]] == 1: 
+                all_occupied_points.add(all_points[-1])
+            else:
+                all_free_points.add(all_points[-1])
         
-    for yi in range(y-radius, y+radius+1):
-        for xi in (x-radius, x+radius):
-            if yi >= 0 and yi < world_size[0] and xi >= 0 and xi < world_size[1]:
-                all_points = bresenham(world_map=world_map, start=robot_pos, end=[yi, xi])
-                all_free_points = all_free_points.union(set(all_points[:-1]))
-                if world_map[all_points[-1][0], all_points[-1][1]] == 1: 
-                    all_occupied_points.add(all_points[-1])
-                else:
-                    all_free_points.add(all_points[-1])
+    for yi in range(max(y-radius, 0), min(y+radius, world_size[0]-1)+1):
+        for xi in (max(x-radius, 0), min(x+radius, world_size[1]-1)):
+            all_points = bresenham(start=robot_pos, end=[yi, xi], world_map=world_map, )
+            all_free_points = all_free_points.union(set(all_points[:-1]))
+            if world_map[all_points[-1][0], all_points[-1][1]] == 1: 
+                all_occupied_points.add(all_points[-1])
+            else:
+                all_free_points.add(all_points[-1])
     
     return all_occupied_points, all_free_points
 
 
-def bresenham(world_map, start, end):
+def bresenham(start, end, world_map=np.array([])):
     """
     Given a world map, a starting pixel coordinate, and an end pixel coordinate returns all pixels 
     in line of sight using bresenham's algorithm
 
     Parameters
     ----------
+    start(list): a 2-element list of pixel coordinates representing starting pixel
+    end(list): a 2-element list of pixel coordinates representing ending pixel
     world_map(numpy.ndarray): numpy array of pixels representing the map. 
         0  == free
         1  == occupied
-    start(list): a 2-element list of pixel coordinates representing starting pixel
-    end(list): a 2-element list of pixel coordinates representing ending pixel
 
     Returns
     -------
@@ -114,9 +112,11 @@ def bresenham(world_map, start, end):
     if swapped:
         points.reverse()
 
-    for p in range(len(points)):
-        point = points[p]
-        if world_map[point[0]][point[1]] == 1:
-            return points[:p] + [points[p]]
+    if world_map.shape[0] != 0:
+        for p in range(len(points)):
+            point = points[p]
+            if world_map[point[0]][point[1]] == 1:
+                return points[:p] + [points[p]]
+    
     return points
 

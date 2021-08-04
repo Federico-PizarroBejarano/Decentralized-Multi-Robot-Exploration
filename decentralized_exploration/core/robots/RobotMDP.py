@@ -69,7 +69,7 @@ class RobotMDP(AbstractRobot):
 
         close_robots = [robot_id for (robot_id, robot) in self._known_robots.items() if Grid.cell_distance(self.grid.all_cells[robot['last_known_position']], current_cell) < horizon and robot_id != current_robot]            
         close_robot_states = [self.grid.all_cells[self._known_robots[robot]['last_known_position']] for robot in close_robots]
-        close_robot_states = [(cell_position.y, cell_position.x) for cell_position in close_robot_states]
+        close_robot_states = [cell_position.coord for cell_position in close_robot_states]
 
         initial_repulsive_rewards = { key: self.rho if key in close_robot_states else 0 for key in self.grid.all_cells.keys() }
 

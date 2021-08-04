@@ -137,6 +137,13 @@ class AbstractRobot:
         pass
 
 
+    def scan_environment(self, world):
+        occupied_points, free_points = self._range_finder.scan(world=world, position=world.get_position(self.robot_id))
+
+        self._update_map(occupied_points=occupied_points, free_points=free_points)
+        self.grid.all_cells[world.get_position(self.robot_id)].reward = 0
+
+
     def explore_1_timestep(self, world, iteration):
         """
         Given the world the robot is exploring, explores the area for 1 timestep/action
@@ -148,10 +155,9 @@ class AbstractRobot:
         """
 
         self._known_robots[self.robot_id]['last_known_position'] = world.get_position(self.robot_id)
-
+        
         new_position = self._choose_next_pose(current_position=world.get_position(self.robot_id), iteration=iteration)
 
-        occupied_points, free_points = self._range_finder.scan(world=world, position=world.get_position(self.robot_id))
+        self.scan_environment(world=world)
 
-        self._update_map(occupied_points=occupied_points, free_points=free_points)
         world.move_robot(robot_id=self.robot_id, new_position=new_position)

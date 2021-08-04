@@ -24,7 +24,7 @@ class Cell:
     """
 
     # Starting value for nOccupied should not be 0
-    def __init__(self, y, x, state=0.0, reward=0.0):
+    def __init__(self, y, x, state=0, reward=0.0):
         self.y = y
         self.x = x
         self.state = state
@@ -34,6 +34,10 @@ class Cell:
         self.distance_from_start = float('inf')
         self.visited = False
         self.previous_cell = None
+    
+    @property
+    def coord(self):
+        return (self.y, self.x)
     
     # Public Methods
     def update_cell(self, state):
@@ -45,7 +49,7 @@ class Cell:
         state (int): the new state of the cell
         """
 
-        self.state = state
+        self.state = int(state)
 
 
 class Grid():
@@ -96,8 +100,8 @@ class Grid():
         distance (int): a integer representing the Cell distance between two cells
         """
 
-        s_y, s_x = start_cell.y, start_cell.x
-        e_y, e_x = end_cell.y, end_cell.x
+        s_y, s_x = start_cell.coord
+        e_y, e_x = end_cell.coord
 
         distance = max(abs(s_y-e_y), abs(s_x-e_x))
         return int(distance)
@@ -112,7 +116,7 @@ class Grid():
         new_cell (Cell): a Cell object with axial coordinates
         """
         
-        self.all_cells[(new_cell.y, new_cell.x)] = new_cell
+        self.all_cells[new_cell.coord] = new_cell
         
 
     def has_rewards(self):
@@ -165,15 +169,36 @@ class Grid():
 
         for y in range(-radius, radius+1):
             for x in range(-radius, radius+1):
-                neighbour = self.all_cells[(center_cell.y + y, center_cell.x + x)]
-                neighbours.append(neighbour)
+                if (center_cell.y + y, center_cell.x + x) in self.all_cells:
+                    neighbour = self.all_cells[(center_cell.y + y, center_cell.x + x)]
+                    neighbours.append(neighbour)
 
         return neighbours
 
     def clear_path(self, start_cell, end_cell):
+        """
+        Determines if the direct linear path between two cells is completely clear (all free)
+        
+        Parameters
+        ----------
+        start_cell (Cell): a Cell object representing the starting cell
+        end_cell (Cell): a Cell object representing the ending cell
+        
+        Returns
+        -------
+        clear (bool): True if clear, False otherwise
+        """
+
+        from ..helpers.field_of_view import bresenham
+
+        coords_of_line = bresenham(start=start_cell.coord, end=end_cell.coord)
+        
+        for coord in coords_of_line[1:]:
+            if self.all_cells[tuple(coord)].state != 0:
+                return False
         return True
 
-    def propagate_rewards(self):
+    def propagate_rewards(self, radius=1):
         """
         Clears the reward from all cells and then re-calculates the reward  at every cell
         """
@@ -183,7 +208,7 @@ class Grid():
         
         for cell in self.all_cells.values():
             if cell.state == -1:
-                neighbours = self.cell_neighbours(center_cell=cell, radius=self.radius)
+                neighbours = self.cell_neighbours(center_cell=cell, radius=radius)
 
                 for neighbour in neighbours:
                     if neighbour.state == 0 and self.clear_path(start_cell=cell, end_cell=cell):
@@ -234,7 +259,7 @@ def convert_pixelmap_to_grid(pixel_map):
     for y in range(pixel_map.shape[0]):
         for x in range(pixel_map.shape[1]):
             cell = Cell(y, x)
-            cell.update_cell(state=pixel_map[y][x])
+            cell.update_cell(state=int(pixel_map[y][x]))
 
             grid.add_cell(new_cell=cell)
 
@@ -261,6 +286,6 @@ def merge_map(grid, pixel_map, pixel_map_to_merge):
             if pixel_map[y, x] == -1:
                 pixel_map[y, x] = pixel_map_to_merge[y, x]
                 found_cell = grid.all_cells[(y, x)]
-                found_cell.update_cell(state=pixel_map_to_merge[y, x])
+                found_cell.update_cell(state=int(pixel_map_to_merge[y, x]))
 
     return pixel_map

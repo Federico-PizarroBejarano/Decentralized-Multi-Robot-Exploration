@@ -20,7 +20,7 @@ def test_field_of_view(I, robot_pos):
 
 def main():
     I = np.load('./decentralized_exploration/maps/new_maps/test_1.npy')
-    robot_pos = (0, 0)
+    robot_pos = (1, 3)
     unknown_I = test_field_of_view(I, robot_pos)
 
     fig = plt.figure()

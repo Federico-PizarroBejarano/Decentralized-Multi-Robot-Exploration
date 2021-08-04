@@ -2,7 +2,6 @@ import numpy as np
 
 from decentralized_exploration.core.constants import Actions
 from decentralized_exploration.helpers.grid import Cell, Grid
-from decentralized_exploration.helpers.field_of_view import bresenham
 
 
 def possible_actions(state, grid):
@@ -107,7 +106,7 @@ def solve_MDP(grid, V, rewards, noise, discount_factor, minimum_change, max_iter
     iterations = 0
 
     all_states = V.keys()
-    current_state = (current_cell.q, current_cell.r)
+    current_state = current_cell.coord
 
     if not DVF:
         DVF = {key:0 for key in V.keys()}
@@ -232,7 +231,7 @@ def closest_reward(current_cell, grid):
                 curr_cell = curr_cell.previous_cell
                 if Grid.cell_distance(start_cell=current_cell, end_cell=curr_cell) > max_distance:
                     max_distance = Grid.cell_distance(start_cell=current_cell, end_cell=curr_cell)
-            return (curr_cell.q, curr_cell.r), reward_cell, max_distance
+            return curr_cell.coord, reward_cell, max_distance
         elif curr_cell.state == 0 and curr_cell.visited == False:
             new_neighbours = grid.cell_neighbours(center_cell=curr_cell, radius=1)
             for neighbour in new_neighbours:
@@ -277,14 +276,10 @@ def path_between_cells(current_cell, goal_cell, grid):
 
     while(len(cells_to_explore) != 0):
         curr_cell = cells_to_explore.pop(0)
-        if (curr_cell.y, curr_cell.x) == (goal_cell.y, goal_cell.x):
-            final_cell = curr_cell
-            max_distance = Grid.cell_distance(start_cell=current_cell, end_cell=final_cell)
+        if curr_cell.coord == goal_cell.coord:
             while curr_cell.previous_cell != current_cell and curr_cell.previous_cell != None:
                 curr_cell = curr_cell.previous_cell
-                if Grid.cell_distance(start_cell=current_cell, end_cell=curr_cell) > max_distance:
-                    max_distance = Grid.cell_distance(start_cell=current_cell, end_cell=curr_cell)
-            return (curr_cell.q, curr_cell.r)
+            return curr_cell.coord
         elif curr_cell.state == 0 and curr_cell.visited == False:
             new_neighbours = grid.cell_neighbours(center_cell=curr_cell, radius=1)
             for neighbour in new_neighbours:
@@ -329,7 +324,7 @@ def check_distance_to_other_robot(grid, robot_states, start_cell, max_cell_dista
 
     while(len(cells_to_explore) != 0):
         curr_cell = cells_to_explore.pop(0)
-        if (curr_cell.y, curr_cell.x) in robot_cells:
+        if curr_cell.coord in robot_cells:
             return True
         elif curr_cell.state == 0 and curr_cell.visited == False:
             new_neighbours = grid.cell_neighbours(center_cell=curr_cell, radius=1)

@@ -23,8 +23,8 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
 
     all_cells = grid.all_cells.values()
     colors_list = ['0.5', '1', '0']
-    x_coord = [k[1] for k in all_cells.keys()]
-    y_coord = [k[0] for k in all_cells.keys()]
+    x_coord = [k[1] for k in grid.all_cells.keys()]
+    y_coord = [k[0] for k in grid.all_cells.keys()]
     colors = [colors_list[cell.state+1] for cell in all_cells]
 
     rewards = {}
@@ -33,40 +33,49 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
     if mode == 'value':
         for cell in all_cells:
             if cell.V != 0 and cell.state == 0:
-                rewards[(cell.y, cell.x)] = round(cell.V, 1)
+                rewards[cell.coord] = round(cell.V, 1)
                 if abs(round(cell.V, 1)) > max_value:
                     max_value = abs(round(cell.V, 1))
     elif mode == 'reward':
         for cell in all_cells:
             if cell.reward != 0:
-                rewards[(cell.y, cell.x)] = round(cell.V, 1)
+                rewards[cell.coord] = round(cell.reward, 1)
                 if abs(round(cell.reward, 1)) > max_value:
                     max_value = abs(round(cell.reward, 1))
     if mode == 'probability':
         for cell in all_cells:
             if cell.probability != 0:
-                rewards[(cell.y, cell.x)] = round(cell.V, 1)
+                rewards[cell.coord] = round(cell.probability, 1)
                 if abs(round(cell.probability*100, 2)) > max_value:
                     max_value = abs(round(cell.probability*100, 2))
 
     plot.set_aspect('equal')
 
+    pixel_robot_states = []
+    for robot in robot_states.keys():
+        point=robot_states[robot].pixel_position
+        pixel_robot_states += [point]
+    
+    print(pixel_robot_states)
+
     # Add some coloured cells
     for x, y, c in zip(x_coord, y_coord, colors):  
-        alpha = 0.5      
-        if (x, y) in rewards:
+        alpha = 0.75      
+        if (y, x) in rewards:
             # plot.text(x, y, int(round(rewards[(x, y)])), ha='center', va='center', size=8)
-            alpha = abs(rewards[(x, y)]/max_value)
-            if rewards[(x, y)] > 0:
+            alpha = abs(rewards[(y, x)]/max_value)
+            if rewards[(y, x)] > 0:
                 c = 'green'
-            elif rewards[(x, y)] < 0:
+            elif rewards[(y, x)] < 0:
                 c = 'red'
+        if (y, x) in pixel_robot_states:
+            c = 'y'
+            alpha = 1
         
-        plt.scatter(x, y, color=c, alpha=alpha)
+        plt.scatter(x, y, color=c, alpha=alpha, marker='s', s=140)
 
-
-    plot.set_xlim()
-    plot.set_ylim()
+    plot.set_xlim(-0.5, 19.5)
+    plot.set_ylim(-0.5, 19.5)
 
     # legend_elements = [Line2D([0], [0], marker='H', markerfacecolor='1', alpha=0.5, color='k', markersize=15, linewidth=0, label='Free Space'), 
     #                     Line2D([0], [0], marker='H', markerfacecolor='0.5', alpha=0.5, color='k', markersize=15, linewidth=0,label='Unknown Space'),
