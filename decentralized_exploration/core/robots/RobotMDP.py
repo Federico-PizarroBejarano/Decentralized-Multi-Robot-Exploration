@@ -2,8 +2,8 @@ import numpy as np
 
 from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
 from decentralized_exploration.core.constants import Actions
-from decentralized_exploration.helpers.decision_making import find_new_orientation, possible_actions, get_new_state, solve_MDP, compute_probability, closest_reward
-from decentralized_exploration.helpers.hex_grid import Hex, Grid, merge_map
+from decentralized_exploration.helpers.decision_making import possible_actions, get_new_state, solve_MDP, compute_probability, closest_reward, path_between_cells
+from decentralized_exploration.helpers.grid import Cell, Grid, merge_map
 
 
 class RobotMDP(AbstractRobot):
@@ -49,12 +49,10 @@ class RobotMDP(AbstractRobot):
         """
         Initializes the set of states and the initial value function of the robot
         """
-                
-        for orientation in [1, 2, 3, 4, 5, 6]:
-            new_states = set([(position[0], position[1], orientation) for position in self.hex_map.all_hexes.keys()])
-            self._all_states.update(new_states)
+
+        self._all_states = set(self.grid.all_cells.keys())
         
-        self._V = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self._all_states}
+        self._V = {state : self.grid.all_cells[(state[0], state[1])].reward for state in self._all_states}
     
 
     def _calculate_V(self, current_robot, horizon):
@@ -67,35 +65,34 @@ class RobotMDP(AbstractRobot):
         horizon (int): how near a state is from the current state to be considered in the MDP
         """
 
-        current_hex_pos = self.hex_map.hex_at(point=self._known_robots[current_robot]['last_known_position'])
-        current_hex = self.hex_map.find_hex(desired_hex=current_hex_pos)
+        current_cell = self.grid.all_cells[self._known_robots[current_robot]['last_known_position']]
 
-        close_robots = [robot_id for (robot_id, robot) in self._known_robots.items() if Grid.hex_distance(self.hex_map.hex_at(robot['last_known_position']), current_hex_pos) < horizon and robot_id != current_robot]            
-        close_robot_states = [self.hex_map.hex_at(self._known_robots[robot]['last_known_position']) for robot in close_robots]
-        close_robot_states = [(hex_position.q, hex_position.r) for hex_position in close_robot_states]
+        close_robots = [robot_id for (robot_id, robot) in self._known_robots.items() if Grid.cell_distance(self.grid.all_cells[robot['last_known_position']], current_cell) < horizon and robot_id != current_robot]            
+        close_robot_states = [self.grid.all_cells[self._known_robots[robot]['last_known_position']] for robot in close_robots]
+        close_robot_states = [(cell_position.y, cell_position.x) for cell_position in close_robot_states]
 
-        initial_repulsive_rewards = { key: self.rho if key in close_robot_states else 0 for key in self.hex_map.all_hexes.keys() }
+        initial_repulsive_rewards = { key: self.rho if key in close_robot_states else 0 for key in self.grid.all_cells.keys() }
 
         self._known_robots[current_robot]['repulsive_V'] = {state : 0 for state in self._all_states}
-        solve_MDP(self.hex_map, self._known_robots[current_robot]['repulsive_V'], initial_repulsive_rewards, self.noise, self.discount_factor, self.minimum_change_repulsive, self.max_iterations, horizon, horizon, current_hex)
+        solve_MDP(self.grid, self._known_robots[current_robot]['repulsive_V'], initial_repulsive_rewards, self.noise, self.discount_factor, self.minimum_change_repulsive, self.max_iterations, horizon, horizon, current_cell)
 
-        repulsive_reward = { key:0 for key in self.hex_map.all_hexes.keys() }
+        repulsive_reward = { key:0 for key in self.grid.all_cells.keys() }
     
         for state in self._all_states:
             repulsive_reward[(state[0], state[1])] += self._known_robots[current_robot]['repulsive_V'][state]
 
-        rewards = { key:hexagon.reward - repulsive_reward[key] for (key, hexagon) in self.hex_map.all_hexes.items() }
+        rewards = { key:cell.reward - repulsive_reward[key] for (key, cell) in self.grid.all_cells.items() }
 
-        self._known_robots[current_robot]['V'] = {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self._all_states}
+        self._known_robots[current_robot]['V'] = {state : self.grid.all_cells[(state[0], state[1])].reward for state in self._all_states}
 
-        closest_reward_hex = closest_reward(current_hex=current_hex, hex_map=self.hex_map)[1]
-        min_iterations = closest_reward_hex.distance_from_start
+        closest_reward_cell = closest_reward(current_cell=current_cell, grid=self.grid)[1]
+        min_iterations = closest_reward_cell.distance_from_start
 
         modified_discount_factor = 1.0 - 80.0/(max(self.horizon, min_iterations)**2.0)
-        solve_MDP(self.hex_map, self._known_robots[current_robot]['V'], rewards, self.noise, modified_discount_factor, self.minimum_change, self.max_iterations, min_iterations, horizon, current_hex)
+        solve_MDP(self.grid, self._known_robots[current_robot]['V'], rewards, self.noise, modified_discount_factor, self.minimum_change, self.max_iterations, min_iterations, horizon, current_cell)
 
 
-    def _compute_DVF(self, current_hex, iteration, horizon):
+    def _compute_DVF(self, current_cell, iteration, horizon):
         """
         Updates the repulsive value at each state. This is then used in _choose_next_pose to avoid other robots
 
@@ -106,7 +103,7 @@ class RobotMDP(AbstractRobot):
         horizon (int): how near a state is from the current state to be considered in the MDP
         """
 
-        close_robots = [robot_id for (robot_id, robot) in self._known_robots.items() if Grid.hex_distance(self.hex_map.hex_at(robot['last_known_position']), current_hex) < horizon and robot_id != self.robot_id]
+        close_robots = [robot_id for (robot_id, robot) in self._known_robots.items() if Grid.cell_distance(self.grid.all_cells[robot['last_known_position']], current_cell) < horizon and robot_id != self.robot_id]
 
         DVF = {state : 0 for state in self._all_states}
 
@@ -114,14 +111,14 @@ class RobotMDP(AbstractRobot):
             if self._known_robots[robot]['last_updated'] == iteration:
                 self._calculate_V(current_robot=robot, horizon=horizon)
             
-            robot_hex = self.hex_map.find_hex(self.hex_map.hex_at(point=self._known_robots[robot]['last_known_position']))
-            compute_probability(start_hex=robot_hex,
+            robot_cell = self.grid.all_cells[self._known_robots[robot]['last_known_position']]
+            compute_probability(start_cell=robot_cell,
                                 time_increment=iteration - self._known_robots[robot]['last_updated'],
                                 exploration_horizon=self.exploration_horizon,
-                                hex_map=self.hex_map)
+                                grid=self.grid)
 
             for state in self._all_states:
-                DVF[state] +=  self.weighing_factor * self.hex_map.all_hexes[(state[0], state[1])].probability * self._known_robots[robot]['V'][state] + self.weighing_factor**3 * self.hex_map.all_hexes[(state[0], state[1])].probability**2
+                DVF[state] +=  self.weighing_factor * self.grid.all_cells[(state[0], state[1])].probability * self._known_robots[robot]['V'][state] + self.weighing_factor**3 * self.grid.all_cells[(state[0], state[1])].probability**2
         
         for state in self._all_states:
             DVF[state] = abs(DVF[state])
@@ -129,61 +126,29 @@ class RobotMDP(AbstractRobot):
         return DVF
 
 
-    def _choose_next_pose(self, current_position, current_orientation, iteration):
+    def _choose_next_pose(self, current_position, iteration):
         """
         Given the current pos, decides on the next best position for the robot
 
         Parameters
         ----------
         current_position (tuple): tuple of integer pixel coordinates
-        current_orientation (int): int representing current orientation of robot
         iteration (int): the current iteration of the algorithm
 
         Returns
         -------
-        next_state (tuple): tuple of q and r coordinates of the new position, with orientation at the end
+        next_state (tuple): tuple of q and r coordinates of the new position
         """
 
-        current_hex_pos = self.hex_map.hex_at(point=current_position)
-        current_hex = self.hex_map.find_hex(desired_hex=current_hex_pos)
-        current_state = (current_hex.q, current_hex.r, current_orientation)
-        
-        # Checking if on reward hexagon
-        on_reward_hex = current_hex.reward > 0
-        
-        if on_reward_hex and not self._escaping_dead_reward['escaping_dead_reward']:          
-            next_hex = self.hex_map.find_closest_unknown(center_hex=current_hex)
-            is_clockwise, new_orientation = find_new_orientation(current_hex=current_hex, current_orientation=current_orientation, next_hex=next_hex)
+        current_cell = self.grid.all_cells[current_position]
 
-            if new_orientation == current_orientation:
-                if next_hex.state == 0:
-                    action = Actions.FORWARD
-                    next_state = get_new_state(current_state, action)
-                    return next_state
-                else:
-                    self._escaping_dead_reward['escaping_dead_reward'] = True
-                    current_hex.reward = 0
-            else:
-                if self._escaping_dead_reward['was_just_on_reward'] == True and new_orientation == self._escaping_dead_reward['previous_orientation']:
-                    self._escaping_dead_reward['escaping_dead_reward'] = True 
-                else:
-                    self._escaping_dead_reward['was_just_on_reward'] = True
-                    self._escaping_dead_reward['previous_orientation'] = current_orientation
-                    action = Actions.CLOCKWISE if is_clockwise else Actions.COUNTER_CLOCKWISE
-                    next_state = get_new_state(current_state, action)
-                    return next_state
-        
-        self._escaping_dead_reward['was_just_on_reward'] = False
-        if self._escaping_dead_reward['escaping_dead_reward']:
-            current_hex.reward = 0
-
-        closest_reward_hex, max_path_distance = closest_reward(current_hex=current_hex, hex_map=self.hex_map)[1:]
+        closest_reward_cell, max_path_distance = closest_reward(current_cell=current_cell, grid=self.grid)[1:]
         modified_horizon = max(self.horizon, max_path_distance+1)
-        min_iterations = closest_reward_hex.distance_from_start
+        min_iterations = closest_reward_cell.distance_from_start
 
-        DVF = self._compute_DVF(current_hex=current_hex_pos, iteration=iteration, horizon=modified_horizon)
+        DVF = self._compute_DVF(current_cell=current_cell, iteration=iteration, horizon=modified_horizon)
 
-        rewards = { key:hexagon.reward for (key, hexagon) in self.hex_map.all_hexes.items() if Grid.hex_distance(hexagon, current_hex) < modified_horizon + 1}
+        rewards = { key:cell.reward for (key, cell) in self.grid.all_cells.items() if Grid.cell_distance(cell, current_cell) < modified_horizon + 1}
 
         max_DVF = max(DVF.values())
         max_reward = max([ reward for reward in rewards.values() ]) + 0.01
@@ -195,40 +160,32 @@ class RobotMDP(AbstractRobot):
 
         print('Reward multiplier: {}, Modified gamma: {}'.format(reward_multiplier, modified_discount_factor))
 
-        self._V = {state : self.hex_map.all_hexes[(state[0], state[1])].reward * reward_multiplier for state in self._all_states}
+        self._V = {state : self.grid.all_cells[(state[0], state[1])].reward * reward_multiplier for state in self._all_states}
 
-        policy = solve_MDP(self.hex_map, self._V, rewards, self.noise, modified_discount_factor, self.minimum_change, self.max_iterations, min_iterations, modified_horizon, current_hex, DVF)
+        policy = solve_MDP(self.grid, self._V, rewards, self.noise, modified_discount_factor, self.minimum_change, self.max_iterations, min_iterations, modified_horizon, current_cell, DVF)
 
-        action = policy[current_state]
-        next_state = get_new_state(state=current_state, action=action)
+        action = policy[current_position]
+        next_state = get_new_state(state=current_position, action=action)
 
-        if abs(self._V[current_state] - self._V[next_state]) < 0.001:
+        if abs(self._V[current_position] - self._V[next_state]) < 0.001:
             print(self.robot_id, ' MDP is stuck, using greedy')
-            next_position = closest_reward(current_hex, self.hex_map)[0]
+            next_position = closest_reward(current_cell, self.grid)[0]
 
             # All rewards have been found
             if next_position == None:
-                return current_state
+                return current_position
 
-            next_hex = Hex(next_position[0], next_position[1])
-            is_clockwise, new_orientation = find_new_orientation(current_hex=current_hex, current_orientation=current_orientation, next_hex=next_hex)
+            next_cell = Cell(next_position[0], next_position[1])
 
-            if new_orientation == current_orientation:
-                action = Actions.FORWARD
-            else:
-                action = Actions.CLOCKWISE if is_clockwise else Actions.COUNTER_CLOCKWISE
-            next_state = get_new_state(current_state, action)
-
-        if action == Actions.FORWARD:
-            self._escaping_dead_reward['escaping_dead_reward'] = False
-
+            next_state = path_between_cells(current_cell, next_cell, self.grid)
+        
         # Plotting
         for state in self._all_states:
-            self.hex_map.find_hex(Hex(state[0], state[1])).V = 0
+            self.grid.all_cells[(state[0], state[1])].V = 0
 
         for state in self._all_states:
-            if Grid.hex_distance(current_hex, Hex(state[0], state[1])) < modified_horizon + 1:
-                self.hex_map.find_hex(Hex(state[0], state[1])).V += self._V[state]
+            if Grid.cell_distance(current_cell, Cell(state[0], state[1])) < modified_horizon + 1:
+                self.grid.all_cells[(state[0], state[1])].V += self._V[state]
 
         return next_state
 
@@ -249,15 +206,15 @@ class RobotMDP(AbstractRobot):
         for robot_id in message:
             if robot_id not in self._known_robots:
                 self._known_robots[robot_id] = {
-                    'V': {state : self.hex_map.all_hexes[(state[0], state[1])].reward for state in self._all_states},
+                    'V': {state : self.grid.all_cells[(state[0], state[1])].reward for state in self._all_states},
                     'repulsive_V': {state : 0 for state in self._all_states}
                 }
             
             self._known_robots[robot_id]['last_updated'] = iteration
             self._known_robots[robot_id]['last_known_position'] = message[robot_id]['robot_position']
 
-            self.__pixel_map = merge_map(hex_map=self.hex_map, pixel_map=self.pixel_map, pixel_map_to_merge=message[robot_id]['pixel_map'])
-            self.hex_map.propagate_rewards()
+            self.__pixel_map = merge_map(grid=self.grid, pixel_map=self.pixel_map, pixel_map_to_merge=message[robot_id]['pixel_map'])
+            self.grid.propagate_rewards()
 
         self._known_robots[self.robot_id] = {
             'last_updated': iteration,

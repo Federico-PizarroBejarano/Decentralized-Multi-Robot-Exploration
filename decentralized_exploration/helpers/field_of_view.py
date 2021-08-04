@@ -1,7 +1,10 @@
 import numpy as np
+import matplotlib.pyplot as plt
+
+from ..helpers.grid import Grid
 
 
-def field_of_view(world_map, robot_pos, start_orientation, end_orientation, is_clockwise = None):
+def field_of_view(world_map, robot_pos):
     """
     Given a world map and the position of the robot, returns all free and occupied pixels in its field of view
 
@@ -11,16 +14,6 @@ def field_of_view(world_map, robot_pos, start_orientation, end_orientation, is_c
         0  == free
         1  == occupied
     robot_pos (list): a 2-element list of pixel coordinates 
-    start_orientation (int): an int 1-6 representing the orientation of the robot. Note y axis is inverted
-        1 == facing directly towards y==0 line
-        2 == rotate 1 by 60 degrees counter-clockwise
-        3 == rotate 2 by 60 degrees counter-clockwise
-        4 == rotate 3 by 60 degrees counter-clockwise s.t. it faces the y=inf line
-        5 == rotate 4 by 60 degrees counter-clockwise
-        6 == rotate 5 by 60 degrees counter-clockwise
-    end_orientation (int): an int 1-6 representing the desired orientation
-    is_clockwise (bool): whether the robot is rotating clockwise (True) or counter-clockwise (False). Defaults to None 
-        and is then set to the most efficient direction
 
     Returns
     -------
@@ -29,47 +22,32 @@ def field_of_view(world_map, robot_pos, start_orientation, end_orientation, is_c
     """
 
     world_size = world_map.shape
+    radius = Grid.radius
+    y, x = robot_pos
+
     all_free_points = set()
     all_occupied_points = set()
 
-    start_edge = get_edge_point(robot_pos=robot_pos, orientation=start_orientation, world_size=world_size)
-    end_edge = get_edge_point(robot_pos=robot_pos, orientation=end_orientation, world_size=world_size)
-
-    curr_point = start_edge
-
-    if is_clockwise == None:
-        clockwise_distance = (start_orientation - end_orientation) % 6
-        counter_clockwise_distance = (end_orientation - start_orientation) % 6
-
-        if clockwise_distance > counter_clockwise_distance:
-            is_clockwise = False
-        else:
-            is_clockwise = True
-
-    while curr_point != end_edge:
-        if (curr_point == [0, 0] and is_clockwise) or (curr_point == [world_size[0] - 1, 0] and not is_clockwise):
-            curr_point[1] += 1
-        elif (curr_point == [0, 0] and not is_clockwise) or (curr_point == [0, world_size[1] - 1] and is_clockwise):
-            curr_point[0] += 1
-        elif (curr_point == [world_size[0] - 1, 0] and is_clockwise) or (curr_point == [world_size[0] - 1, world_size[1] - 1] and not is_clockwise):
-            curr_point[0] -= 1
-        elif (curr_point == [0, world_size[1] - 1] and not is_clockwise) or (curr_point == [world_size[0] - 1, world_size[1] - 1] and is_clockwise):
-            curr_point[1] -= 1
-        elif curr_point[0] != 0 and curr_point[0] != world_size[0] - 1:
-            if (is_clockwise and curr_point[1] == 0) or (not is_clockwise and curr_point[1] == world_size[1]-1):
-                curr_point[0] -= 1
-            else:
-                curr_point[0] += 1
-        elif curr_point[1] != 0 and curr_point[1] != world_size[1] - 1:
-            if (is_clockwise and curr_point[0] == 0) or (not is_clockwise and curr_point[0] == world_size[0]-1):
-                curr_point[1] += 1
-            else:
-                curr_point[1] -= 1
-
-        all_points = bresenham(world_map=world_map, start=robot_pos, end=curr_point)
-        all_free_points = all_free_points.union(set(all_points[:-1]))
-        all_occupied_points.add(all_points[-1])
-
+    for yi in (y-radius, y+radius):
+        for xi in range(x-radius, x+radius+1):
+            if yi >= 0 and yi < world_size[0] and xi >= 0 and xi < world_size[1]:
+                all_points = bresenham(world_map=world_map, start=robot_pos, end=[yi, xi])
+                all_free_points = all_free_points.union(set(all_points[:-1]))
+                if world_map[all_points[-1][0], all_points[-1][1]] == 1: 
+                    all_occupied_points.add(all_points[-1])
+                else:
+                    all_free_points.add(all_points[-1])
+        
+    for yi in range(y-radius, y+radius+1):
+        for xi in (x-radius, x+radius):
+            if yi >= 0 and yi < world_size[0] and xi >= 0 and xi < world_size[1]:
+                all_points = bresenham(world_map=world_map, start=robot_pos, end=[yi, xi])
+                all_free_points = all_free_points.union(set(all_points[:-1]))
+                if world_map[all_points[-1][0], all_points[-1][1]] == 1: 
+                    all_occupied_points.add(all_points[-1])
+                else:
+                    all_free_points.add(all_points[-1])
+    
     return all_occupied_points, all_free_points
 
 
@@ -142,77 +120,3 @@ def bresenham(world_map, start, end):
             return points[:p] + [points[p]]
     return points
 
-
-def get_edge_point(robot_pos, orientation, world_size):
-    """
-    Given the robot position and orientation, finds the point on the edge of the map 
-    where the robot would intersect if it continued on its trajectory
-
-    Parameters
-    ----------
-    robot_pos (tuple): tuple of integer pixel coordinates
-    orientation (int): an int representing the current orientation
-    world_size (tuple): a tuple of the size of the world_map
-
-    Returns
-    -------
-    edge_point (tuple): tuple of integer pixel coordinates of the edge
-    """
-
-    robot_pos = robot_pos[::-1]
-    world_size = world_size[::-1]
-
-    if orientation == 1:
-        edge_point = [robot_pos[0], 0]
-    elif orientation == 4:
-        edge_point = [robot_pos[0], world_size[1] - 1]
-    elif orientation == 2:
-        slope = 1/(3**0.5)
-        y_intercept = robot_pos[1] - slope*robot_pos[0]
-
-        if y_intercept >= 0:
-            edge_point = [0, y_intercept]
-        else:
-            y = 0
-            x = (y - y_intercept)/slope
-            edge_point = [x, y]
-    elif orientation == 5:
-        slope = 1/(3**0.5)
-        y_intercept = robot_pos[1] - slope*robot_pos[0]
-
-        x = world_size[0]-1
-        y = slope*x + y_intercept
-
-        if y <= world_size[1]-1:
-            edge_point = [x, y]
-        else:
-            y = world_size[1] - 1
-            x = (y - y_intercept)/slope
-            edge_point = [x, y]
-    
-    elif orientation == 3:
-        slope = -1/(3**0.5)
-        y_intercept = robot_pos[1] - slope*robot_pos[0]
-
-        if y_intercept <= world_size[1] - 1:
-            edge_point = [0, y_intercept]
-        else:
-            y = world_size[1] - 1
-            x = (y - y_intercept)/slope
-            edge_point = [x, y]
-    
-    elif orientation == 6:
-        slope = -1/(3**0.5)
-        y_intercept = robot_pos[1] - slope*robot_pos[0]
-
-        x = world_size[0]-1
-        y = slope*x + y_intercept
-
-        if y >= 0:
-            edge_point = [x, y]
-        else:
-            y = 0
-            x = (y - y_intercept)/slope
-            edge_point = [x, y]
-    
-    return [int(round(edge_point[1])), int(round(edge_point[0]))]

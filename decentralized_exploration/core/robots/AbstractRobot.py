@@ -1,16 +1,12 @@
 import numpy as np
 from abc import ABCMeta, abstractmethod
 
-from decentralized_exploration.helpers.hex_grid import Hex, convert_pixelmap_to_grid
+from decentralized_exploration.helpers.grid import Cell, convert_pixelmap_to_grid
 
 
 class AbstractRobot:
     """
     A class used to represent a single robot
-
-    Class Attributes
-    ----------------
-    hexagon_size (int): the size of the hexagons compared to each pixel. A tunable parameter
 
     Instance Attributes
     -------------------
@@ -22,7 +18,7 @@ class AbstractRobot:
         -1 == unexplored
         0  == free
         1  == occupied
-    hex_map (Grid): A Grid object holding the hex layer
+    grid (Grid): A Grid object holding the grid layer
 
     Public Methods
     --------------
@@ -31,8 +27,6 @@ class AbstractRobot:
 
     __metaclass__ = ABCMeta
 
-    # Tunable Parameters
-    hexagon_size = 9
     
     def __init__(self, robot_id, range_finder, width, length, world_size):
         self._robot_id = robot_id
@@ -41,7 +35,6 @@ class AbstractRobot:
         self._length = length
         self._escaping_dead_reward = {
             'was_just_on_reward': False, 
-            'previous_orientation': 1,
             'escaping_dead_reward': False
         }
 
@@ -62,14 +55,14 @@ class AbstractRobot:
         return self._pixel_map
 
     @property
-    def hex_map(self):
-        return self._hex_map
+    def grid(self):
+        return self._grid
 
 
     # Private methods
     def _initialize_map(self, world_size):
         """
-        Initialized both the internal pixel and hex maps given the size of the world
+        Initialized both the internal pixel and grid given the size of the world
 
         Parameters
         ----------
@@ -77,12 +70,12 @@ class AbstractRobot:
         """
 
         self._pixel_map = -np.ones(world_size)
-        self._hex_map = convert_pixelmap_to_grid(pixel_map=self.pixel_map, size=self.hexagon_size)
+        self._grid = convert_pixelmap_to_grid(pixel_map=self.pixel_map)
 
 
     def _update_map(self, occupied_points, free_points):
         """
-        Updates both the internal pixel and hex maps given lists of occupied and free pixels
+        Updates both the internal pixel and grid given lists of occupied and free pixels
 
         Parameters
         ----------
@@ -100,20 +93,18 @@ class AbstractRobot:
         self.pixel_map[free_rows, free_cols] = 0
 
         for occ_point in occupied_points:
-            desired_hex = self.hex_map.hex_at(point=occ_point)
-            found_hex = self.hex_map.find_hex(desired_hex=desired_hex)
-            found_hex.update_hex(dOccupied=1, dUnknown=-1)
+            found_cell = self.grid.all_cells[occ_point]
+            found_cell.update_cell(state=1)
 
         for free_point in free_points:
-            desired_hex = self.hex_map.hex_at(point=free_point)
-            found_hex = self.hex_map.find_hex(desired_hex=desired_hex)
-            found_hex.update_hex(dFree=1, dUnknown=-1)
+            found_cell = self.grid.all_cells[free_point]
+            found_cell.update_cell(state=0)
         
-        self.hex_map.propagate_rewards()
+        self.grid.propagate_rewards()
 
 
     @abstractmethod
-    def _choose_next_pose(self, current_position, current_orientation, iteration):
+    def _choose_next_pose(self, current_position, iteration):
         """
         Given the current pos, decides on the next best position for the robot. 
         Overriden in each sub-class. 
@@ -121,40 +112,17 @@ class AbstractRobot:
         Parameters
         ----------
         current_position (tuple): tuple of integer pixel coordinates
-        current_orientation (int): int representing current orientation of robot
         iteration (int): the current iteration of the algorithm
 
         Returns
         -------
-        next_state (tuple): tuple of q and r coordinates of the new position, with orientation at the end
+        next_state (tuple): tuple of y and x coordinates of the new position
         """
 
         pass
 
 
     # Public Methods
-    def complete_rotation(self, world):
-        """
-        Rotates the robot completely to scan the area around it
-
-        Parameters
-        ----------
-        world (World): a World object that the robot will explore
-        """
-
-        starting_orientation = world.get_orientation(self.robot_id)
-        next_orientation = starting_orientation + 1 if (starting_orientation + 1 <= 6) else 1
-        count = 0
-
-        while count < 6:
-            occupied_points, free_points = self._range_finder.scan(world=world, position=world.get_position(self.robot_id), old_orientation=world.get_orientation(self.robot_id), new_orientation=next_orientation, is_clockwise=False)
-            self._update_map(occupied_points=occupied_points, free_points=free_points)
-
-            world.move_robot(robot_id=self.robot_id, new_position=world.get_position(self.robot_id), new_orientation=next_orientation)
-            next_orientation = next_orientation + 1 if (next_orientation + 1 <= 6) else 1
-
-            count += 1
-
     @abstractmethod
     def communicate(self, message, iteration):
         """
@@ -181,12 +149,9 @@ class AbstractRobot:
 
         self._known_robots[self.robot_id]['last_known_position'] = world.get_position(self.robot_id)
 
-        new_state = self._choose_next_pose(current_position=world.get_position(self.robot_id), current_orientation=world.get_orientation(self.robot_id), iteration=iteration)
-        new_position = self.hex_map.hex_center(Hex(new_state[0], new_state[1]))
-        new_position = [int(coord) for coord in new_position]
-        new_orientation = new_state[2]
+        new_position = self._choose_next_pose(current_position=world.get_position(self.robot_id), iteration=iteration)
 
-        occupied_points, free_points = self._range_finder.scan(world=world, position=world.get_position(self.robot_id), old_orientation=world.get_orientation(self.robot_id), new_orientation=new_orientation)
+        occupied_points, free_points = self._range_finder.scan(world=world, position=world.get_position(self.robot_id))
 
         self._update_map(occupied_points=occupied_points, free_points=free_points)
-        world.move_robot(robot_id=self.robot_id, new_position=new_position, new_orientation=new_orientation)
+        world.move_robot(robot_id=self.robot_id, new_position=new_position)

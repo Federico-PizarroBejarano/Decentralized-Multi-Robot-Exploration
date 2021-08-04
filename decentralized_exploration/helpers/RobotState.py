@@ -5,9 +5,7 @@ class RobotState:
     Instance Attributes
     -------------------
     pixel_position (int): a 2-element array of integer pixel coordinates
-    orientation (int): an integer representing the orientation of the robot (1-6)
     """
 
-    def __init__(self, pixel_position, orientation):
+    def __init__(self, pixel_position):
         self.pixel_position = pixel_position
-        self.orientation = orientation

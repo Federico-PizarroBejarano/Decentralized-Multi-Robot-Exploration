@@ -18,11 +18,9 @@ class World:
     Public Methods
     --------------
     get_position(robot_id): returns the pixel position of the robot with the specified robot_id
-    get_orientation(robot_id): returns the orientation of the robot with the specified robot_id
     clear_path_between_robots(self, robot1, robot2): returns True if the path between two robots is 
         composed entirely of free pixels
-    move_robot(robot_id, new_position, new_orientation): Updates the robot position and orientation
-        of the robot with the specified robot_id
+    move_robot(robot_id, new_position): Updates the robot position of the robot with the specified robot_id
     """
 
     def __init__(self, world_map, pixel_size, robot_states):
@@ -57,22 +55,6 @@ class World:
         """
 
         return self._robot_states[robot_id].pixel_position
-    
-
-    def get_orientation(self, robot_id):
-        """
-        Returns the orientation of the robot with the given robot_id
-
-        Parameters
-        ----------
-        robot_id (str): the id of the desired robot
-
-        Returns
-        -------
-        orientation (int): an int representing the orientation of the robot
-        """
-
-        return self._robot_states[robot_id].orientation
 
     
     def clear_path_between_robots(self, robot1, robot2):
@@ -105,16 +87,14 @@ class World:
             return True
 
 
-    def move_robot(self, robot_id, new_position, new_orientation):
+    def move_robot(self, robot_id, new_position):
         """
-        Updates the position and orientation for a robot with the given robot_id
+        Updates the position for a robot with the given robot_id
 
         Parameters
         ----------
         robot_id (str): the id of the desired robot
         new_position (list): a 2-element list of integer pixel coordinates
-        new_orientation (int): an integer representing the orientation of the robot
         """
 
         self._robot_states[robot_id].pixel_position = new_position
-        self._robot_states[robot_id].orientation = new_orientation

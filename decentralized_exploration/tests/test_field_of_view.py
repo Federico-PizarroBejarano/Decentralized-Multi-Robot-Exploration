@@ -6,7 +6,7 @@ from ..helpers.field_of_view import field_of_view
 
 
 def test_field_of_view(I, robot_pos):
-    occupied_points, free_points = field_of_view(I, robot_pos, 2, 3, True)
+    occupied_points, free_points = field_of_view(I, robot_pos)
     unknown_I = -np.ones(I.shape)
 
     occ_rows, occ_cols = [p[0] for p in occupied_points], [p[1] for p in occupied_points]
@@ -19,8 +19,8 @@ def test_field_of_view(I, robot_pos):
 
 
 def main():
-    I = np.load('./decentralized_exploration/maps/map_1_small.npy')
-    robot_pos = (30, 77)
+    I = np.load('./decentralized_exploration/maps/new_maps/test_1.npy')
+    robot_pos = (0, 0)
     unknown_I = test_field_of_view(I, robot_pos)
 
     fig = plt.figure()

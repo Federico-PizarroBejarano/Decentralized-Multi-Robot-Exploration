@@ -7,18 +7,16 @@ from decentralized_exploration.core.RangeFinder import RangeFinder
 from decentralized_exploration.core.robots.RobotMDP import RobotMDP
 from decentralized_exploration.core.RobotTeam import RobotTeam
 from decentralized_exploration.helpers.RobotState import RobotState
-from decentralized_exploration.helpers.hex_grid import convert_pixelmap_to_grid
+from decentralized_exploration.helpers.grid import convert_pixelmap_to_grid
 
 
 if __name__ == "__main__":
     world_map = np.load('./decentralized_exploration/maps/large_map_4.npy')
-    completed_grid = convert_pixelmap_to_grid(pixel_map=world_map, size=RobotMDP.hexagon_size)
-    hexes_near_entrance = completed_grid.hex_neighbours(center_hex=completed_grid.find_hex(desired_hex=completed_grid.hex_at(point=[500, 300])), radius=5)
+    completed_grid = convert_pixelmap_to_grid(pixel_map=world_map)
 
-    num_of_robots = 2
+    num_of_robots = 1
     robot_team = RobotTeam(world_size=world_map.shape, blocked_by_obstacles=False)
-    starting_hexes = random.sample(population=[h for h in hexes_near_entrance if h.state == 0], k=num_of_robots)
-    starting_poses = [completed_grid.hex_center(hexagon=h) for h in starting_hexes]
+    starting_poses = [[0, 0]]
 
     print('Starting poses: ', starting_poses)
 
@@ -29,7 +27,7 @@ if __name__ == "__main__":
         range_finder = RangeFinder(full_range=10, frequency=0.7)
 
         robot = RobotMDP(robot_id="robot_" + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
-        robot_state = RobotState(pixel_position=starting_pos, orientation=np.random.randint(1, 7))
+        robot_state = RobotState(pixel_position=starting_pos)
 
         robot_team.add_robot(robot)
         robot_states[robot.robot_id] = robot_state

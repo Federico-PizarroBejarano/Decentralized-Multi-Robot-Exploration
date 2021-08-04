@@ -8,67 +8,51 @@ import cPickle as pickle
 
 def plot_grid(grid, plot, robot_states = {}, mode='value'):
     """
-    Plots a given Grid. If a robot_pos is given, will highlight the hexagon the robot is in in red
+    Plots a given Grid. If a robot_pos is given, will highlight the cell the robot is in in red
 
     Parameters
     ----------
     grid (Grid): the grid to be plotted
     plot (matplotlib.axes): a matplotlib axes object to be plotted on
     robot_states (dict): an optional dictionary where the keys are the robot_ids and the values are RobotStates
-    mode (str) = either 'value' to show the value of each hex, 'reward' to show the reward at each hex, 
+    mode (str) = either 'value' to show the value of each cell, 'reward' to show the reward at each cell, 
         'probability' to show the probability of each robot exploring neighboring states, or blank to show nothing
     """
 
     plot.cla()
 
-    all_hexes = grid.all_hexes.values()
+    all_cells = grid.all_cells.values()
     colors_list = ['0.5', '1', '0']
-    coord = [[h.q, h.r, h.s] for h in all_hexes]
-    colors = [colors_list[h.state+1] for h in all_hexes]
+    x_coord = [k[1] for k in all_cells.keys()]
+    y_coord = [k[0] for k in all_cells.keys()]
+    colors = [colors_list[cell.state+1] for cell in all_cells]
 
     rewards = {}
     max_value = -float('inf')
 
     if mode == 'value':
-        for hexagon in all_hexes:
-            if hexagon.V != 0 and hexagon.state == 0:
-                y = 2. * np.sin(np.radians(60)) * (hexagon.r - hexagon.s) / 3.
-                rewards[(hexagon.q, y)] = round(hexagon.V, 1)
-                if abs(round(hexagon.V, 1)) > max_value:
-                    max_value = abs(round(hexagon.V, 1))
+        for cell in all_cells:
+            if cell.V != 0 and cell.state == 0:
+                rewards[(cell.y, cell.x)] = round(cell.V, 1)
+                if abs(round(cell.V, 1)) > max_value:
+                    max_value = abs(round(cell.V, 1))
     elif mode == 'reward':
-        for hexagon in all_hexes:
-            if hexagon.reward != 0:
-                y = 2. * np.sin(np.radians(60)) * (hexagon.r - hexagon.s) / 3.
-                rewards[(hexagon.q, y)] = round(hexagon.reward, 1)
-                if abs(round(hexagon.reward, 1)) > max_value:
-                    max_value = abs(round(hexagon.reward, 1))
+        for cell in all_cells:
+            if cell.reward != 0:
+                rewards[(cell.y, cell.x)] = round(cell.V, 1)
+                if abs(round(cell.reward, 1)) > max_value:
+                    max_value = abs(round(cell.reward, 1))
     if mode == 'probability':
-        for hexagon in all_hexes:
-            if hexagon.probability != 0:
-                y = 2. * np.sin(np.radians(60)) * (hexagon.r - hexagon.s) / 3.
-                rewards[(hexagon.q, y)] = round(hexagon.probability*100, 2)
-                if abs(round(hexagon.probability*100, 2)) > max_value:
-                    max_value = abs(round(hexagon.probability*100, 2))
-
-    # Horizontal cartesian coords
-    hcoord = [c[0] for c in coord]
-
-    # Vertical cartersian coords
-    vcoord = [2. * np.sin(np.radians(60)) * (c[1] - c[2]) / 3. for c in coord]
+        for cell in all_cells:
+            if cell.probability != 0:
+                rewards[(cell.y, cell.x)] = round(cell.V, 1)
+                if abs(round(cell.probability*100, 2)) > max_value:
+                    max_value = abs(round(cell.probability*100, 2))
 
     plot.set_aspect('equal')
 
-    hex_robot_states = {}
-    for robot in robot_states.keys():
-        robot_hex = grid.hex_at(point=robot_states[robot].pixel_position)
-        hex_x = robot_hex.q
-        hex_y = 2.*np.sin(np.radians(60)) * (robot_hex.r - robot_hex.s)/3.
-
-        hex_robot_states[(hex_x, hex_y)] = (robot_states[robot].orientation, robot)
-
-    # Add some coloured hexagons
-    for x, y, c in zip(hcoord, vcoord, colors):  
+    # Add some coloured cells
+    for x, y, c in zip(x_coord, y_coord, colors):  
         alpha = 0.5      
         if (x, y) in rewards:
             # plot.text(x, y, int(round(rewards[(x, y)])), ha='center', va='center', size=8)
@@ -77,33 +61,12 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
                 c = 'green'
             elif rewards[(x, y)] < 0:
                 c = 'red'
-
-        if (x, y) in hex_robot_states:
-            alpha = 1.0
-            c = 'yellow'
-            # plot.text(x, y, hex_robot_states[(x, y)][1][-1], ha='center', va='center', size=8)
-
-            if hex_robot_states[(x, y)][0] == 1:
-                plot.plot(x, y-0.3, 'bo')
-            if hex_robot_states[(x, y)][0] == 2:
-                plot.plot(x-0.25, y-0.15, 'bo')
-            if hex_robot_states[(x, y)][0] == 3:
-                plot.plot(x-0.25, y+0.15, 'bo')
-            if hex_robot_states[(x, y)][0] == 4:
-                plot.plot(x, y+0.3, 'bo')
-            if hex_robot_states[(x, y)][0] == 5:
-                plot.plot(x+0.25, y+0.15, 'bo')
-            if hex_robot_states[(x, y)][0] == 6:
-                plot.plot(x+0.25, y-0.15, 'bo')
+        
+        plt.scatter(x, y, color=c, alpha=alpha)
 
 
-        hexagon = RegularPolygon((x, y), numVertices=6, radius=2./3.,
-                                 orientation=np.radians(30),
-                                 facecolor=c, alpha=alpha, edgecolor='k')
-        plot.add_patch(hexagon)
-
-    plot.set_xlim([min(hcoord)-1, max(hcoord)+1])
-    plot.set_ylim([min(vcoord)-1, max(vcoord)+1])
+    plot.set_xlim()
+    plot.set_ylim()
 
     # legend_elements = [Line2D([0], [0], marker='H', markerfacecolor='1', alpha=0.5, color='k', markersize=15, linewidth=0, label='Free Space'), 
     #                     Line2D([0], [0], marker='H', markerfacecolor='0.5', alpha=0.5, color='k', markersize=15, linewidth=0,label='Unknown Space'),
