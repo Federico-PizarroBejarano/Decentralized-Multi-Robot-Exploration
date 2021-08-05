@@ -21,7 +21,7 @@ def possible_actions(state, grid, robot_states):
 
     poss_actions = []
 
-    y, x = state[0], state[1]
+    y, x = state
     
     if ((y+1, x) in grid.all_cells) and (grid.all_cells[(y+1, x)].state == 0) and ((y+1, x) not in other_robots):
         poss_actions.append(Actions.UP)
@@ -40,6 +40,9 @@ def possible_actions(state, grid, robot_states):
     if ((y-1, x-1) in grid.all_cells) and (grid.all_cells[(y-1, x-1)].state == 0) and ((y-1, x-1) not in other_robots):
         poss_actions.append(Actions.DOWN_LEFT)
     
+    if poss_actions == []:
+        poss_actions.append(Actions.STAY_STILL)
+    
     return poss_actions
 
 
@@ -56,24 +59,26 @@ def get_new_state(state, action):
     -------
     new_state (tuple): tuple of the new state (y, x)
     """
-    y, x = state[0], state[1]
+    y, x = state
     
     if action == Actions.UP:
         new_state = (y+1, x)
-    if action == Actions.DOWN:
+    elif action == Actions.DOWN:
         new_state = (y-1, x)
-    if action == Actions.RIGHT:
+    elif action == Actions.RIGHT:
         new_state = (y, x+1)
-    if action == Actions.LEFT:
+    elif action == Actions.LEFT:
         new_state = (y, x-1)
-    if action == Actions.UP_RIGHT:
+    elif action == Actions.UP_RIGHT:
         new_state = (y+1, x+1)
-    if action == Actions.UP_LEFT:
+    elif action == Actions.UP_LEFT:
         new_state = (y+1, x-1)
-    if action == Actions.DOWN_RIGHT:
+    elif action == Actions.DOWN_RIGHT:
         new_state = (y-1, x+1)
-    if action == Actions.DOWN_LEFT:
+    elif action == Actions.DOWN_LEFT:
         new_state = (y-1, x-1)
+    elif action == Actions.STAY_STILL:
+        new_state = state
     
     return new_state
 
@@ -117,7 +122,7 @@ def solve_MDP(grid, V, rewards, noise, discount_factor, minimum_change, max_iter
         iterations += 1
         
         for state in all_states:
-            if ((state[0], state[1]) != current_state) and ( (grid.all_cells[(state[0], state[1])].state == 1) or (Grid.cell_distance(current_cell, Cell(state[0], state[1])) > horizon) ):
+            if (state != current_state) and ( (grid.all_cells[state].state == 1) or (Grid.cell_distance(current_cell, Cell(state[0], state[1])) > horizon) ):
                 continue
 
             old_value = V[state]
@@ -128,18 +133,17 @@ def solve_MDP(grid, V, rewards, noise, discount_factor, minimum_change, max_iter
 
                 # Choose a random action to do with probability noise
                 random_state = next_state
-                if noise > 0.0:
-                    random_action = np.random.choice([rand_act for rand_act in possible_actions(state=state, grid=grid, robot_states=robot_states) if rand_act != action])
-                    random_state = get_new_state(state, random_action)
+                # if noise > 0.0:
+                #     random_action = np.random.choice([rand_act for rand_act in possible_actions(state=state, grid=grid, robot_states=robot_states) if rand_act != action])
+                #     random_state = get_new_state(state, random_action)
 
-                value = rewards[(state[0], state[1])] + discount_factor * ( ((1 - noise)* V[next_state] + (noise * V[random_state])) - DVF[next_state])
-                
+                value = rewards[state] + discount_factor * ( ((1 - noise)* V[next_state] + (noise * V[random_state])) - DVF[next_state])
                 # Keep best action so far
                 if value > new_value:
                     new_value = value
                     policy[state] = action
 
-            # Save best value                         
+            # Save best value            
             V[state] = new_value
             biggest_change = max(biggest_change, np.abs(old_value - V[state]))
 

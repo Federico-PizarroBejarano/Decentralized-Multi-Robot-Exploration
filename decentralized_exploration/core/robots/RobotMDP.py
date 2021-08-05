@@ -118,7 +118,7 @@ class RobotMDP(AbstractRobot):
                                 grid=self.grid)
 
             for state in self._all_states:
-                DVF[state] +=  self.weighing_factor * self.grid.all_cells[(state[0], state[1])].probability * self._known_robots[robot]['V'][state] + self.weighing_factor**3 * self.grid.all_cells[(state[0], state[1])].probability**2
+                DVF[state] += self.weighing_factor * self.grid.all_cells[state].probability * self._known_robots[robot]['V'][state] + self.weighing_factor**3 * self.grid.all_cells[state].probability**2
         
         for state in self._all_states:
             DVF[state] = abs(DVF[state])

@@ -71,11 +71,11 @@ class RobotTeam:
         """
 
         message = {}
-        robot_position = np.array(world.get_position(robot_id=robot_id))
+        robot_position = world.get_position(robot_id=robot_id)
 
         for robot in self._robots.values():
             if (robot.robot_id != robot_id):
-                other_robot_position = np.array(world.get_position(robot.robot_id))
+                other_robot_position = world.get_position(robot.robot_id)
                 distance = max(abs(robot_position[1]-other_robot_position[1]), abs(robot_position[0]-other_robot_position[0]))
 
                 if distance <= self._communication_range:
@@ -146,18 +146,20 @@ class RobotTeam:
 
         fig2 = plt.figure(2)
         ax1 = fig2.add_subplot(111)
+
+        mode = 'value'
     
-        plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode='reward')
-        plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode='reward')
+        plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
+        plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
         
         plt.pause(0.05)
 
         for robot in self._robots.values():
             robot.scan_environment(world=world)
             self._pixel_map = merge_map(grid=self._grid, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
-            # plot_grid(grid=self._grid, plot=ax1, robot_states=world.robot_states, mode='reward')
-            plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode='reward')
-            plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode='reward')
+            # plot_grid(grid=self._grid, plot=ax1, robot_states=world.robot_states, mode=mode)
+            plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
+            plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
             plt.pause(0.05)
 
         self._grid.propagate_rewards()
@@ -178,9 +180,9 @@ class RobotTeam:
 
             self._grid.propagate_rewards()
 
-            # plot_grid(grid=self._grid, plot=ax1, robot_states=world.robot_states, mode='reward')
-            plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode='reward')
-            plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode='reward')
+            # plot_grid(grid=self._grid, plot=ax1, robot_states=world.robot_states, mode=mode)
+            plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
+            plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
             plt.pause(0.5)
             
             # grid_statistics =  [self._grid.percent_explored(), self._local_interaction(robot_states=world.robot_states), world.get_position('robot_1'), world.get_position('robot_2')]
