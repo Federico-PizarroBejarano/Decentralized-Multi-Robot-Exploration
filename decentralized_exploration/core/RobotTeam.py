@@ -1,6 +1,7 @@
 import numpy as np
 import cPickle as pickle
 import matplotlib.pyplot as plt
+import time
 
 from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
 from decentralized_exploration.helpers.grid import convert_pixelmap_to_grid, merge_map
@@ -14,8 +15,6 @@ class RobotTeam:
     Class Attributes
     ----------------
     local_interaction_dist (float): the maximum pixel distance between robots to be considered
-        a local interaction
-    local_interaction_path_length (int): the maximum path length between robots to be considered
         a local interaction
 
     Instance Attributes
@@ -31,8 +30,7 @@ class RobotTeam:
     """
 
     # Tunable parameter
-    local_interaction_dist = 100.0
-    local_interaction_path_length = 6
+    local_interaction_dist = 4
 
     def __init__(self, world_size, communication_range = float('inf'), blocked_by_obstacles = False):
         self._robots = {}
@@ -88,34 +86,33 @@ class RobotTeam:
         return message
 
 
-    def _local_interaction(self, robot_states):
+    def _local_interaction(self, robot_states, world):
         """
         Checks if any two robots are too close to one another
 
         Parameters
         ----------
         robot_states (dict): a dictionary storing the RobotStates of each robot
+        world (World): the world which contains the positions of every robot
     
         Returns
         -------
         is_local_interaction (bool): whether a local interaction occured
         """
 
+        local_interactions = []
+
         for robot in robot_states.keys():
             for second_robot in robot_states.keys():
-                vector_between_robots = np.array(robot_states[robot].pixel_position) - np.array(robot_states[second_robot].pixel_position)
-                dist_between_robots = np.linalg.norm(vector_between_robots)
+                robot_position = robot_states[robot].pixel_position
+                other_robot_position = robot_states[second_robot].pixel_position
+                dist_between_robots = max(abs(robot_position[1]-other_robot_position[1]), abs(robot_position[0]-other_robot_position[0]))
 
-                if robot != second_robot and dist_between_robots < 1.0:
-                    return True
-                elif robot != second_robot and dist_between_robots < self.local_interaction_dist:
-                    robot_cell = self._grid.all_cells[robot_states[robot].pixel_position]
-                    clear_path = check_distance_to_other_robot(grid=self._grid, robot_states=robot_states.values(), start_cell=robot_cell, max_cell_distance=self.local_interaction_path_length)
-                    
-                    if clear_path:
-                        return True
+                if robot != second_robot and dist_between_robots < self.local_interaction_dist:
+                    if self._blocked_by_obstacles == False or world.clear_path_between_robots(robot1=robot, robot2=second_robot):                 
+                        local_interactions.append((int(robot[-1]), int(second_robot[-1])))
 
-        return False
+        return local_interactions
 
 
     # Public Methods
@@ -141,36 +138,40 @@ class RobotTeam:
         world (World): a World object that the robot will explore
         """
 
-        fig1 = plt.figure(1)
-        ax1 = fig1.add_subplot(111)
+        # fig1 = plt.figure(1)
+        # ax1 = fig1.add_subplot(111)
 
-        fig2 = plt.figure(2)
-        ax2 = fig2.add_subplot(111)
+        # fig2 = plt.figure(2)
+        # ax2 = fig2.add_subplot(111)
 
-        fig3 = plt.figure(3)
-        ax3 = fig3.add_subplot(111)
+        # fig3 = plt.figure(3)
+        # ax3 = fig3.add_subplot(111)
 
-        mode = 'reward'
+        # mode = 'reward'
     
-        plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
-        plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
-        plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
+        # plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
+        # plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
+        # plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
         
-        plt.pause(0.05)
+        # plt.pause(0.05)
+
+        start_time = time.time()
 
         for robot in self._robots.values():
             robot.scan_environment(world=world)
             self._pixel_map = merge_map(grid=self._grid, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
             # plot_grid(grid=self._grid, plot=ax1, robot_states=world.robot_states, mode=mode)
-            plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
-            plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
-            plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
-            plt.pause(0.05)
+            # plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
+            # plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
+            # plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
+            # plt.pause(0.05)
 
         self._grid.propagate_rewards()
 
         iteration = 0
-        # explored_per_iteration = []
+        explored_per_iteration = []
+        distances_travelled = [0, 0, 0]
+        last_positions = [(10000, 10000), (10000, 10000), (10000, 10000)]
 
         while self._grid.has_rewards() and iteration < 1000:
             print("Iteration #", iteration)
@@ -180,23 +181,29 @@ class RobotTeam:
                 robot.communicate(message=message, iteration=iteration)
 
             for robot in self._robots.values():
+                last_positions[int(robot.robot_id[-1])-1] = world.get_position(robot_id=robot.robot_id)
                 robot.explore_1_timestep(world=world, iteration=iteration)
                 self._pixel_map = merge_map(grid=self._grid, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
+                distances_travelled[int(robot.robot_id[-1])-1] += np.linalg.norm(np.array(last_positions[int(robot.robot_id[-1])-1]) - np.array(world.get_position(robot_id=robot.robot_id)))
 
             self._grid.propagate_rewards()
 
+
+
             # plot_grid(grid=self._grid, plot=ax1, robot_states=world.robot_states, mode=mode)
-            plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
-            plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
-            plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
-            plt.pause(0.5)
+            # plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
+            # plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
+            # plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
+            # plt.pause(0.5)
             
-            # grid_statistics =  [self._grid.percent_explored(), self._local_interaction(robot_states=world.robot_states), world.get_position('robot_1'), world.get_position('robot_2')]
-            # explored_per_iteration.append(grid_statistics)
+            grid_statistics =  [self._grid.percent_explored(), self._local_interaction(robot_states=world.robot_states, world=world), distances_travelled, world.get_position('robot_1'), world.get_position('robot_2'), world.get_position('robot_3'), time.time()-start_time]
+            explored_per_iteration.append(grid_statistics)
             
             iteration += 1
 
-        # with open('./decentralized_exploration/results/trajectories/mdp_no_comm.pkl', 'wb') as outfile:
-        #     pickle.dump(explored_per_iteration, outfile, pickle.HIGHEST_PROTOCOL)
+        with open('./decentralized_exploration/results/greedy_1_tl.pkl', 'wb') as outfile:
+            pickle.dump(explored_per_iteration, outfile, pickle.HIGHEST_PROTOCOL)
         
-        plt.close('all')
+        print(explored_per_iteration)
+        
+        # plt.close('all')

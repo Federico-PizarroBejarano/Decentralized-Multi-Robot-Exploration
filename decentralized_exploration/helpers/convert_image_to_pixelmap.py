@@ -29,4 +29,4 @@ def convert_pickle3_to_2(filename):
     with open('./decentralized_exploration/maps/original_pickles/{}.pickle'.format(filename), 'rb') as outfile:
         results = pickle.load(outfile)
 
-    np.save('./decentralized_exploration/maps/new_maps/{}.npy'.format(filename), results)
+    np.save('./decentralized_exploration/maps/{}.npy'.format(filename), results)

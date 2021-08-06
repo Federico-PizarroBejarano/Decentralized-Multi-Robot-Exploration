@@ -12,7 +12,7 @@ def test_grid_creation(I, ax1):
 
 
 def main():
-    I = np.load('./decentralized_exploration/maps/new_maps/test_1.npy')
+    I = np.load('./decentralized_exploration/maps/test_1.npy')
 
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
