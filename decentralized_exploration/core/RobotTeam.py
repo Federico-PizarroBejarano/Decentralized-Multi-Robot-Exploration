@@ -1,5 +1,4 @@
 import numpy as np
-import cPickle as pickle
 import matplotlib.pyplot as plt
 import time
 
@@ -200,10 +199,7 @@ class RobotTeam:
             explored_per_iteration.append(grid_statistics)
             
             iteration += 1
-
-        with open('./decentralized_exploration/results/greedy_1_tl.pkl', 'wb') as outfile:
-            pickle.dump(explored_per_iteration, outfile, pickle.HIGHEST_PROTOCOL)
         
-        print(explored_per_iteration)
+        return explored_per_iteration
         
         # plt.close('all')

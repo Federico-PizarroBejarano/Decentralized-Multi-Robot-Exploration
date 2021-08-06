@@ -12,28 +12,38 @@ from decentralized_exploration.helpers.grid import convert_pixelmap_to_grid
 
 
 if __name__ == "__main__":
-    world_map = np.load('./decentralized_exploration/maps/test_1.npy')
-    completed_grid = convert_pixelmap_to_grid(pixel_map=world_map)
+    all_starting_poses = {  'top_left':[(0, 0), (1, 0), (0, 1)], 
+                            'top_right':[(0, 19), (1, 19), (0, 18)], 
+                            'bottom_left':[(19, 0), (18, 0), (19, 1)], 
+                            'bottom_right':[(19, 19), (18, 19), (19, 18)] }
 
-    num_of_robots = 3
-    robot_team = RobotTeam(world_size=world_map.shape, communication_range=4, blocked_by_obstacles=True)
+    for test in range(1, 11):
+        for starting_poses_key in all_starting_poses.keys():
+            world_map = np.load('./decentralized_exploration/maps/test_{}.npy'.format(test))
+            completed_grid = convert_pixelmap_to_grid(pixel_map=world_map)
 
-    starting_poses = [(0, 0), (1, 0), (0, 1)]
-    print('Starting poses: ', starting_poses)
+            num_of_robots = 3
+            robot_team = RobotTeam(world_size=world_map.shape, communication_range=4, blocked_by_obstacles=True)
 
-    robot_states = {}
+            starting_poses = all_starting_poses[starting_poses_key]
+            print('Starting poses: ', starting_poses)
 
-    for r in range(num_of_robots):
-        starting_pos = starting_poses[r]
-        range_finder = RangeFinder(full_range=10, frequency=0.7)
+            robot_states = {}
 
-        # robot = RobotGreedy(robot_id="robot_" + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
-        robot = RobotMDP(robot_id="robot_" + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
-        robot_state = RobotState(pixel_position=starting_pos)
+            for r in range(num_of_robots):
+                starting_pos = starting_poses[r]
+                range_finder = RangeFinder(full_range=10, frequency=0.7)
 
-        robot_team.add_robot(robot)
-        robot_states[robot.robot_id] = robot_state
+                robot = RobotGreedy(robot_id="robot_" + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
+                # robot = RobotMDP(robot_id="robot_" + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
+                robot_state = RobotState(pixel_position=starting_pos)
 
-    world = World(world_map=world_map, pixel_size=1, robot_states=robot_states)
+                robot_team.add_robot(robot)
+                robot_states[robot.robot_id] = robot_state
 
-    robot_team.explore(world=world)
+            world = World(world_map=world_map, pixel_size=1, robot_states=robot_states)
+
+            data = robot_team.explore(world=world)
+
+            with open('./decentralized_exploration/results/greedy_{}_{}.pkl'.format(test, starting_poses_key), 'wb') as outfile:
+                pickle.dump(data, outfile, pickle.HIGHEST_PROTOCOL)
