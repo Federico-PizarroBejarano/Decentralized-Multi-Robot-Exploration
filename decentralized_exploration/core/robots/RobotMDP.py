@@ -2,7 +2,7 @@ import numpy as np
 
 from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
 from decentralized_exploration.core.constants import Actions
-from decentralized_exploration.helpers.decision_making import get_new_state, solve_MDP, compute_probability, closest_reward, path_between_cells
+from decentralized_exploration.helpers.decision_making import get_new_state, solve_MDP, compute_probability, closest_reward, path_between_cells, max_value, possible_actions
 from decentralized_exploration.helpers.grid import Cell, Grid, merge_map
 
 
@@ -33,8 +33,8 @@ class RobotMDP(AbstractRobot):
     max_iterations = 50
     rho = 0.10
     horizon = 20
-    exploration_horizon = 6
-    weighing_factor = 5.0
+    exploration_horizon = 4
+    weighing_factor = 4.0
 
     def __init__(self, robot_id, range_finder, width, length, world_size):
         super(RobotMDP, self).__init__(robot_id, range_finder, width, length, world_size)
@@ -53,6 +53,7 @@ class RobotMDP(AbstractRobot):
         self._all_states = set(self.grid.all_cells.keys())
         
         self._V = {state : self.grid.all_cells[(state[0], state[1])].reward for state in self._all_states}
+        self._repulsive_V = {state : 0 for state in self._all_states}
     
 
     def _calculate_V(self, current_robot, horizon, robot_states):
@@ -68,12 +69,11 @@ class RobotMDP(AbstractRobot):
         current_cell = self.grid.all_cells[self._known_robots[current_robot]['last_known_position']]
 
         close_robots = [robot_id for (robot_id, robot) in self._known_robots.items() if Grid.cell_distance(self.grid.all_cells[robot['last_known_position']], current_cell) < horizon and robot_id != current_robot]            
-        close_robot_states = [self.grid.all_cells[self._known_robots[robot]['last_known_position']] for robot in close_robots]
-        close_robot_states = [cell_position.coord for cell_position in close_robot_states]
+        close_robot_states = [self._known_robots[robot]['last_known_position'] for robot in close_robots]
 
         initial_repulsive_rewards = { key: self.rho if key in close_robot_states else 0 for key in self.grid.all_cells.keys() }
 
-        self._known_robots[current_robot]['repulsive_V'] = {state : 0 for state in self._all_states}
+        self._known_robots[current_robot]['repulsive_V'] = { key: self.rho if key in close_robot_states else 0 for key in self.grid.all_cells.keys() }
         solve_MDP(self.grid, self._known_robots[current_robot]['repulsive_V'], initial_repulsive_rewards, self.noise, self.discount_factor, self.minimum_change_repulsive, self.max_iterations, horizon, horizon, current_cell, robot_states)
 
         repulsive_reward = { key:0 for key in self.grid.all_cells.keys() }
@@ -121,7 +121,7 @@ class RobotMDP(AbstractRobot):
                                 grid=self.grid)
 
             for state in self._all_states:
-                DVF[state] += self.weighing_factor * self.grid.all_cells[state].probability * self._known_robots[robot]['V'][state] + self.weighing_factor**3 * self.grid.all_cells[state].probability**2
+                DVF[state] += self.weighing_factor * self.grid.all_cells[state].probability * abs(self._known_robots[robot]['V'][state]) + self.weighing_factor**3 * self.grid.all_cells[state].probability**2
         
         for state in self._all_states:
             DVF[state] = abs(DVF[state])
@@ -146,8 +146,13 @@ class RobotMDP(AbstractRobot):
         current_cell = self.grid.all_cells[current_position]
 
         closest_reward_cell, max_path_distance = closest_reward(current_cell=current_cell, grid=self.grid, robot_states=robot_states)[1:]
-        modified_horizon = max(self.horizon, max_path_distance+1)
-        min_iterations = closest_reward_cell.distance_from_start
+        
+        if closest_reward_cell == None:
+            min_iterations = self.max_iterations // 2
+            modified_horizon = self.horizon
+        else:
+            min_iterations = closest_reward_cell.distance_from_start
+            modified_horizon = max(self.horizon, max_path_distance+1)
 
         DVF = self._compute_DVF(current_cell=current_cell, iteration=iteration, horizon=modified_horizon, robot_states=robot_states)
 
@@ -161,13 +166,13 @@ class RobotMDP(AbstractRobot):
         reward_multiplier = max(2, 2*max_DVF/max_reward, 2*cumulative_DVF/cumulative_reward)        
         modified_discount_factor = 1.0 - 80.0/(max(self.horizon, min_iterations)**2.0)
 
-        print('Reward multiplier: {}, Modified gamma: {}'.format(reward_multiplier, modified_discount_factor))
+        # print('Reward multiplier: {}, Modified gamma: {}'.format(reward_multiplier, modified_discount_factor))
 
         self._V = {state : self.grid.all_cells[(state[0], state[1])].reward * reward_multiplier for state in self._all_states}
 
-        policy = solve_MDP(self.grid, self._V, rewards, self.noise, modified_discount_factor, self.minimum_change, self.max_iterations, min_iterations, modified_horizon, current_cell, robot_states, DVF)
+        solve_MDP(self.grid, self._V, rewards, self.noise, modified_discount_factor, self.minimum_change, self.max_iterations, min_iterations, modified_horizon, current_cell, robot_states, DVF)
 
-        action = policy[current_position]
+        action = max_value(self._V, self._grid, current_position, possible_actions(state=current_position, grid=self._grid, robot_states=robot_states))
         next_state = get_new_state(state=current_position, action=action)
 
         if abs(self._V[current_position] - self._V[next_state]) < 0.001:

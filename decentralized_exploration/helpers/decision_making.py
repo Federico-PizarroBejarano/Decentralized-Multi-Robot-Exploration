@@ -128,16 +128,10 @@ def solve_MDP(grid, V, rewards, noise, discount_factor, minimum_change, max_iter
             old_value = V[state]
             new_value = -float('inf')
             
-            for action in possible_actions(state=state, grid=grid, robot_states=robot_states):
+            for action in possible_actions(state=state, grid=grid, robot_states={}):
                 next_state = get_new_state(state, action)
 
-                # Choose a random action to do with probability noise
-                random_state = next_state
-                # if noise > 0.0:
-                #     random_action = np.random.choice([rand_act for rand_act in possible_actions(state=state, grid=grid, robot_states=robot_states) if rand_act != action])
-                #     random_state = get_new_state(state, random_action)
-
-                value = rewards[state] + discount_factor * ( ((1 - noise)* V[next_state] + (noise * V[random_state])) - DVF[next_state])
+                value = rewards[state] + discount_factor * ( V[next_state] - DVF[next_state])
                 # Keep best action so far
                 if value > new_value:
                     new_value = value
@@ -148,6 +142,19 @@ def solve_MDP(grid, V, rewards, noise, discount_factor, minimum_change, max_iter
             biggest_change = max(biggest_change, np.abs(old_value - V[state]))
 
     return policy
+
+
+def max_value(V, grid, current_state, poss_actions):
+    best_V = -float('inf')
+    best_action = None
+
+    for action in poss_actions:
+        new_state = get_new_state(current_state, action)
+        if V[new_state] > best_V:
+            best_V = V[new_state]
+            best_action = action
+    
+    return best_action
 
 
 def compute_probability(start_cell, time_increment, exploration_horizon, grid):

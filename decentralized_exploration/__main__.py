@@ -19,6 +19,7 @@ if __name__ == "__main__":
 
     for test in range(1, 11):
         for starting_poses_key in all_starting_poses.keys():
+            print("test", test, starting_poses_key)
             world_map = np.load('./decentralized_exploration/maps/test_{}.npy'.format(test))
             completed_grid = convert_pixelmap_to_grid(pixel_map=world_map)
 
@@ -34,8 +35,8 @@ if __name__ == "__main__":
                 starting_pos = starting_poses[r]
                 range_finder = RangeFinder(full_range=10, frequency=0.7)
 
-                robot = RobotGreedy(robot_id="robot_" + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
-                # robot = RobotMDP(robot_id="robot_" + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
+                # robot = RobotGreedy(robot_id="robot_" + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
+                robot = RobotMDP(robot_id="robot_" + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
                 robot_state = RobotState(pixel_position=starting_pos)
 
                 robot_team.add_robot(robot)
@@ -45,5 +46,5 @@ if __name__ == "__main__":
 
             data = robot_team.explore(world=world)
 
-            with open('./decentralized_exploration/results/greedy_{}_{}.pkl'.format(test, starting_poses_key), 'wb') as outfile:
+            with open('./decentralized_exploration/results/mdp_{}_{}.pkl'.format(test, starting_poses_key), 'wb') as outfile:
                 pickle.dump(data, outfile, pickle.HIGHEST_PROTOCOL)

@@ -146,7 +146,7 @@ class RobotTeam:
         # fig3 = plt.figure(3)
         # ax3 = fig3.add_subplot(111)
 
-        # mode = 'reward'
+        # mode = 'value'
     
         # plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
         # plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
@@ -172,22 +172,24 @@ class RobotTeam:
         distances_travelled = [0, 0, 0]
         last_positions = [(10000, 10000), (10000, 10000), (10000, 10000)]
 
-        while self._grid.has_rewards() and iteration < 1000:
-            print("Iteration #", iteration)
+        while self._grid.has_rewards():
+            if iteration >= 150:
+                print("TAKING TOO LONG")
+                1/0
+            print("Iteration #", iteration, "  % explored: ", self._grid.percent_explored())
             
             for robot in self._robots.values():
                 message = self._generate_message(robot_id=robot.robot_id,  world=world)
                 robot.communicate(message=message, iteration=iteration)
 
             for robot in self._robots.values():
+                # print(robot.robot_id)
                 last_positions[int(robot.robot_id[-1])-1] = world.get_position(robot_id=robot.robot_id)
                 robot.explore_1_timestep(world=world, iteration=iteration)
                 self._pixel_map = merge_map(grid=self._grid, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
                 distances_travelled[int(robot.robot_id[-1])-1] += np.linalg.norm(np.array(last_positions[int(robot.robot_id[-1])-1]) - np.array(world.get_position(robot_id=robot.robot_id)))
 
             self._grid.propagate_rewards()
-
-
 
             # plot_grid(grid=self._grid, plot=ax1, robot_states=world.robot_states, mode=mode)
             # plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
