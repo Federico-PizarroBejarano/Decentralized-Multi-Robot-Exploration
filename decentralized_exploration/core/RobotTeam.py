@@ -142,15 +142,19 @@ class RobotTeam:
         """
 
         fig1 = plt.figure(1)
-        ax2 = fig1.add_subplot(111)
+        ax1 = fig1.add_subplot(111)
 
         fig2 = plt.figure(2)
-        ax1 = fig2.add_subplot(111)
+        ax2 = fig2.add_subplot(111)
 
-        mode = 'value'
+        fig3 = plt.figure(3)
+        ax3 = fig3.add_subplot(111)
+
+        mode = 'reward'
     
         plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
         plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
+        plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
         
         plt.pause(0.05)
 
@@ -160,6 +164,7 @@ class RobotTeam:
             # plot_grid(grid=self._grid, plot=ax1, robot_states=world.robot_states, mode=mode)
             plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
             plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
+            plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
             plt.pause(0.05)
 
         self._grid.propagate_rewards()
@@ -183,6 +188,7 @@ class RobotTeam:
             # plot_grid(grid=self._grid, plot=ax1, robot_states=world.robot_states, mode=mode)
             plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
             plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
+            plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
             plt.pause(0.5)
             
             # grid_statistics =  [self._grid.percent_explored(), self._local_interaction(robot_states=world.robot_states), world.get_position('robot_1'), world.get_position('robot_2')]

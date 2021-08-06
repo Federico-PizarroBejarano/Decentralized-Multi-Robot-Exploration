@@ -34,7 +34,7 @@ class RobotMDP(AbstractRobot):
     rho = 0.10
     horizon = 20
     exploration_horizon = 6
-    weighing_factor = 20.0
+    weighing_factor = 5.0
 
     def __init__(self, robot_id, range_finder, width, length, world_size):
         super(RobotMDP, self).__init__(robot_id, range_finder, width, length, world_size)
@@ -86,7 +86,10 @@ class RobotMDP(AbstractRobot):
         self._known_robots[current_robot]['V'] = {state : self.grid.all_cells[(state[0], state[1])].reward for state in self._all_states}
 
         closest_reward_cell = closest_reward(current_cell=current_cell, grid=self.grid, robot_states=robot_states)[1]
-        min_iterations = closest_reward_cell.distance_from_start
+        if closest_reward_cell == None:
+            min_iterations = self.max_iterations // 2
+        else:
+            min_iterations = closest_reward_cell.distance_from_start
 
         modified_discount_factor = 1.0 - 80.0/(max(self.horizon, min_iterations)**2.0)
         solve_MDP(self.grid, self._known_robots[current_robot]['V'], rewards, self.noise, modified_discount_factor, self.minimum_change, self.max_iterations, min_iterations, horizon, current_cell, robot_states)
