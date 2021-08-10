@@ -202,6 +202,6 @@ class RobotTeam:
             
             iteration += 1
         
+        plt.close('all')
+
         return explored_per_iteration
-        
-        # plt.close('all')

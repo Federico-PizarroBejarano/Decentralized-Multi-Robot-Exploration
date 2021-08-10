@@ -83,7 +83,7 @@ def get_new_state(state, action):
     return new_state
 
 
-def solve_MDP(grid, V, rewards, noise, discount_factor, minimum_change, max_iterations, min_iterations, horizon, current_cell, robot_states, DVF=None):
+def solve_MDP(grid, V, rewards, noise, discount_factor, minimum_change, max_iterations, min_iterations, horizon, current_cell, robot_states):
     """
     Solves an MDP given the states, rewards, transition function, and actions. 
 
@@ -100,7 +100,6 @@ def solve_MDP(grid, V, rewards, noise, discount_factor, minimum_change, max_iter
     min_iterations (int): the minimum number of iterations before the MDP returns
     horizon (int): how near a state is from the current state to be considered in the MD
     current_cell (Cell): the cell of where the robot currently is
-    DVF (dict): the distributed value function to be subtracted from the value function
 
     Returns
     -------
@@ -113,9 +112,6 @@ def solve_MDP(grid, V, rewards, noise, discount_factor, minimum_change, max_iter
 
     all_states = V.keys()
     current_state = current_cell.coord
-
-    if not DVF:
-        DVF = {key:0 for key in V.keys()}
 
     while (biggest_change >= minimum_change or iterations < max(min_iterations, horizon) + 1) and (iterations < max(min_iterations, horizon, max_iterations) + 1):
         biggest_change = 0
@@ -131,7 +127,8 @@ def solve_MDP(grid, V, rewards, noise, discount_factor, minimum_change, max_iter
             for action in possible_actions(state=state, grid=grid, robot_states={}):
                 next_state = get_new_state(state, action)
 
-                value = rewards[state] + discount_factor * ( V[next_state] - DVF[next_state])
+                value = rewards[state] + discount_factor * V[next_state]
+                
                 # Keep best action so far
                 if value > new_value:
                     new_value = value
