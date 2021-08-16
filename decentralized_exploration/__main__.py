@@ -12,10 +12,12 @@ from decentralized_exploration.helpers.grid import convert_pixelmap_to_grid
 
 
 if __name__ == "__main__":
-    all_starting_poses = {  'top_left':[(0, 0), (1, 0), (0, 1)], 
+    all_starting_poses = {  
+                            'top_left':[(0, 0), (1, 0), (0, 1)], 
                             'top_right':[(0, 19), (1, 19), (0, 18)], 
                             'bottom_left':[(19, 0), (18, 0), (19, 1)], 
-                            'bottom_right':[(19, 19), (18, 19), (19, 18)] }
+                            'bottom_right':[(19, 19), (18, 19), (19, 18)] 
+                        }
 
     for test in range(1, 11):
         for starting_poses_key in all_starting_poses.keys():
