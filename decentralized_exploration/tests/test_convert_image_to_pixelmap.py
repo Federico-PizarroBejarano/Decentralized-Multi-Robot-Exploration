@@ -20,5 +20,5 @@ def main():
     test_convert_image_to_pixelmap(file_path, pixel_map)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

@@ -5,7 +5,7 @@ from decentralized_exploration.helpers.grid import Cell, convert_pixelmap_to_gri
 
 
 class AbstractRobot:
-    """
+    '''
     A class used to represent a single robot
 
     Instance Attributes
@@ -23,7 +23,7 @@ class AbstractRobot:
     Public Methods
     --------------
     explore_1_timestep(world): Explores the world for a single timestep/action. 
-    """
+    '''
 
     __metaclass__ = ABCMeta
 
@@ -61,27 +61,27 @@ class AbstractRobot:
 
     # Private methods
     def _initialize_map(self, world_size):
-        """
+        '''
         Initialized both the internal pixel and grid given the size of the world
 
         Parameters
         ----------
         world_size (tuple): the size of the world map in pixels
-        """
+        '''
 
         self._pixel_map = -np.ones(world_size)
         self._grid = convert_pixelmap_to_grid(pixel_map=self.pixel_map)
 
 
     def _update_map(self, occupied_points, free_points):
-        """
+        '''
         Updates both the internal pixel and grid given lists of occupied and free pixels
 
         Parameters
         ----------
         occupied_points (list of [x, y] points): list of occupied points
         free_points (list of [x, y] points): list of free points
-        """
+        '''
 
         occupied_points = [p for p in occupied_points if self.pixel_map[p[0], p[1]] == -1]
         free_points = [p for p in free_points if self.pixel_map[p[0], p[1]] == -1]
@@ -105,7 +105,7 @@ class AbstractRobot:
 
     @abstractmethod
     def _choose_next_pose(self, current_position, iteration, robot_states):
-        """
+        '''
         Given the current pos, decides on the next best position for the robot. 
         Overriden in each sub-class. 
 
@@ -117,7 +117,7 @@ class AbstractRobot:
         Returns
         -------
         next_state (tuple): tuple of y and x coordinates of the new position
-        """
+        '''
 
         pass
 
@@ -125,14 +125,14 @@ class AbstractRobot:
     # Public Methods
     @abstractmethod
     def communicate(self, message, iteration):
-        """
+        '''
         Communicates with the other robots in the team. Overridden in each sub-class. 
 
         Parameters
         ----------
         message (dict): a dictionary containing the robot position and pixel map of the other robots
         iteration (int): the current iteration
-        """
+        '''
 
         pass
 
@@ -145,14 +145,14 @@ class AbstractRobot:
 
 
     def explore_1_timestep(self, world, iteration):
-        """
+        '''
         Given the world the robot is exploring, explores the area for 1 timestep/action
 
         Parameters
         ----------
         world (World): a World object that the robot will explore
         iteration (int): the current iteration of the algorithm
-        """
+        '''
 
         self._known_robots[self.robot_id]['last_known_position'] = world.get_position(self.robot_id)
         

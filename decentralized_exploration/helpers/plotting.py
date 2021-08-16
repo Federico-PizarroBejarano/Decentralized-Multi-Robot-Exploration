@@ -7,7 +7,7 @@ import cPickle as pickle
 
 
 def plot_grid(grid, plot, robot_states = {}, mode='value'):
-    """
+    '''
     Plots a given Grid. If a robot_pos is given, will highlight the cell the robot is in in red
 
     Parameters
@@ -17,7 +17,7 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
     robot_states (dict): an optional dictionary where the keys are the robot_ids and the values are RobotStates
     mode (str) = either 'value' to show the value of each cell, 'reward' to show the reward at each cell, 
         'probability' to show the probability of each robot exploring neighboring states, or blank to show nothing
-    """
+    '''
 
     plot.cla()
 
@@ -87,7 +87,7 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
 
 
 def plot_map(pixel_map, plot, robot_pos=[]):
-    """
+    '''
     Plots a pixel map
 
     Parameters
@@ -98,7 +98,7 @@ def plot_map(pixel_map, plot, robot_pos=[]):
         1  == occupied
     plot (matplotlib.axes): a matplotlib axes object to be plotted on
     robot_pos (list): an optional 2-element array of pixel coordinates
-    """
+    '''
 
     plot.cla()
 
@@ -110,7 +110,7 @@ def plot_map(pixel_map, plot, robot_pos=[]):
 
 
 def process_one_test(filename):
-    """
+    '''
     Takes the filename of a test and outputs a dictionary of relevant test results
 
     Parameters
@@ -129,7 +129,7 @@ def process_one_test(filename):
         'to_75_pc_std': standard deviation in 'to_75_pc'
         'to_90_pc_std': standard deviation in 'to_90_pc'
         'to_99_pc_std': standard deviation in 'to_99_pc'
-    """
+    '''
 
     with open('./decentralized_exploration/results/{}.pkl'.format(filename), 'rb') as infile:
         results = pickle.load(infile)
@@ -174,9 +174,9 @@ def process_one_test(filename):
 
 
 def plot_local_interactions():
-    """
+    '''
     Plots the average number of local interactions for every test
-    """
+    '''
 
     greedy_filenames = ['greedy', 'greedy_blocked', 'greedy_no_comm']
     mdp_filenames = ['mdp', 'mdp_blocked', 'mdp_no_comm']
@@ -200,9 +200,9 @@ def plot_local_interactions():
 
     ax.bar([1, 2, 4, 5, 6, 8, 9], li, color='steelblue')
 
-    ax.text(0.6, -10, "Full Communication", weight="bold", fontsize=15)
-    ax.text(3.95, -10, "Limited Communication", weight="bold", fontsize=15)
-    ax.text(7.55, -10, "No Communication", weight="bold", fontsize=15)
+    ax.text(0.6, -10, 'Full Communication', weight='bold', fontsize=15)
+    ax.text(3.95, -10, 'Limited Communication', weight='bold', fontsize=15)
+    ax.text(7.55, -10, 'No Communication', weight='bold', fontsize=15)
 
     plt.xticks(range(10), x_axis, fontsize=14)
     ax.set_ylabel('Cumulated Local Interactions\n(# of Iterations)', weight = 'bold', fontsize=17)
@@ -213,9 +213,9 @@ def plot_local_interactions():
 
 
 def plot_computation_time():
-    """
+    '''
     Plots the average computation time for every test
-    """
+    '''
 
     x_axis = ['', 'Greedy', 'MDP', '', 'Greedy', 'MDP', 'MDP - Ind', '', 'Greedy', 'MDP']
 
@@ -225,9 +225,9 @@ def plot_computation_time():
     it_time = np.array([3.464, 8.747, 3.160, 6.241, 6.120, 3.164, 6.074]) - 2.213
     ax.bar([1, 2, 4, 5, 6, 8, 9], it_time, color='plum')
 
-    ax.text(0.6, -0.65, "Full Communication", weight="bold", fontsize=15)
-    ax.text(3.95, -0.65, "Limited Communication", weight="bold", fontsize=15)
-    ax.text(7.55, -0.65, "No Communication", weight="bold", fontsize=15)
+    ax.text(0.6, -0.65, 'Full Communication', weight='bold', fontsize=15)
+    ax.text(3.95, -0.65, 'Limited Communication', weight='bold', fontsize=15)
+    ax.text(7.55, -0.65, 'No Communication', weight='bold', fontsize=15)
 
     plt.xticks(range(10), x_axis, fontsize=14)
     ax.set_ylabel('Computation Time per Iteration (s)', weight='bold', fontsize=17, labelpad=10)
@@ -238,9 +238,9 @@ def plot_computation_time():
 
 
 def plot_variation():
-    """
+    '''
     Plots the average variation in number of local interactions and total mission time for every test
-    """
+    '''
 
     greedy_filenames = ['greedy', 'greedy_blocked', 'greedy_no_comm']
     mdp_filenames = ['mdp', 'mdp_blocked', 'mdp_no_comm']
@@ -267,9 +267,9 @@ def plot_variation():
     ax.bar(np.array([1, 2, 4, 5, 6, 8, 9])+0.2, std_99, width=0.4, color='tomato')
     ax.bar(np.array([1, 2, 4, 5, 6, 8, 9])-0.2, li, width=0.4, color='cornflowerblue')
 
-    ax.text(0.6, -9, "Full Communication", weight="bold", fontsize=15)
-    ax.text(3.95, -9, "Limited Communication", weight="bold", fontsize=15)
-    ax.text(7.55, -9, "No Communication", weight="bold", fontsize=15)
+    ax.text(0.6, -9, 'Full Communication', weight='bold', fontsize=15)
+    ax.text(3.95, -9, 'Limited Communication', weight='bold', fontsize=15)
+    ax.text(7.55, -9, 'No Communication', weight='bold', fontsize=15)
 
     plt.xticks(range(10), x_axis, fontsize=14)
     ax.set_ylabel('Number of Iterations', weight = 'bold', fontsize=17)
@@ -285,9 +285,9 @@ def plot_variation():
 
 
 def plot_exploration_rate():
-    """
+    '''
     Plots the average percent of area explored per number of iterations for every test
-    """
+    '''
 
     files = ['mdp', 'mdp_blocked', 'mdp_ind_blocked', 'mdp_no_comm', 'greedy', 'greedy_blocked', 'greedy_no_comm']
     labels = ['MDP - Full Communication', 'MDP - Limited Communication', 'MDP Ind - Limited Communication', 'MDP - No Communication', 'Greedy - Full Communication', 'Greedy - Limited Communication', 'Greedy - No Communication']
@@ -339,14 +339,14 @@ def plot_exploration_rate():
 
 
 def plot_trajectory(filename, map_file='large_map_4'):
-    """
+    '''
     Plots the trajectories of the two robots in a sample run on the map
 
     Parameters
     ----------
     filename (str): the filename of the sample test run, without the file extension
     map_file (str): the name of the map to be plotted on
-    """
+    '''
 
     pixel_map = np.load('./decentralized_exploration/maps/{}.npy'.format(map_file))
 

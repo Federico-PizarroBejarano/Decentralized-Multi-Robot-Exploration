@@ -5,7 +5,7 @@ from decentralized_exploration.helpers.grid import Cell, Grid
 
 
 def possible_actions(state, grid, robot_states):
-    """
+    '''
     Given a state and the grid, returns all possible actions 
 
     Parameters
@@ -16,7 +16,7 @@ def possible_actions(state, grid, robot_states):
     Returns
     -------
     poss_actions (list): a list of Actions (either up, down, left, right, up_left, up_right, down_left, down_right)
-    """
+    '''
     other_robots = [robot_states[robot].pixel_position for robot in robot_states if robot_states[robot].pixel_position != state]
 
     poss_actions = []
@@ -47,7 +47,7 @@ def possible_actions(state, grid, robot_states):
 
 
 def get_new_state(state, action):
-    """
+    '''
     Given a state and an action, computes the resulting state
 
     Parameters
@@ -58,7 +58,7 @@ def get_new_state(state, action):
     Returns
     -------
     new_state (tuple): tuple of the new state (y, x)
-    """
+    '''
     y, x = state
     
     if action == Actions.UP:
@@ -84,7 +84,7 @@ def get_new_state(state, action):
 
 
 def solve_MDP(grid, V, rewards, noise, discount_factor, minimum_change, max_iterations, min_iterations, horizon, current_cell, robot_states, DVF=None):
-    """
+    '''
     Solves an MDP given the states, rewards, transition function, and actions. 
 
     Parameters
@@ -105,7 +105,7 @@ def solve_MDP(grid, V, rewards, noise, discount_factor, minimum_change, max_iter
     Returns
     -------
     policy (dict): a dictionary containing the optimal action to perform at each state, indexed by state
-    """
+    '''
 
     policy = {}
     biggest_change = float('inf')
@@ -158,7 +158,7 @@ def max_value(V, grid, current_state, poss_actions):
 
 
 def compute_probability(start_cell, time_increment, exploration_horizon, grid):
-    """
+    '''
     Calculates the probability that a robot has moved from start_cell to each other cell in time_increment. 
     Updates this information in the grid
 
@@ -168,7 +168,7 @@ def compute_probability(start_cell, time_increment, exploration_horizon, grid):
     time_increment (int): the number of iterations of the algorithm since the robot was last contacted
     exploration_horizon (int): how far another cell can be and still be considered to be potentially explored
     grid (Grid): the Grid object representing the grid 
-    """
+    '''
 
     for cell in grid.all_cells.values():
         cell.visited = False
@@ -179,7 +179,8 @@ def compute_probability(start_cell, time_increment, exploration_horizon, grid):
 
     neighbours = grid.cell_neighbours(center_cell=start_cell, radius=1)
     for neighbour in neighbours:
-        neighbour.distance_from_start = start_cell.distance_from_start + 1
+        if neighbour.state == 0:
+            neighbour.distance_from_start = start_cell.distance_from_start + 1
 
     cells_to_explore = neighbours
     num_possible_cells = 0
@@ -201,8 +202,132 @@ def compute_probability(start_cell, time_increment, exploration_horizon, grid):
             cell.probability = 1/(num_possible_cells * max(1.0, Grid.cell_distance(start_cell, cell)**0.5))
 
 
+def calculate_utility(current_cell, grid, robot_states):
+    '''
+    '''
+
+    calculate_dist(current_cell, grid)
+    calculate_coord(grid, robot_states)
+
+    max_utility = -float('inf')
+    max_cell = None
+
+    for cell in grid.all_cells.values():
+        cell.utility = cell.norm_reward + cell.norm_dist - cell.coord_factor
+        if cell.reward > 0 and cell.utility > max_utility:
+            max_utility = cell.utility
+            max_cell = cell
+    
+    return max_cell
+
+
+def calculate_dist(current_cell, grid):
+    '''
+    '''
+
+    alpha = 4
+    beta = 2
+
+    min_dist = float('inf')
+    max_dist = 0
+    max_reward = 0
+
+    for cell in grid.all_cells.values():
+        cell.visited = False
+        cell.distance_from_start = float('inf')
+        
+    current_cell.visited = True
+    current_cell.distance_from_start = 0
+
+    if current_cell.reward > 0:
+        min_dist = 0
+        max_reward = current_cell.reward
+
+    neighbours = grid.cell_neighbours(center_cell=current_cell, radius=1)
+
+    for neighbour in neighbours:
+        if neighbour.state == 0:
+            if neighbour.reward > 0:
+                min_dist = min(min_dist, 1)
+                max_dist = max(max_dist, 1)
+                max_reward = max(max_reward, neighbour.reward)
+            
+            neighbour.distance_from_start = current_cell.distance_from_start + 1
+
+    cells_to_explore = neighbours
+
+    while(len(cells_to_explore) != 0):
+        curr_cell = cells_to_explore.pop(0)
+        if curr_cell.state == 0 and curr_cell.visited == False:
+            curr_cell.visited = True
+            if curr_cell.reward > 0:
+                min_dist = min(min_dist, curr_cell.distance_from_start)
+                max_dist = max(max_dist, curr_cell.distance_from_start)
+                max_reward = max(max_reward, curr_cell.reward)
+
+            new_neighbours = grid.cell_neighbours(center_cell=curr_cell, radius=1)
+            for neighbour in new_neighbours:
+                if curr_cell.distance_from_start + 1 < neighbour.distance_from_start and neighbour.state == 0:
+                    neighbour.distance_from_start = curr_cell.distance_from_start + 1
+                    cells_to_explore.append(neighbour)
+    
+    for cell in grid.all_cells.values():
+        cell.dist = float(cell.distance_from_start - min_dist)/float(max_dist - min_dist)
+        cell.norm_dist = (cell.dist)**(alpha-1) * (1-cell.dist)**(beta-1)
+        cell.norm_reward = float(cell.reward)/float(max_reward)
+
+
+
+def calculate_coord(grid, robot_states):
+    '''
+    '''
+
+    max_coord = 0
+
+    for cell in grid.all_cells.values():
+        cell.coord_factor = 0
+        
+    for robot in robot_states:
+        max_dist = 0
+
+        for cell in grid.all_cells.values():
+            cell.visited = False
+            cell.distance_from_start = float('inf')
+
+        current_cell = grid.all_cells[robot_states[robot]]
+        current_cell.visited = True
+        current_cell.distance_from_start = 0
+
+        neighbours = grid.cell_neighbours(center_cell=current_cell, radius=1)
+        for neighbour in neighbours:
+            if neighbour.state == 0:
+                max_dist = max(max_dist, 1)
+                neighbour.distance_from_start = current_cell.distance_from_start + 1
+
+        cells_to_explore = neighbours
+
+        while(len(cells_to_explore) != 0):
+            curr_cell = cells_to_explore.pop(0)
+            if curr_cell.state == 0 and curr_cell.visited == False:
+                curr_cell.visited = True
+                max_dist = max(max_dist, curr_cell.distance_from_start)
+
+                new_neighbours = grid.cell_neighbours(center_cell=curr_cell, radius=1)
+                for neighbour in new_neighbours:
+                    if curr_cell.distance_from_start + 1 < neighbour.distance_from_start and neighbour.state == 0:
+                        neighbour.distance_from_start = curr_cell.distance_from_start + 1
+                        cells_to_explore.append(neighbour)
+        
+        for cell in grid.all_cells.values():
+            cell.coord_factor += float(max_dist - cell.distance_from_start)/float(max_dist)
+            max_coord = max(cell.coord_factor, max_coord)
+
+    for cell in grid.all_cells.values():
+        cell.coord_factor = float(cell.coord_factor) / float(max_coord)
+
+
 def closest_reward(current_cell, grid, robot_states):
-    """
+    '''
     Uses breadth first search to find the nearest free Cell with a reward.
 
     Parameters
@@ -217,7 +342,7 @@ def closest_reward(current_cell, grid, robot_states):
     reward_cell (Cell): the closest Cell that has a reward
     max_distance (int): the largest distance between the current_cell and a cell 
         in the path to the reward_cell. Used to calculate the necessary horizon
-    """
+    '''
 
     other_robots = [robot_states[robot].pixel_position for robot in robot_states if robot_states[robot].pixel_position != current_cell.coord]
 
@@ -231,8 +356,9 @@ def closest_reward(current_cell, grid, robot_states):
 
     neighbours = grid.cell_neighbours(center_cell=current_cell, radius=1)
     for neighbour in neighbours:
-        neighbour.distance_from_start = current_cell.distance_from_start + 1
-        neighbour.previous_cell = current_cell
+        if neighbour.state == 0:
+            neighbour.distance_from_start = current_cell.distance_from_start + 1
+            neighbour.previous_cell = current_cell
 
     cells_to_explore = neighbours
 
@@ -258,7 +384,7 @@ def closest_reward(current_cell, grid, robot_states):
 
 
 def path_between_cells(current_cell, goal_cell, grid, robot_states):
-    """
+    '''
     Uses breadth first search to find the nearest free Cell with a reward.
 
     Parameters
@@ -271,7 +397,7 @@ def path_between_cells(current_cell, goal_cell, grid, robot_states):
     -------
     next_state (tuple): the next state the robot should go to as a tuple of 
         y and x coordinates of the new position
-    """
+    '''
 
     other_robots = [robot_states[robot].pixel_position for robot in robot_states if robot_states[robot].pixel_position != current_cell.coord]
 
@@ -285,8 +411,9 @@ def path_between_cells(current_cell, goal_cell, grid, robot_states):
 
     neighbours = grid.cell_neighbours(center_cell=current_cell, radius=1)
     for neighbour in neighbours:
-        neighbour.distance_from_start = current_cell.distance_from_start + 1
-        neighbour.previous_cell = current_cell
+        if neighbour.state == 0:
+            neighbour.distance_from_start = current_cell.distance_from_start + 1
+            neighbour.previous_cell = current_cell
 
     cells_to_explore = neighbours
 
@@ -308,7 +435,7 @@ def path_between_cells(current_cell, goal_cell, grid, robot_states):
     
 
 def check_distance_to_other_robot(grid, robot_states, start_cell, max_cell_distance):
-    """
+    '''
     Checks if there is another robot within the max_cell_distance of the start_cell
 
     Parameters
@@ -321,7 +448,7 @@ def check_distance_to_other_robot(grid, robot_states, start_cell, max_cell_dista
     Returns
     -------
     is_local_interaction (bool): whether a local interaction occured
-    """
+    '''
 
     robot_cells = [robot.pixel_position for robot in robot_states]
 
@@ -334,7 +461,8 @@ def check_distance_to_other_robot(grid, robot_states, start_cell, max_cell_dista
 
     neighbours = grid.cell_neighbours(center_cell=start_cell, radius=1)
     for neighbour in neighbours:
-        neighbour.distance_from_start = start_cell.distance_from_start + 1
+        if neighbour.state == 0:
+            neighbour.distance_from_start = start_cell.distance_from_start + 1
 
     cells_to_explore = neighbours
 

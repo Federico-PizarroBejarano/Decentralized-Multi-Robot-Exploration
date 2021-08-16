@@ -5,7 +5,7 @@ from ..helpers.grid import Grid
 
 
 def field_of_view(world_map, robot_pos):
-    """
+    '''
     Given a world map and the position of the robot, returns all free and occupied pixels in its field of view
 
     Parameters
@@ -19,7 +19,7 @@ def field_of_view(world_map, robot_pos):
     -------
     all_free_points (list): a list of pixel coordinates representing free points
     all_occupied_points (list): a list of pixel coordinates representing occupied points
-    """
+    '''
 
     world_size = world_map.shape
     radius = Grid.radius
@@ -50,7 +50,7 @@ def field_of_view(world_map, robot_pos):
 
 
 def bresenham(start, end, world_map=np.array([])):
-    """
+    '''
     Given a world map, a starting pixel coordinate, and an end pixel coordinate returns all pixels 
     in line of sight using bresenham's algorithm
 
@@ -66,7 +66,7 @@ def bresenham(start, end, world_map=np.array([])):
     -------
     points (list): a list of pixel coordinates representing line of sight, with the last pixel being 
         occupied and all others being free
-    """
+    '''
 
     # Setup initial conditions
     x1, y1 = start

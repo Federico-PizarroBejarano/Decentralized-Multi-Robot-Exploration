@@ -2,7 +2,7 @@ import math
 import numpy as np
 
 class Cell:
-    """
+    '''
     A class used to represent a cell in the grid layer
 
     Instance Attributes
@@ -21,7 +21,7 @@ class Cell:
     --------------
     update_cell(nUnknown = 0, nFree = 0, nOccupied = 0): updates the number of unknown, free, 
         and occupied pixels
-    """
+    '''
 
     # Starting value for nOccupied should not be 0
     def __init__(self, y, x, state=0, reward=0.0):
@@ -34,6 +34,11 @@ class Cell:
         self.distance_from_start = float('inf')
         self.visited = False
         self.previous_cell = None
+        self.dist = 0
+        self.norm_dist = 0
+        self.norm_reward = 0
+        self.coord_factor = 0
+        self.utility = 0
     
     @property
     def coord(self):
@@ -41,19 +46,19 @@ class Cell:
     
     # Public Methods
     def update_cell(self, state):
-        """
+        '''
         Updates the cell with changes to the number of unknown, free, and occupied pixels
 
         Parameters
         ----------
         state (int): the new state of the cell
-        """
+        '''
 
         self.state = int(state)
 
 
 class Grid():
-    """
+    '''
     A class used to represent a grid (represented as an dictionary of Cell objects)
 
     Class Attributes
@@ -77,7 +82,7 @@ class Grid():
     propagate_rewards(): updates the reward of every cell
     clear_path(start_cell, end_cell): returns whether there is a clear pixel path between two cell
     find_closest_unknown(center_cell): returns the closest cell that is unknown
-    """
+    '''
 
     radius = 4
 
@@ -87,7 +92,7 @@ class Grid():
     # Static Methods
     @staticmethod
     def cell_distance(start_cell, end_cell):
-        """
+        '''
         Takes two cells and returns the distance between them as an integer
 
         Parameters
@@ -98,7 +103,7 @@ class Grid():
         Returns
         -------
         distance (int): a integer representing the Cell distance between two cells
-        """
+        '''
 
         s_y, s_x = start_cell.coord
         e_y, e_x = end_cell.coord
@@ -108,25 +113,25 @@ class Grid():
 
     # Public Instance Methods
     def add_cell(self, new_cell):
-        """
+        '''
         Adds a Cell with given axial coordinates into all_cells.
 
         Parameters
         ----------
         new_cell (Cell): a Cell object with axial coordinates
-        """
+        '''
         
         self.all_cells[new_cell.coord] = new_cell
         
 
     def has_rewards(self):
-        """
+        '''
         Checks whether there are cells left to explore 
 
         Returns
         -------
         has_rewards (bool): True if there are cells with rewadrs in all_cells, False otherwise
-        """
+        '''
 
         for cell in self.all_cells.values():
             if cell.reward > 0:
@@ -135,13 +140,13 @@ class Grid():
         return False
     
     def percent_explored(self):
-        """
+        '''
         Returns the percentage of cells that are explored
 
         Returns
         -------
         percent_explored (float): percentage (0-1) of cells explored
-        """
+        '''
         total_cells = len(self.all_cells.values())
         num_unknown = 0.0
         
@@ -152,7 +157,7 @@ class Grid():
         return 1.0 - num_unknown/total_cells
 
     def cell_neighbours(self, center_cell, radius=1):
-        """
+        '''
         Returns list of neighbours of a given Cell within a specified radius
 
         Parameters
@@ -163,20 +168,20 @@ class Grid():
         Returns
         -------
         neighbours (list): a list of Cell objects
-        """
+        '''
 
         neighbours = []
 
         for y in range(-radius, radius+1):
             for x in range(-radius, radius+1):
-                if (center_cell.y + y, center_cell.x + x) in self.all_cells:
+                if (center_cell.y + y, center_cell.x + x) in self.all_cells and (y != 0 or x != 0):
                     neighbour = self.all_cells[(center_cell.y + y, center_cell.x + x)]
                     neighbours.append(neighbour)
 
         return neighbours
 
     def clear_path(self, start_cell, end_cell):
-        """
+        '''
         Determines if the direct linear path between two cells is completely clear (all free)
         
         Parameters
@@ -187,7 +192,7 @@ class Grid():
         Returns
         -------
         clear (bool): True if clear, False otherwise
-        """
+        '''
 
         from ..helpers.field_of_view import bresenham
 
@@ -199,9 +204,9 @@ class Grid():
         return True
 
     def propagate_rewards(self, radius=1):
-        """
+        '''
         Clears the reward from all cells and then re-calculates the reward  at every cell
-        """
+        '''
 
         for cell in self.all_cells.values():
             cell.reward = 0
@@ -216,7 +221,7 @@ class Grid():
 
     
     def find_closest_unknown(self, center_cell):
-        """
+        '''
         If the given cell has a reward, returns one of the unknown cells providing the reward
 
         Parameters
@@ -226,7 +231,7 @@ class Grid():
         Returns
         -------
         unknown_cell (Cell): a Cell representing the neighbouring unknown cell, None if center_cell has no reward
-        """
+        '''
 
         if center_cell.reward == 0:
             return None
@@ -239,7 +244,7 @@ class Grid():
 
 
 def convert_pixelmap_to_grid(pixel_map):
-    """
+    '''
     Converts an image (represented as a numpy.ndarray) into a grid
 
     Parameters
@@ -252,7 +257,7 @@ def convert_pixelmap_to_grid(pixel_map):
     Returns
     -------
     grid (Grid): a Grid object representing the map
-    """
+    '''
 
     grid = Grid()
 
@@ -260,14 +265,13 @@ def convert_pixelmap_to_grid(pixel_map):
         for x in range(pixel_map.shape[1]):
             cell = Cell(y, x)
             cell.update_cell(state=int(pixel_map[y][x]))
-
             grid.add_cell(new_cell=cell)
 
     return grid
 
 
 def merge_map(grid, pixel_map, pixel_map_to_merge):
-    """
+    '''
     Merges the current pixel_map with another pixel map.
 
     Parameters
@@ -279,7 +283,7 @@ def merge_map(grid, pixel_map, pixel_map_to_merge):
     Returns
     -------
     pixel_map (numpy.ndarray): the updated pixel_map
-    """
+    '''
 
     for y in range(pixel_map.shape[0]):
         for x in range(pixel_map.shape[1]):

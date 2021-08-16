@@ -7,7 +7,7 @@ from decentralized_exploration.helpers.grid import Cell, Grid, merge_map
 
 
 class RobotMDP(AbstractRobot):
-    """
+    '''
     A class used to represent a single robot
 
     Class Attributes
@@ -23,7 +23,7 @@ class RobotMDP(AbstractRobot):
     exploration_horizon (int): how near a state is from another robot to be considered a possible future location
         when calculating probability
     weighing_factor (float): weighs the effect of the DVF on the final MDP
-    """
+    '''
 
     # Tunable Parameters
     discount_factor = 0.8
@@ -46,25 +46,25 @@ class RobotMDP(AbstractRobot):
 
     # Private methods
     def _initialize_values(self):
-        """
+        '''
         Initializes the set of states and the initial value function of the robot
-        """
+        '''
 
         self._all_states = set(self.grid.all_cells.keys())
         
-        self._V = {state : self.grid.all_cells[(state[0], state[1])].reward for state in self._all_states}
+        self._V = {state : self.grid.all_cells[state].reward for state in self._all_states}
         self._repulsive_V = {state : 0 for state in self._all_states}
     
 
     def _calculate_V(self, current_robot, horizon, robot_states):
-        """
+        '''
         Calculates the probable value function for another robot
 
         Parameters
         ----------
         current_robot (str): the robot_id of the robot whose value function will be estimated
         horizon (int): how near a state is from the current state to be considered in the MDP
-        """
+        '''
 
         current_cell = self.grid.all_cells[self._known_robots[current_robot]['last_known_position']]
 
@@ -79,11 +79,11 @@ class RobotMDP(AbstractRobot):
         repulsive_reward = { key:0 for key in self.grid.all_cells.keys() }
     
         for state in self._all_states:
-            repulsive_reward[(state[0], state[1])] += self._known_robots[current_robot]['repulsive_V'][state]
+            repulsive_reward[state] += self._known_robots[current_robot]['repulsive_V'][state]
 
         rewards = { key:cell.reward - repulsive_reward[key] for (key, cell) in self.grid.all_cells.items() }
 
-        self._known_robots[current_robot]['V'] = {state : self.grid.all_cells[(state[0], state[1])].reward for state in self._all_states}
+        self._known_robots[current_robot]['V'] = {state : self.grid.all_cells[state].reward for state in self._all_states}
 
         closest_reward_cell = closest_reward(current_cell=current_cell, grid=self.grid, robot_states=robot_states)[1]
         if closest_reward_cell == None:
@@ -96,7 +96,7 @@ class RobotMDP(AbstractRobot):
 
 
     def _compute_DVF(self, current_cell, iteration, horizon, robot_states):
-        """
+        '''
         Updates the repulsive value at each state. This is then used in _choose_next_pose to avoid other robots
 
         Parameters
@@ -104,7 +104,7 @@ class RobotMDP(AbstractRobot):
         current_position (tuple): tuple of integer pixel coordinates
         iteration (int): the current iteration of the algorithm
         horizon (int): how near a state is from the current state to be considered in the MDP
-        """
+        '''
 
         close_robots = [robot_id for (robot_id, robot) in self._known_robots.items() if Grid.cell_distance(self.grid.all_cells[robot['last_known_position']], current_cell) < horizon and robot_id != self.robot_id]
 
@@ -130,7 +130,7 @@ class RobotMDP(AbstractRobot):
 
 
     def _choose_next_pose(self, current_position, iteration, robot_states):
-        """
+        '''
         Given the current pos, decides on the next best position for the robot
 
         Parameters
@@ -141,7 +141,7 @@ class RobotMDP(AbstractRobot):
         Returns
         -------
         next_state (tuple): tuple of q and r coordinates of the new position
-        """
+        '''
 
         current_cell = self.grid.all_cells[current_position]
 
@@ -168,7 +168,7 @@ class RobotMDP(AbstractRobot):
 
         # print('Reward multiplier: {}, Modified gamma: {}'.format(reward_multiplier, modified_discount_factor))
 
-        self._V = {state : self.grid.all_cells[(state[0], state[1])].reward * reward_multiplier for state in self._all_states}
+        self._V = {state : self.grid.all_cells[state].reward * reward_multiplier for state in self._all_states}
 
         solve_MDP(self.grid, self._V, rewards, self.noise, modified_discount_factor, self.minimum_change, self.max_iterations, min_iterations, modified_horizon, current_cell, robot_states, DVF)
 
@@ -189,18 +189,18 @@ class RobotMDP(AbstractRobot):
         
         # Plotting
         for state in self._all_states:
-            self.grid.all_cells[(state[0], state[1])].V = 0
+            self.grid.all_cells[state].V = 0
 
         for state in self._all_states:
             if Grid.cell_distance(current_cell, Cell(state[0], state[1])) < modified_horizon + 1:
-                self.grid.all_cells[(state[0], state[1])].V += self._V[state]
+                self.grid.all_cells[state].V += self._V[state]
 
         return next_state
 
 
     # Public Methods
     def communicate(self, message, iteration):
-        """
+        '''
         Communicates with the other robots in the team. Receives a message and updates the 
         last known position and last updated time of every robot that transmitted a message. 
         Additionally, merges in all their pixel maps.
@@ -209,12 +209,12 @@ class RobotMDP(AbstractRobot):
         ----------
         message (dict): a dictionary containing the robot position and pixel map of the other robots
         iteration (int): the current iteration
-        """
+        '''
 
         for robot_id in message:
             if robot_id not in self._known_robots:
                 self._known_robots[robot_id] = {
-                    'V': {state : self.grid.all_cells[(state[0], state[1])].reward for state in self._all_states},
+                    'V': {state : self.grid.all_cells[state].reward for state in self._all_states},
                     'repulsive_V': {state : 0 for state in self._all_states}
                 }
             

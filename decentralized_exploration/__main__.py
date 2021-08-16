@@ -11,7 +11,7 @@ from decentralized_exploration.helpers.RobotState import RobotState
 from decentralized_exploration.helpers.grid import convert_pixelmap_to_grid
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     all_starting_poses = {  
                             'top_left':[(0, 0), (1, 0), (0, 1)], 
                             'top_right':[(0, 19), (1, 19), (0, 18)], 
@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     for test in range(1, 11):
         for starting_poses_key in all_starting_poses.keys():
-            print("test", test, starting_poses_key)
+            print('test', test, starting_poses_key)
             world_map = np.load('./decentralized_exploration/maps/test_{}.npy'.format(test))
             completed_grid = convert_pixelmap_to_grid(pixel_map=world_map)
 
@@ -37,8 +37,8 @@ if __name__ == "__main__":
                 starting_pos = starting_poses[r]
                 range_finder = RangeFinder(full_range=10, frequency=0.7)
 
-                # robot = RobotGreedy(robot_id="robot_" + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
-                robot = RobotMDP(robot_id="robot_" + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
+                # robot = RobotGreedy(robot_id='robot_' + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
+                robot = RobotMDP(robot_id='robot_' + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
                 robot_state = RobotState(pixel_position=starting_pos)
 
                 robot_team.add_robot(robot)

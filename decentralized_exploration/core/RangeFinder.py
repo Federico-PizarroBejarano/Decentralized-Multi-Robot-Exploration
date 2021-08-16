@@ -3,7 +3,7 @@ from decentralized_exploration.helpers.field_of_view import field_of_view
 
 
 class RangeFinder:
-    """
+    '''
     A class used to represent a range_finder of any kind
 
     Instance Attributes
@@ -14,7 +14,7 @@ class RangeFinder:
     Public Methods
     --------------
     scan(world): object to scans the given world
-    """
+    '''
 
     def __init__(self, full_range, frequency):
         self._full_range = full_range
@@ -30,7 +30,7 @@ class RangeFinder:
 
     # Public Methods
     def scan(self, world, position):
-        """
+        '''
         Scans the given world
 
         Parameters
@@ -42,6 +42,6 @@ class RangeFinder:
         -------
         all_free_points (list): a list of pixel coordinates representing free points
         all_occupied_points (list): a list of pixel coordinates representing occupied points
-        """
+        '''
 
         return field_of_view(world_map=world.world_map, robot_pos=position)

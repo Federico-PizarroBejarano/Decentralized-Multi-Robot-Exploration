@@ -3,7 +3,7 @@ import numpy as np
 from decentralized_exploration.helpers.field_of_view import bresenham
 
 class World:
-    """
+    '''
     A class used to represent a single robot
 
     Instance Attributes
@@ -21,7 +21,7 @@ class World:
     clear_path_between_robots(self, robot1, robot2): returns True if the path between two robots is 
         composed entirely of free pixels
     move_robot(robot_id, new_position): Updates the robot position of the robot with the specified robot_id
-    """
+    '''
 
     def __init__(self, world_map, pixel_size, robot_states):
         self._map = world_map
@@ -42,7 +42,7 @@ class World:
 
     # Public Methods
     def get_position(self, robot_id):
-        """
+        '''
         Returns the pixel position of the robot with the given robot_id
 
         Parameters
@@ -52,13 +52,13 @@ class World:
         Returns
         -------
         position (list): a 2-element list of integer pixel coordinates
-        """
+        '''
 
         return self._robot_states[robot_id].pixel_position
 
     
     def clear_path_between_robots(self, robot1, robot2):
-        """
+        '''
         Returns True if the path between two robots is composed entirely of free pixels
 
         Parameters
@@ -69,7 +69,7 @@ class World:
         Returns
         -------
         clear_path (bool): True is the line between the two robots is unoccupied, False otherwise
-        """
+        '''
         
         robot1_pos = self.get_position(robot1)
         robot2_pos = self.get_position(robot2)
@@ -86,13 +86,13 @@ class World:
 
 
     def move_robot(self, robot_id, new_position):
-        """
+        '''
         Updates the position for a robot with the given robot_id
 
         Parameters
         ----------
         robot_id (str): the id of the desired robot
         new_position (list): a 2-element list of integer pixel coordinates
-        """
+        '''
 
         self._robot_states[robot_id].pixel_position = new_position

@@ -1,12 +1,12 @@
 from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
 from decentralized_exploration.core.constants import Actions
-from decentralized_exploration.helpers.decision_making import get_new_state, closest_reward, path_between_cells
+from decentralized_exploration.helpers.decision_making import get_new_state, closest_reward, path_between_cells, calculate_utility
 from decentralized_exploration.helpers.grid import Cell, merge_map
 
 
-class RobotGreedy(AbstractRobot):
+class RobotUtility(AbstractRobot):
     def __init__(self, robot_id, range_finder, width, length, world_size):
-        super(RobotGreedy, self).__init__(robot_id, range_finder, width, length, world_size)
+        super(RobotUtility, self).__init__(robot_id, range_finder, width, length, world_size)
 
 
     # Private Methods
@@ -26,7 +26,10 @@ class RobotGreedy(AbstractRobot):
 
         current_cell = self.grid.all_cells[current_position]
         
-        goal_position = closest_reward(current_cell=current_cell, grid=self.grid, robot_states=robot_states)[0]
+        robots_in_sight = [robot_id for robot_id in self._known_robots.keys() if self._known_robots[robot_id]['last_updated'] == iteration]
+        robot_states_in_sight = [robot_states[robot_id] for robot_id in robot_states.keys() if robot_id in robots_in_sight]
+
+        goal_position = calculate_utility(current_cell=current_cell, grid=self.grid, robot_states=robot_states_in_sight)
 
         # All rewards have been found
         if goal_position == None:

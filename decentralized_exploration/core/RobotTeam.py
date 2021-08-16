@@ -8,7 +8,7 @@ from decentralized_exploration.helpers.decision_making import check_distance_to_
 from decentralized_exploration.helpers.plotting import plot_grid
 
 class RobotTeam:
-    """
+    '''
     A class used to represent a team of robots
     
     Class Attributes
@@ -26,7 +26,7 @@ class RobotTeam:
     --------------
     add_robot(robot): adds a Robot to the team
     explore(world):  given the world the robot is exploring, iteratively explores the area
-    """
+    '''
 
     # Tunable parameter
     local_interaction_dist = 4
@@ -40,20 +40,20 @@ class RobotTeam:
 
     # Private Methods
     def _initialize_map(self, world_size):
-        """
+        '''
         Initialized both the internal pixel and cell maps given the size of the world
 
         Parameters
         ----------
         world_size (tuple): the size of the world map in pixels
-        """
+        '''
 
         self._pixel_map = -np.ones(world_size)
         self._grid = convert_pixelmap_to_grid(pixel_map=self._pixel_map)
 
 
     def _generate_message(self, robot_id, world):
-        """
+        '''
         Generates the message that a given robot with robot_id will receive
 
         Parameters
@@ -65,7 +65,7 @@ class RobotTeam:
         -------
         message (dict): a dictionary of robot positions and pixel maps for each robot, 
             indexed by their robot_ids
-        """
+        '''
 
         message = {}
         robot_position = world.get_position(robot_id=robot_id)
@@ -86,7 +86,7 @@ class RobotTeam:
 
 
     def _local_interaction(self, robot_states, world):
-        """
+        '''
         Checks if any two robots are too close to one another
 
         Parameters
@@ -97,7 +97,7 @@ class RobotTeam:
         Returns
         -------
         is_local_interaction (bool): whether a local interaction occured
-        """
+        '''
 
         local_interactions = []
 
@@ -116,26 +116,26 @@ class RobotTeam:
 
     # Public Methods
     def add_robot(self, robot):
-        """
+        '''
         Adds a new robot to the team if it is not already in the team
 
         Parameters
         ----------
         robot (Robot): the robot to be added
-        """
+        '''
 
         if robot.robot_id not in self._robots:
             self._robots[robot.robot_id] = robot
 
 
     def explore(self, world):
-        """
+        '''
         Given the world the robot is exploring, iteratively explores the area with the whole team
 
         Parameters
         ----------
         world (World): a World object that the robot will explore
-        """
+        '''
 
         # fig1 = plt.figure(1)
         # ax1 = fig1.add_subplot(111)
@@ -174,9 +174,9 @@ class RobotTeam:
 
         while self._grid.has_rewards():
             if iteration >= 150:
-                print("TAKING TOO LONG")
+                print('TAKING TOO LONG')
                 1/0
-            print("Iteration #", iteration, "  % explored: ", self._grid.percent_explored())
+            print('Iteration #', iteration, '  % explored: ', self._grid.percent_explored())
             
             for robot in self._robots.values():
                 message = self._generate_message(robot_id=robot.robot_id,  world=world)

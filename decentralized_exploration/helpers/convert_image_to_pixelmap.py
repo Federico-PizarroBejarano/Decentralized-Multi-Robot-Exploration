@@ -4,7 +4,7 @@ import numpy as np
 
 
 def convert_image_to_pixelmap(file_path):
-    """
+    '''
     Converts an image file into a numpy array of pixel intensities representing free 
     and occupied space returns it
 
@@ -17,7 +17,7 @@ def convert_image_to_pixelmap(file_path):
     pixel_map (numpy.ndarray): numpy array of pixels representing the map. 
         0  == free
         1  == occupied
-    """
+    '''
 
     pixel_map = imread(file_path, as_gray=True)
     pixel_map[pixel_map < 128] = 1
