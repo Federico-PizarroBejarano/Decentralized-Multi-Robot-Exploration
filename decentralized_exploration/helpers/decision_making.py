@@ -258,10 +258,13 @@ def compute_probability(start_cell, time_increment, exploration_horizon, grid):
                     
     for cell in grid.all_cells.values():
         if cell.visited:
-            cell.probability = 1/(num_possible_cells * max(1.0, Grid.cell_distance(start_cell, cell)**0.5))
+            if num_possible_cells > 0:
+                cell.probability = 1/(num_possible_cells * max(1.0, Grid.cell_distance(start_cell, cell)**0.5))
+            else:
+                cell.probability = 1.0
 
 
-def calculate_utility(current_cell, grid, robot_states, alpha=1, beta=1):
+def calculate_utility(current_cell, grid, robot_in_sight, all_robots, alpha=1, beta=1):
     '''
     Calculates the utility metric of each reward cell.
 
@@ -278,8 +281,8 @@ def calculate_utility(current_cell, grid, robot_states, alpha=1, beta=1):
     next_cell (Cell): the next cell the robot should go to to optimize utility
     '''
 
-    calculate_coord(grid, robot_states)
-    calculate_dist(current_cell, grid, robot_states, alpha, beta)
+    calculate_coord(grid, robot_in_sight)
+    calculate_dist(current_cell, grid, all_robots, alpha, beta)
 
     max_utility = -float('inf')
     max_cell = None
@@ -325,7 +328,7 @@ def calculate_dist(current_cell, grid, robot_states, alpha, beta):
     max_dist = 0
     max_reward = 0
 
-    robot_cells = [grid.all_cells[other_robot.pixel_position] for other_robot in robot_states]
+    robot_cells = [grid.all_cells[robot_states[other_robot].pixel_position] for other_robot in robot_states.keys() if robot_states[other_robot].pixel_position != current_cell.coord]
 
     for cell in grid.all_cells.values():
         cell.visited = False

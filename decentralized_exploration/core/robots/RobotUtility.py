@@ -32,7 +32,7 @@ class RobotUtility(AbstractRobot):
         robots_in_sight = [robot_id for robot_id in self._known_robots.keys() if self._known_robots[robot_id]['last_updated'] == iteration and robot_id != self.robot_id]
         robot_states_in_sight = [robot_states[robot_id] for robot_id in robot_states.keys() if robot_id in robots_in_sight]
 
-        next_state = calculate_utility(current_cell=current_cell, grid=self.grid, robot_states=robot_states_in_sight, alpha=1, beta=2)
+        next_state = calculate_utility(current_cell=current_cell, grid=self.grid, robot_in_sight=robot_states_in_sight, all_robots=robot_states, alpha=1, beta=2)
 
 
         if np.random.randint(100) > probability_of_failed_action:
