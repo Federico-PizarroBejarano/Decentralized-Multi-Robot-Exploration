@@ -56,7 +56,7 @@ def create_data_entry(data):
     return data_dict
 
 
-def create_full_dataframe():
+def create_full_dataframe(communication_level):
     algorithms = ['greedy', 'utility', 'mdp']
     maps = range(1, 11)
     all_starting_poses = ['top_left', 'top_right', 'bottom_left', 'bottom_right']
@@ -82,15 +82,15 @@ def create_full_dataframe():
     for algorithm in algorithms:
         for map_num in maps:
             for starting_pose in all_starting_poses:
-                filename = '{}_{}_{}'.format(algorithm, map_num, starting_pose)
+                filename = '{}_{}_{}_{}'.format(algorithm, map_num, starting_pose, communication_level)
                 data = load_data(filename)
                 data_dict = create_data_entry(data)
 
                 all_data.loc[algorithm, map_num, starting_pose] = data_dict
 
-    all_data.to_pickle('./decentralized_exploration/results/all_data.pkl')
+    all_data.to_pickle('./decentralized_exploration/results/all_data_{}.pkl'.format(communication_level))
     return all_data
 
 if __name__ == '__main__':
-    all_data = create_full_dataframe()
+    all_data = create_full_dataframe(communication_level=25)
     print(all_data)
