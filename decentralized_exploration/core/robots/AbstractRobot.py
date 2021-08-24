@@ -113,6 +113,7 @@ class AbstractRobot:
         ----------
         current_position (tuple): tuple of integer pixel coordinates
         iteration (int): the current iteration of the algorithm
+        robot_states (dict): a dictionary storing the RobotStates of each robot
 
         Returns
         -------

@@ -12,7 +12,8 @@ def possible_actions(state, grid, robot_states):
     ----------
     state (tuple): tuple of state (y, x)
     grid (Grid): a Grid representing the map
-
+    robot_states (dict): a dictionary storing the RobotStates of each robot
+    
     Returns
     -------
     poss_actions (list): a list of Actions (either up, down, left, right, up_left, up_right, down_left, down_right)
@@ -84,7 +85,49 @@ def get_new_state(state, action):
     return new_state
 
 
-def solve_MDP(grid, V, rewards, noise, discount_factor, minimum_change, max_iterations, min_iterations, horizon, current_cell, robot_states, DVF=None):
+def get_action(start_state, end_state):
+    '''
+    Given two neighbouring states, computes the necessary action
+
+    Parameters
+    ----------
+    start_state (tuple): tuple of state (y, x)
+    end_state (tuple): tuple of state (y, x)
+
+    Returns
+    -------
+    action (Action): an Action (either up, down, left, right, up_left, up_right, down_left, down_right)
+    '''
+
+    if np.linalg.norm((start_state[0] - end_state[0], start_state[1] - end_state[1])) >= 2:
+        print('States too distant!!')
+        1/0
+        
+    y, x = start_state
+    
+    if end_state == (y+1, x):
+        action = Actions.UP
+    if end_state == (y-1, x):
+        action = Actions.DOWN
+    if end_state == (y, x+1):
+        action = Actions.RIGHT
+    if end_state == (y, x-1):
+        action = Actions.LEFT
+    if end_state == (y+1, x+1):
+        action = Actions.UP_RIGHT
+    if end_state == (y+1, x-1):
+        action = Actions.UP_LEFT
+    if end_state == (y-1, x+1):
+        action = Actions.DOWN_RIGHT
+    if end_state == (y-1, x-1):
+        action = Actions.DOWN_LEFT
+    if end_state == start_state:
+        action = Actions.STAY_STILL
+    
+    return action
+
+
+def solve_MDP(grid, V, rewards, noise, discount_factor, minimum_change, max_iterations, min_iterations, horizon, current_cell, DVF=None):
     '''
     Solves an MDP given the states, rewards, transition function, and actions. 
 
@@ -226,7 +269,7 @@ def calculate_utility(current_cell, grid, robot_states, alpha=1, beta=1):
     ----------
     current_cell (Cell): the cell where the robot currently is
     grid (Grid): a Grid object containing the map
-    robot_states (dict): a list storing the RobotStates of each robot in sight
+    robot_states (list): a list storing the RobotStates of each robot in sight
     alpha (int): a tunable parameter
     beta (int): a tunable parameter
 
@@ -269,7 +312,7 @@ def calculate_dist(current_cell, grid, robot_states, alpha, beta):
     ----------
     current_cell (Cell): the cell where the robot currently is
     grid (Grid): a Grid object containing the map
-    robot_states (dict): a list storing the RobotStates of each robot in sight
+    robot_states (list): a list storing the RobotStates of each robot in sight
     alpha (int): a tunable parameter
     beta (int): a tunable parameter
 
@@ -348,7 +391,7 @@ def calculate_coord(grid, robot_states):
     Parameters
     ----------
     grid (Grid): a Grid object containing the map
-    robot_states (dict): a list storing the RobotStates of each robot in sight
+    robot_states (list): a list storing the RobotStates of each robot in sight
     '''
 
     if len(robot_states) == 0:

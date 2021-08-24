@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from ..helpers.grid import Grid
+from ..core.constants import probability_of_failed_scan
 
 
 def field_of_view(world_map, robot_pos):
@@ -46,6 +47,14 @@ def field_of_view(world_map, robot_pos):
             else:
                 all_free_points.add(all_points[-1])
     
+    all_occupied = list(all_occupied_points)
+    all_free = list(all_free_points)
+
+    keep_occ = [np.random.randint(100) > probability_of_failed_scan for i in range(len(all_occupied))]
+    keep_free = [np.random.randint(100) > probability_of_failed_scan for i in range(len(all_free))]
+    all_occupied_points = set([all_occupied[p] for p in range(len(all_occupied)) if keep_occ[p]])
+    all_free_points = set([all_free[p] for p in range(len(all_free)) if keep_free[p]])
+
     return all_occupied_points, all_free_points
 
 

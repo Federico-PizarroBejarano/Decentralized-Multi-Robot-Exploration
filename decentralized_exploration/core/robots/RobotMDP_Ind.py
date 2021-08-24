@@ -21,6 +21,7 @@ class RobotMDP_Ind(RobotMDP):
         current_position (tuple): tuple of integer pixel coordinates
         iteration (int): the current iteration of the algorithm
         horizon (int): how near a state is from the current state to be considered in the MDP
+        robot_states (dict): a dictionary storing the RobotStates of each robot
         '''
 
         close_robots = [robot_id for (robot_id, robot) in self._known_robots.items() if Grid.cell_distance(self.grid.all_cells[robot['last_known_position']], current_cell) < self.horizon and robot_id != self.robot_id]

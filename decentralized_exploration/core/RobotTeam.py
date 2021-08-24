@@ -6,6 +6,7 @@ from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
 from decentralized_exploration.helpers.grid import convert_pixelmap_to_grid, merge_map
 from decentralized_exploration.helpers.decision_making import check_distance_to_other_robot
 from decentralized_exploration.helpers.plotting import plot_grid
+from decentralized_exploration.core.constants import probability_of_failed_communication
 
 class RobotTeam:
     '''
@@ -77,10 +78,16 @@ class RobotTeam:
 
                 if distance <= self._communication_range:
                     if self._blocked_by_obstacles == False or world.clear_path_between_robots(robot1=robot.robot_id, robot2=robot_id):
-                        message[robot.robot_id] = { 
-                            'robot_position': other_robot_position,
-                            'pixel_map': robot.pixel_map
-                        }
+                        if np.random.randint(100) > probability_of_failed_communication :
+                            message[robot.robot_id] = { 
+                                'robot_position': other_robot_position,
+                                'pixel_map': robot.pixel_map
+                            }
+                        else:
+                            message[robot.robot_id] = { 
+                                'robot_position': other_robot_position,
+                                'pixel_map': []
+                            }
         
         return message
 
