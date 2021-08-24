@@ -1,7 +1,6 @@
 from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
-from decentralized_exploration.core.constants import Actions
-from decentralized_exploration.helpers.decision_making import get_new_state, closest_reward, path_between_cells, calculate_utility
-from decentralized_exploration.helpers.grid import Cell, merge_map
+from decentralized_exploration.helpers.decision_making import calculate_utility
+from decentralized_exploration.helpers.grid import merge_map
 
 
 class RobotUtility(AbstractRobot):
@@ -25,21 +24,13 @@ class RobotUtility(AbstractRobot):
         '''
 
         current_cell = self.grid.all_cells[current_position]
-        
-        robots_in_sight = [robot_id for robot_id in self._known_robots.keys() if self._known_robots[robot_id]['last_updated'] == iteration]
+
+        robots_in_sight = [robot_id for robot_id in self._known_robots.keys() if self._known_robots[robot_id]['last_updated'] == iteration and robot_id != self.robot_id]
         robot_states_in_sight = [robot_states[robot_id] for robot_id in robot_states.keys() if robot_id in robots_in_sight]
 
-        goal_position = calculate_utility(current_cell=current_cell, grid=self.grid, robot_states=robot_states_in_sight)
+        next_state = calculate_utility(current_cell=current_cell, grid=self.grid, robot_states=robot_states_in_sight, alpha=1, beta=2)
 
-        # All rewards have been found
-        if goal_position == None:
-            return current_position
-
-        goal_cell = Cell(goal_position[0], goal_position[1])
-
-        next_state = path_between_cells(current_cell=current_cell, goal_cell=goal_cell, grid=self.grid, robot_states=robot_states)
-        
-        return next_state
+        return next_state.coord
     
 
     # Public Methods
@@ -53,10 +44,15 @@ class RobotUtility(AbstractRobot):
         iteration (int): the current iteration
         '''
 
-        for robot_id in message:
+        for robot_id in message:  
+            if robot_id not in self._known_robots:
+                self._known_robots[robot_id] = {}          
+            self._known_robots[robot_id]['last_updated'] = iteration
+            self._known_robots[robot_id]['last_known_position'] = message[robot_id]['robot_position']
+
             self.__pixel_map = merge_map(grid=self.grid, pixel_map=self.pixel_map, pixel_map_to_merge=message[robot_id]['pixel_map'])
             self.grid.propagate_rewards()
 
         self._known_robots[self.robot_id] = {
-            'last_updated': iteration,
+            'last_updated': iteration
         }

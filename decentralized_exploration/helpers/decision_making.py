@@ -59,6 +59,7 @@ def get_new_state(state, action):
     -------
     new_state (tuple): tuple of the new state (y, x)
     '''
+
     y, x = state
     
     if action == Actions.UP:
@@ -144,7 +145,22 @@ def solve_MDP(grid, V, rewards, noise, discount_factor, minimum_change, max_iter
     return policy
 
 
-def max_value(V, grid, current_state, poss_actions):
+def max_value(V, current_state, poss_actions):
+    '''
+    Given a value function, the current state, and the possible actions, returns the optimal action
+
+    Parameters
+    ----------
+    V (dict): a dictionary containing the value of each state
+    current_state (tuple): the pixel coordinates of where the robot currently is
+    poss_action (list): a list of Actions (either up, down, left, right, up_left, up_right, down_left, 
+        down_right, or stay still)
+
+    Returns
+    -------
+    best_action (Action): the optimal Action
+    '''
+
     best_V = -float('inf')
     best_action = None
 
@@ -202,39 +218,76 @@ def compute_probability(start_cell, time_increment, exploration_horizon, grid):
             cell.probability = 1/(num_possible_cells * max(1.0, Grid.cell_distance(start_cell, cell)**0.5))
 
 
-def calculate_utility(current_cell, grid, robot_states):
+def calculate_utility(current_cell, grid, robot_states, alpha=1, beta=1):
     '''
+    Calculates the utility metric of each reward cell.
+
+    Parameters
+    ----------
+    current_cell (Cell): the cell where the robot currently is
+    grid (Grid): a Grid object containing the map
+    robot_states (dict): a list storing the RobotStates of each robot in sight
+    alpha (int): a tunable parameter
+    beta (int): a tunable parameter
+
+    Returns
+    -------
+    next_cell (Cell): the next cell the robot should go to to optimize utility
     '''
 
-    calculate_dist(current_cell, grid)
     calculate_coord(grid, robot_states)
+    calculate_dist(current_cell, grid, robot_states, alpha, beta)
 
     max_utility = -float('inf')
     max_cell = None
 
     for cell in grid.all_cells.values():
-        cell.utility = cell.norm_reward + cell.norm_dist - cell.coord_factor
-        if cell.reward > 0 and cell.utility > max_utility:
-            max_utility = cell.utility
-            max_cell = cell
+        if cell.reward > 0 and abs(cell.distance_from_start) != float('inf'):
+            cell.utility = cell.norm_reward + cell.norm_dist - cell.coord_factor
+            if cell.utility > max_utility:
+                max_utility = cell.utility
+                max_cell = cell
+        else:
+            cell.utility = -float('inf')
     
-    return max_cell
+    if max_cell == None:
+        return current_cell
+
+    next_cell = max_cell
+    while next_cell.previous_cell != current_cell and next_cell.previous_cell != None:
+        next_cell = next_cell.previous_cell
+
+    return next_cell
 
 
-def calculate_dist(current_cell, grid):
+def calculate_dist(current_cell, grid, robot_states, alpha, beta):
     '''
-    '''
+    Given a grid and the current location of the robots, calculates the distance parameter
+    to each reward cell to be used in the utility calculation
 
-    alpha = 4
-    beta = 2
+    Parameters
+    ----------
+    current_cell (Cell): the cell where the robot currently is
+    grid (Grid): a Grid object containing the map
+    robot_states (dict): a list storing the RobotStates of each robot in sight
+    alpha (int): a tunable parameter
+    beta (int): a tunable parameter
+
+    Returns
+    -------
+    next_cell (Cell): the next cell the robot should go to to optimize utility
+    '''
 
     min_dist = float('inf')
     max_dist = 0
     max_reward = 0
 
+    robot_cells = [grid.all_cells[other_robot.pixel_position] for other_robot in robot_states]
+
     for cell in grid.all_cells.values():
         cell.visited = False
         cell.distance_from_start = float('inf')
+        cell.previous_cell = None
         
     current_cell.visited = True
     current_cell.distance_from_start = 0
@@ -246,19 +299,20 @@ def calculate_dist(current_cell, grid):
     neighbours = grid.cell_neighbours(center_cell=current_cell, radius=1)
 
     for neighbour in neighbours:
-        if neighbour.state == 0:
+        if neighbour.state == 0 and neighbour not in robot_cells:
             if neighbour.reward > 0:
                 min_dist = min(min_dist, 1)
                 max_dist = max(max_dist, 1)
                 max_reward = max(max_reward, neighbour.reward)
             
             neighbour.distance_from_start = current_cell.distance_from_start + 1
+            neighbour.previous_cell = current_cell
 
     cells_to_explore = neighbours
 
     while(len(cells_to_explore) != 0):
         curr_cell = cells_to_explore.pop(0)
-        if curr_cell.state == 0 and curr_cell.visited == False:
+        if curr_cell.state == 0 and curr_cell.visited == False and curr_cell not in robot_cells:
             curr_cell.visited = True
             if curr_cell.reward > 0:
                 min_dist = min(min_dist, curr_cell.distance_from_start)
@@ -269,24 +323,42 @@ def calculate_dist(current_cell, grid):
             for neighbour in new_neighbours:
                 if curr_cell.distance_from_start + 1 < neighbour.distance_from_start and neighbour.state == 0:
                     neighbour.distance_from_start = curr_cell.distance_from_start + 1
+                    neighbour.previous_cell = curr_cell
                     cells_to_explore.append(neighbour)
-    
-    for cell in grid.all_cells.values():
-        cell.dist = float(cell.distance_from_start - min_dist)/float(max_dist - min_dist)
-        cell.norm_dist = (cell.dist)**(alpha-1) * (1-cell.dist)**(beta-1)
-        cell.norm_reward = float(cell.reward)/float(max_reward)
 
+    for cell in grid.all_cells.values():
+        if max_dist == min_dist:
+            cell.dist = 1.0
+        else:
+            cell.dist = float(cell.distance_from_start - min_dist)/float(max_dist - min_dist)
+        
+        cell.norm_dist = (cell.dist)**(alpha-1.0) * (1.0-cell.dist)**(beta-1.0)
+        
+        if max_reward == 0:
+            cell.norm_reward = 0.0
+        else:
+            cell.norm_reward = float(cell.reward)/float(max_reward)
 
 
 def calculate_coord(grid, robot_states):
     '''
+    Given a grid and the locations of robots in sight, calculates the coordination factor
+    to be used in the utility calculation.
+
+    Parameters
+    ----------
+    grid (Grid): a Grid object containing the map
+    robot_states (dict): a list storing the RobotStates of each robot in sight
     '''
+
+    if len(robot_states) == 0:
+        return
 
     max_coord = 0
 
     for cell in grid.all_cells.values():
         cell.coord_factor = 0
-        
+    
     for robot in robot_states:
         max_dist = 0
 
@@ -294,14 +366,15 @@ def calculate_coord(grid, robot_states):
             cell.visited = False
             cell.distance_from_start = float('inf')
 
-        current_cell = grid.all_cells[robot_states[robot]]
+        current_cell = grid.all_cells[robot.pixel_position]
         current_cell.visited = True
         current_cell.distance_from_start = 0
 
         neighbours = grid.cell_neighbours(center_cell=current_cell, radius=1)
         for neighbour in neighbours:
             if neighbour.state == 0:
-                max_dist = max(max_dist, 1)
+                if neighbour.reward > 0:
+                    max_dist = max(max_dist, 1)
                 neighbour.distance_from_start = current_cell.distance_from_start + 1
 
         cells_to_explore = neighbours
@@ -310,7 +383,8 @@ def calculate_coord(grid, robot_states):
             curr_cell = cells_to_explore.pop(0)
             if curr_cell.state == 0 and curr_cell.visited == False:
                 curr_cell.visited = True
-                max_dist = max(max_dist, curr_cell.distance_from_start)
+                if curr_cell.reward > 0:
+                    max_dist = max(max_dist, curr_cell.distance_from_start)
 
                 new_neighbours = grid.cell_neighbours(center_cell=curr_cell, radius=1)
                 for neighbour in new_neighbours:
@@ -319,11 +393,17 @@ def calculate_coord(grid, robot_states):
                         cells_to_explore.append(neighbour)
         
         for cell in grid.all_cells.values():
-            cell.coord_factor += float(max_dist - cell.distance_from_start)/float(max_dist)
-            max_coord = max(cell.coord_factor, max_coord)
+            if max_dist != 0:
+                cell.coord_factor += float(max_dist - cell.distance_from_start)/float(max_dist)
+            
+            if cell.reward > 0:
+                max_coord = max(cell.coord_factor, max_coord)
 
     for cell in grid.all_cells.values():
-        cell.coord_factor = float(cell.coord_factor) / float(max_coord)
+        if max_coord == 0:
+            cell.coord_factor = 0
+        else:
+            cell.coord_factor = float(cell.coord_factor) / float(max_coord)
 
 
 def closest_reward(current_cell, grid, robot_states):
@@ -411,7 +491,7 @@ def path_between_cells(current_cell, goal_cell, grid, robot_states):
 
     neighbours = grid.cell_neighbours(center_cell=current_cell, radius=1)
     for neighbour in neighbours:
-        if neighbour.state == 0:
+        if neighbour.state == 0 and neighbour not in robot_states:
             neighbour.distance_from_start = current_cell.distance_from_start + 1
             neighbour.previous_cell = current_cell
 

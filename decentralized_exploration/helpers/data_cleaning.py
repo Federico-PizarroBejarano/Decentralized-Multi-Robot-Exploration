@@ -57,7 +57,7 @@ def create_data_entry(data):
 
 
 def create_full_dataframe():
-    algorithms = ['greedy', 'mdp']
+    algorithms = ['greedy', 'utility', 'mdp']
     maps = range(1, 11)
     all_starting_poses = ['top_left', 'top_right', 'bottom_left', 'bottom_right']
 

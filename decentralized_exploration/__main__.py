@@ -5,6 +5,7 @@ import cPickle as pickle
 from decentralized_exploration.core.World import World
 from decentralized_exploration.core.RangeFinder import RangeFinder
 from decentralized_exploration.core.robots.RobotGreedy import RobotGreedy
+from decentralized_exploration.core.robots.RobotUtility import RobotUtility
 from decentralized_exploration.core.robots.RobotMDP import RobotMDP
 from decentralized_exploration.core.RobotTeam import RobotTeam
 from decentralized_exploration.helpers.RobotState import RobotState
@@ -38,7 +39,8 @@ if __name__ == '__main__':
                 range_finder = RangeFinder(full_range=10, frequency=0.7)
 
                 # robot = RobotGreedy(robot_id='robot_' + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
-                robot = RobotMDP(robot_id='robot_' + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
+                robot = RobotUtility(robot_id='robot_' + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
+                # robot = RobotMDP(robot_id='robot_' + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
                 robot_state = RobotState(pixel_position=starting_pos)
 
                 robot_team.add_robot(robot)
@@ -48,5 +50,5 @@ if __name__ == '__main__':
 
             data = robot_team.explore(world=world)
 
-            with open('./decentralized_exploration/results/mdp_{}_{}.pkl'.format(test, starting_poses_key), 'wb') as outfile:
+            with open('./decentralized_exploration/results/utility_{}_{}.pkl'.format(test, starting_poses_key), 'wb') as outfile:
                 pickle.dump(data, outfile, pickle.HIGHEST_PROTOCOL)

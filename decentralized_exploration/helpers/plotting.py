@@ -42,7 +42,13 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
                 rewards[cell.coord] = round(cell.reward, 1)
                 if abs(round(cell.reward, 1)) > max_value:
                     max_value = abs(round(cell.reward, 1))
-    if mode == 'probability':
+    elif mode == 'utility':
+        for cell in all_cells:
+            if cell.utility != 0 and abs(cell.utility) < 100 and cell.reward > 0:
+                rewards[cell.coord] = round(cell.utility, 1)
+                if abs(round(cell.utility, 1)) > max_value:
+                    max_value = abs(round(cell.utility, 1))
+    elif mode == 'probability':
         for cell in all_cells:
             if cell.probability != 0:
                 rewards[cell.coord] = round(cell.probability, 1)

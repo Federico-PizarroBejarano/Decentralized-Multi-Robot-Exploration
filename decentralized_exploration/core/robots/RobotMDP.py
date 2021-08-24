@@ -172,7 +172,7 @@ class RobotMDP(AbstractRobot):
 
         solve_MDP(self.grid, self._V, rewards, self.noise, modified_discount_factor, self.minimum_change, self.max_iterations, min_iterations, modified_horizon, current_cell, robot_states, DVF)
 
-        action = max_value(self._V, self._grid, current_position, possible_actions(state=current_position, grid=self._grid, robot_states=robot_states))
+        action = max_value(self._V, current_position, possible_actions(state=current_position, grid=self._grid, robot_states=robot_states))
         next_state = get_new_state(state=current_position, action=action)
 
         if abs(self._V[current_position] - self._V[next_state]) < 0.001:
