@@ -10,7 +10,6 @@ from decentralized_exploration.core.robots.RobotMDP import RobotMDP
 from decentralized_exploration.core.RobotTeam import RobotTeam
 from decentralized_exploration.helpers.RobotState import RobotState
 from decentralized_exploration.helpers.grid import convert_pixelmap_to_grid
-from decentralized_exploration.core.constants import probability_of_failed_communication
 
 
 if __name__ == '__main__':
@@ -30,37 +29,39 @@ if __name__ == '__main__':
     for algorithm in algorithms:
         for test in range(1, 11):
             for starting_poses_key in all_starting_poses.keys():
-                print(algorithm, test, starting_poses_key)
-                world_map = np.load('./decentralized_exploration/maps/test_{}.npy'.format(test))
-                completed_grid = convert_pixelmap_to_grid(pixel_map=world_map)
+                for fci in [2, 3, 4, 5]:
+                    for pfc in [0, 10, 20]:
+                        print(algorithm, test, starting_poses_key)
+                        world_map = np.load('./decentralized_exploration/maps/test_{}.npy'.format(test))
+                        completed_grid = convert_pixelmap_to_grid(pixel_map=world_map)
 
-                num_of_robots = 3
-                robot_team = RobotTeam(world_size=world_map.shape, communication_range=4, blocked_by_obstacles=True)
+                        num_of_robots = 3
+                        robot_team = RobotTeam(world_size=world_map.shape, communication_range=4, blocked_by_obstacles=True, failed_communication_interval=fci, probability_of_failed_communication=pfc)
 
-                starting_poses = all_starting_poses[starting_poses_key]
-                print('Starting poses: ', starting_poses)
+                        starting_poses = all_starting_poses[starting_poses_key]
+                        print('Starting poses: ', starting_poses)
 
-                robot_states = {}
+                        robot_states = {}
 
-                for r in range(num_of_robots):
-                    starting_pos = starting_poses[r]
-                    range_finder = RangeFinder(full_range=10, frequency=0.7)
+                        for r in range(num_of_robots):
+                            starting_pos = starting_poses[r]
+                            range_finder = RangeFinder(full_range=10, frequency=0.7)
 
-                    if algorithm == 'greedy':
-                        robot = RobotGreedy(robot_id='robot_' + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
-                    elif algorithm == 'utility':
-                        robot = RobotUtility(robot_id='robot_' + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
-                    elif algorithm == 'mdp':
-                        robot = RobotMDP(robot_id='robot_' + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
-                    
-                    robot_state = RobotState(pixel_position=starting_pos)
+                            if algorithm == 'greedy':
+                                robot = RobotGreedy(robot_id='robot_' + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
+                            elif algorithm == 'utility':
+                                robot = RobotUtility(robot_id='robot_' + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
+                            elif algorithm == 'mdp':
+                                robot = RobotMDP(robot_id='robot_' + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
+                            
+                            robot_state = RobotState(pixel_position=starting_pos)
 
-                    robot_team.add_robot(robot)
-                    robot_states[robot.robot_id] = robot_state
+                            robot_team.add_robot(robot)
+                            robot_states[robot.robot_id] = robot_state
 
-                world = World(world_map=world_map, pixel_size=1, robot_states=robot_states)
+                        world = World(world_map=world_map, pixel_size=1, robot_states=robot_states)
 
-                data = robot_team.explore(world=world)
+                        data = robot_team.explore(world=world)
 
-                with open('./decentralized_exploration/results/{}_{}_{}_{}fc_{}iters.pkl'.format(algorithm, test, starting_poses_key, probability_of_failed_communication, RobotTeam.failed_communication_interval), 'wb') as outfile:
-                    pickle.dump(data, outfile, pickle.HIGHEST_PROTOCOL)
+                        with open('./decentralized_exploration/results/{}_{}_{}_{}fc_{}iters.pkl'.format(algorithm, test, starting_poses_key, pfc, fci), 'wb') as outfile:
+                            pickle.dump(data, outfile, pickle.HIGHEST_PROTOCOL)

@@ -6,7 +6,7 @@ from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
 from decentralized_exploration.helpers.grid import convert_pixelmap_to_grid, merge_map
 from decentralized_exploration.helpers.decision_making import check_distance_to_other_robot
 from decentralized_exploration.helpers.plotting import plot_grid
-from decentralized_exploration.core.constants import probability_of_failed_communication
+
 
 class RobotTeam:
     '''
@@ -31,14 +31,15 @@ class RobotTeam:
 
     # Tunable parameter
     local_interaction_dist = 4
-    failed_communication_interval = 10
 
-    def __init__(self, world_size, communication_range = float('inf'), blocked_by_obstacles = False):
+    def __init__(self, world_size, communication_range=float('inf'), blocked_by_obstacles=False, failed_communication_interval=0, probability_of_failed_communication=0):
         self._robots = {}
         self._communication_range = communication_range
         self._blocked_by_obstacles = blocked_by_obstacles
         self._initialize_map(world_size=world_size)
-        self._messages_to_skip = 0 
+        self._failed_communication_interval = failed_communication_interval
+        self._probability_of_failed_communication = probability_of_failed_communication
+        self._messages_to_skip = 0
 
 
     # Private Methods
@@ -187,8 +188,8 @@ class RobotTeam:
                 1/0
             print('Iteration #', iteration, '  % explored: ', self._grid.percent_explored())
             
-            if self._messages_to_skip <= 0 and np.random.randint(100) > probability_of_failed_communication:
-                self._messages_to_skip = self.failed_communication_interval
+            if self._messages_to_skip <= 0 and np.random.randint(100) > self._probability_of_failed_communication:
+                self._messages_to_skip = self._failed_communication_interval
 
             for robot in self._robots.values():
                 message = self._generate_message(robot_id=robot.robot_id,  world=world)

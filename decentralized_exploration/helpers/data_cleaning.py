@@ -93,6 +93,6 @@ def create_full_dataframe(communication_level, down_iterations):
 
 if __name__ == '__main__':
     all_data = create_full_dataframe(communication_level=25, down_iterations=5)
-    all_data = create_full_dataframe(communication_level=50, down_iterations=10)
-    all_data = create_full_dataframe(communication_level=25, down_iterations=5)
+    all_data = create_full_dataframe(communication_level=50, down_iterations=5)
+    all_data = create_full_dataframe(communication_level=25, down_iterations=10)
     all_data = create_full_dataframe(communication_level=50, down_iterations=10)

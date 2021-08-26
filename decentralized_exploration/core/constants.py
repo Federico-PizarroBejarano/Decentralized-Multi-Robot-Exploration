@@ -10,5 +10,4 @@ class Actions():
     STAY_STILL = 'stay_still'
 
 probability_of_failed_action = 10
-probability_of_failed_communication = 25
 probability_of_failed_scan = 10
