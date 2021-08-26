@@ -31,12 +31,14 @@ class RobotTeam:
 
     # Tunable parameter
     local_interaction_dist = 4
+    failed_communication_interval = 10
 
     def __init__(self, world_size, communication_range = float('inf'), blocked_by_obstacles = False):
         self._robots = {}
         self._communication_range = communication_range
         self._blocked_by_obstacles = blocked_by_obstacles
         self._initialize_map(world_size=world_size)
+        self._messages_to_skip = 0 
 
 
     # Private Methods
@@ -78,7 +80,7 @@ class RobotTeam:
 
                 if distance <= self._communication_range:
                     if self._blocked_by_obstacles == False or world.clear_path_between_robots(robot1=robot.robot_id, robot2=robot_id):
-                        if np.random.randint(100) > probability_of_failed_communication :
+                        if self._messages_to_skip <= 0:
                             message[robot.robot_id] = { 
                                 'robot_position': other_robot_position,
                                 'pixel_map': robot.pixel_map
@@ -88,7 +90,7 @@ class RobotTeam:
                                 'robot_position': other_robot_position,
                                 'pixel_map': []
                             }
-        
+
         return message
 
 
@@ -180,14 +182,19 @@ class RobotTeam:
         last_positions = [(10000, 10000), (10000, 10000), (10000, 10000)]
 
         while self._grid.has_rewards():
-            if iteration >= 150:
+            if iteration >= 300:
                 print('TAKING TOO LONG')
                 1/0
             print('Iteration #', iteration, '  % explored: ', self._grid.percent_explored())
             
+            if self._messages_to_skip <= 0 and np.random.randint(100) > probability_of_failed_communication:
+                self._messages_to_skip = self.failed_communication_interval
+
             for robot in self._robots.values():
                 message = self._generate_message(robot_id=robot.robot_id,  world=world)
                 robot.communicate(message=message, iteration=iteration)
+            
+            self._messages_to_skip -= 1
 
             for robot in self._robots.values():
                 # print(robot.robot_id)

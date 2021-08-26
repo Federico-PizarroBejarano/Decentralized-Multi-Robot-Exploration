@@ -30,7 +30,7 @@ if __name__ == '__main__':
     for algorithm in algorithms:
         for test in range(1, 11):
             for starting_poses_key in all_starting_poses.keys():
-                print('test', test, starting_poses_key)
+                print(algorithm, test, starting_poses_key)
                 world_map = np.load('./decentralized_exploration/maps/test_{}.npy'.format(test))
                 completed_grid = convert_pixelmap_to_grid(pixel_map=world_map)
 
@@ -62,5 +62,5 @@ if __name__ == '__main__':
 
                 data = robot_team.explore(world=world)
 
-                with open('./decentralized_exploration/results/{}_{}_{}_{}.pkl'.format(algorithm, test, starting_poses_key, probability_of_failed_communication), 'wb') as outfile:
+                with open('./decentralized_exploration/results/{}_{}_{}_{}fc_{}iters.pkl'.format(algorithm, test, starting_poses_key, probability_of_failed_communication, RobotTeam.failed_communication_interval), 'wb') as outfile:
                     pickle.dump(data, outfile, pickle.HIGHEST_PROTOCOL)
