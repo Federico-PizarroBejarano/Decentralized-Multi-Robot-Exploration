@@ -21,8 +21,8 @@ if __name__ == '__main__':
                         }
 
     algorithms = [
-                    # 'greedy', 
-                    # 'utility', 
+                    'greedy', 
+                    'utility', 
                     'mdp'
                 ]
 
@@ -30,7 +30,7 @@ if __name__ == '__main__':
         for test in range(1, 11):
             for starting_poses_key in all_starting_poses.keys():
                 for fci in [2, 3, 4, 5]:
-                    for pfc in [0, 10, 20]:
+                    for pfc in [10, 20]:
                         print(algorithm, test, starting_poses_key)
                         world_map = np.load('./decentralized_exploration/maps/test_{}.npy'.format(test))
                         completed_grid = convert_pixelmap_to_grid(pixel_map=world_map)

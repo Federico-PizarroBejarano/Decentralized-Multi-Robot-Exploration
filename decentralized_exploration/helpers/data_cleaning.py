@@ -95,7 +95,47 @@ def create_full_dataframe(communication_level, down_iterations):
     all_data.to_pickle('./decentralized_exploration/results/all_data_{}fc_{}iters.pkl'.format(communication_level, down_iterations))
     return all_data
 
+
+def compare_parameters(communication_levels, down_iterations):
+    algorithms = [
+        'greedy', 
+        'utility', 
+        'mdp'
+    ]
+
+    idx = pd.MultiIndex.from_product([algorithms, communication_levels, down_iterations], names=['Algorithm', 'Prob FC', 'FC Interval'])
+    col = [ 'local_int', 
+            'time',
+            'total_dist_1',
+            'total_dist_2',
+            'total_dist_3',
+            'to_20', 
+            'to_30', 
+            'to_40', 
+            'to_50', 
+            'to_60', 
+            'to_70', 
+            'to_80', 
+            'to_90', 
+            'to_100' ]
+    
+    all_data = pd.DataFrame('-', index=idx, columns=col) 
+
+    for pfc in communication_levels:
+        for fci in down_iterations:
+            filename = 'all_data_{}fc_{}iters.pkl'.format(pfc, fci)
+            df = pd.read_pickle('./decentralized_exploration/results/'+filename)
+
+            for algorithm in algorithms:
+                all_data.loc[algorithm, pfc, fci] = df.loc[algorithm].mean()
+
+    all_data.to_pickle('./decentralized_exploration/results/all_data_summary.pkl')
+    return all_data
+
+
 if __name__ == '__main__':
     for fci in [2, 3, 4, 5]:
-        for pfc in [0, 10, 20, 50, 75]:
+        for pfc in [10, 20, 80, 90, 100]:
             create_full_dataframe(communication_level=pfc, down_iterations=fci)
+    
+    print(compare_parameters([0, 10, 20, 80, 90, 100], [2, 3, 4, 5]))
