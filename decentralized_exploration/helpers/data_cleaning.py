@@ -57,7 +57,11 @@ def create_data_entry(data):
 
 
 def create_full_dataframe(communication_level, down_iterations):
-    algorithms = ['greedy', 'utility', 'mdp']
+    algorithms = [
+        'greedy', 
+        'utility', 
+        'mdp'
+    ]
     maps = range(1, 11)
     all_starting_poses = ['top_left', 'top_right', 'bottom_left', 'bottom_right']
 
@@ -92,7 +96,6 @@ def create_full_dataframe(communication_level, down_iterations):
     return all_data
 
 if __name__ == '__main__':
-    all_data = create_full_dataframe(communication_level=25, down_iterations=5)
-    all_data = create_full_dataframe(communication_level=50, down_iterations=5)
-    all_data = create_full_dataframe(communication_level=25, down_iterations=10)
-    all_data = create_full_dataframe(communication_level=50, down_iterations=10)
+    for fci in [2, 3, 4, 5]:
+        for pfc in [0, 10, 20, 50, 75]:
+            create_full_dataframe(communication_level=pfc, down_iterations=fci)

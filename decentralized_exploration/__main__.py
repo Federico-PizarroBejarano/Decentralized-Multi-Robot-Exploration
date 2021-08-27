@@ -21,8 +21,8 @@ if __name__ == '__main__':
                         }
 
     algorithms = [
-                    'greedy', 
-                    'utility', 
+                    # 'greedy', 
+                    # 'utility', 
                     'mdp'
                 ]
 
