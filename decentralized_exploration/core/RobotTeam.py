@@ -188,7 +188,7 @@ class RobotTeam:
                 1/0
             print('Iteration #', iteration, '  % explored: ', self._grid.percent_explored())
             
-            if self._messages_to_skip <= 0 and np.random.randint(100) > self._probability_of_failed_communication:
+            if self._messages_to_skip <= 0 and np.random.randint(100) < self._probability_of_failed_communication:
                 self._messages_to_skip = self._failed_communication_interval
 
             for robot in self._robots.values():
