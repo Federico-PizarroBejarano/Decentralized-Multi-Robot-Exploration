@@ -12,9 +12,7 @@ def load_data(filename):
 def create_data_entry(data):
     data_dict = {   'local_int': 0, 
                     'time': 0,
-                    'total_dist_1': 0,
-                    'total_dist_2': 0,
-                    'total_dist_3': 0,
+                    'total_dist': 0,
                     'to_20': 0, 
                     'to_30': 0, 
                     'to_40': 0, 
@@ -26,10 +24,7 @@ def create_data_entry(data):
                     'to_100': 0 }
     
     data_dict['time'] += data[-1][-1]
-    data_dict['total_dist_1'] += data[-1][2][0]
-    data_dict['total_dist_2'] += data[-1][2][1]
-    data_dict['total_dist_3'] += data[-1][2][2]
-
+    data_dict['total_dist'] += data[-1][2][0] + data[-1][2][1] + data[-1][2][2]
 
     for iteration in range(len(data)): 
         data_dict['local_int'] += int(len(data[iteration][1])/2)
@@ -68,9 +63,7 @@ def create_full_dataframe(communication_level, down_iterations):
     idx = pd.MultiIndex.from_product([algorithms, maps, all_starting_poses], names=['Algorithm', 'Map', 'Starting Pose'])
     col = [ 'local_int', 
             'time',
-            'total_dist_1',
-            'total_dist_2',
-            'total_dist_3',
+            'total_dist',
             'to_20', 
             'to_30', 
             'to_40', 
@@ -106,9 +99,7 @@ def compare_parameters(communication_levels, down_iterations):
     idx = pd.MultiIndex.from_product([algorithms, communication_levels, down_iterations], names=['Algorithm', 'Prob FC', 'FC Interval'])
     col = [ 'local_int', 
             'time',
-            'total_dist_1',
-            'total_dist_2',
-            'total_dist_3',
+            'total_dist',
             'to_20', 
             'to_30', 
             'to_40', 
@@ -134,8 +125,8 @@ def compare_parameters(communication_levels, down_iterations):
 
 
 if __name__ == '__main__':
-    for fci in [2, 3, 4, 5]:
-        for pfc in [10, 20, 80, 90, 100]:
+    for fci in [2, 3, 4, 5, 7, 10]:
+        for pfc in [10, 20, 30, 40, 50, 60, 70, 80, 90]:
             create_full_dataframe(communication_level=pfc, down_iterations=fci)
     
-    print(compare_parameters([0, 10, 20, 80, 90, 100], [2, 3, 4, 5]))
+    print(compare_parameters([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100], [2, 3, 4, 5, 7, 10]))

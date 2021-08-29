@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import cPickle as pickle
+import os
 
 from decentralized_exploration.core.World import World
 from decentralized_exploration.core.RangeFinder import RangeFinder
@@ -26,12 +27,20 @@ if __name__ == '__main__':
                     'mdp'
                 ]
 
+    all_files = os.listdir('./decentralized_exploration/results')
+
     for algorithm in algorithms:
         for test in range(1, 11):
             for starting_poses_key in all_starting_poses.keys():
-                for fci in [2, 3, 4, 5]:
-                    for pfc in [10, 20]:
-                        print(algorithm, test, starting_poses_key)
+                for pfc in [10, 20, 30, 40, 50, 60, 70, 80, 90]:
+                    for fci in [2, 3, 4, 5, 7, 10]:
+                        filename = '{}_{}_{}_{}fc_{}iters.pkl'.format(algorithm, test, starting_poses_key, pfc, fci)
+
+                        if filename in all_files:
+                            print('{}_{}_{}_{}fc_{}iters.pkl'.format(algorithm, test, starting_poses_key, pfc, fci) + ' SKIPPED!!')
+                            continue
+
+                        print(algorithm, test, starting_poses_key, '{}% fail'.format(pfc), fci)
                         world_map = np.load('./decentralized_exploration/maps/test_{}.npy'.format(test))
                         completed_grid = convert_pixelmap_to_grid(pixel_map=world_map)
 
@@ -63,5 +72,5 @@ if __name__ == '__main__':
 
                         data = robot_team.explore(world=world)
 
-                        with open('./decentralized_exploration/results/{}_{}_{}_{}fc_{}iters.pkl'.format(algorithm, test, starting_poses_key, pfc, fci), 'wb') as outfile:
+                        with open('./decentralized_exploration/results/'+filename, 'wb') as outfile:
                             pickle.dump(data, outfile, pickle.HIGHEST_PROTOCOL)
