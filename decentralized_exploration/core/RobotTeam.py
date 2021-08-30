@@ -198,7 +198,6 @@ class RobotTeam:
             self._messages_to_skip -= 1
 
             for robot in self._robots.values():
-                # print(robot.robot_id)
                 last_positions[int(robot.robot_id[-1])-1] = world.get_position(robot_id=robot.robot_id)
                 robot.explore_1_timestep(world=world, iteration=iteration)
                 self._pixel_map = merge_map(grid=self._grid, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
@@ -212,7 +211,7 @@ class RobotTeam:
             # plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
             # plt.pause(0.5)
             
-            grid_statistics =  [self._grid.percent_explored(), self._local_interaction(robot_states=world.robot_states, world=world), distances_travelled, world.get_position('robot_1'), world.get_position('robot_2'), world.get_position('robot_3'), time.time()-start_time]
+            grid_statistics =  [self._grid.percent_explored(), self._local_interaction(robot_states=world.robot_states, world=world), list(distances_travelled), world.get_position('robot_1'), world.get_position('robot_2'), world.get_position('robot_3'), time.time()-start_time]
             explored_per_iteration.append(grid_statistics)
             
             iteration += 1

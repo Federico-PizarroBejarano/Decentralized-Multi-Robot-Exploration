@@ -1,5 +1,7 @@
+import numpy as np
 import pandas as pd
 import cPickle as pickle
+import matplotlib.pyplot as plt
 
 
 def load_data(filename):
@@ -124,11 +126,71 @@ def compare_parameters(communication_levels, down_iterations):
     return all_data
 
 
+def get_exploration_rates(communication_levels, down_iterations):
+    algorithms = [
+        'greedy', 
+        'utility', 
+        'mdp'
+    ]
+    maps = range(1, 11)
+    all_starting_poses = ['top_left', 'top_right', 'bottom_left', 'bottom_right']
+
+    resolution = 0.0001
+    cov_pct = np.arange(0.1, 1.0+resolution, resolution).tolist()
+
+    all_lists = {}
+    all_metrics = {}
+
+    for algorithm in algorithms:
+        for pfc in communication_levels:
+            for fci in down_iterations:
+                if pfc == 0:
+                    fci = 0
+                elif pfc == 100:
+                    fci = 5
+                
+                dist_trav_av = [0]*len(cov_pct)
+                for map_num in maps:
+                    for starting_pose in all_starting_poses:
+                        filename = '{}_{}_{}_{}fc_{}iters'.format(algorithm, map_num, starting_pose, pfc, fci)
+                        with open('./decentralized_exploration/results/{}.pkl'.format(filename), 'rb') as infile:
+                            results = pickle.load(infile)
+
+                        percent_explored = []
+                        distance_travelled = []
+                        for it in range(len(results)):
+                            percent_explored.append(results[it][0])
+                            distance_travelled.append(results[it][2][0] + results[it][2][1] + results[it][2][2])
+                        dist_trav_interp = np.interp(cov_pct, percent_explored, distance_travelled)
+                        dist_trav_av = [sum(x) for x in zip(dist_trav_interp, dist_trav_av)]
+                
+                dist_trav_av = [dist/40.0 for dist in dist_trav_av]
+                all_lists['{}_{}fc'.format(algorithm, pfc)] = dist_trav_av
+                all_metrics['{}_{}fc'.format(algorithm, pfc)] = calculate_objective_function(dist_trav_av)
+
+    with open('./decentralized_exploration/results/all_exploration_rates', 'wb') as outfile:
+        pickle.dump([all_lists, all_metrics], outfile, pickle.HIGHEST_PROTOCOL)
+
+
+def calculate_objective_function(dist_trav):
+    resolution = 0.0001
+    cov_pct = np.arange(0.1, 1.0+resolution, resolution).tolist()
+
+    obj_metric = 0
+
+    for i in range(len(cov_pct)):
+        obj_metric += cov_pct[i]/dist_trav[i]
+
+    return obj_metric
+
+
 if __name__ == '__main__':  
     # for fci in [2, 3, 4, 5, 7, 10]:
     #     for pfc in [10, 20, 30, 40, 50, 60, 70, 80, 90]:
     #         create_full_dataframe(communication_level=pfc, down_iterations=fci)
     
-    df = compare_parameters([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100], [2, 3, 4, 5, 7, 10])
+    # df = compare_parameters([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100], [2, 3, 4, 5, 7, 10])
 
-    df.to_csv('./decentralized_exploration/results/all_data_summary.csv')  
+    # df.to_csv('./decentralized_exploration/results/all_data_summary.csv') 
+
+    get_exploration_rates([0, 20, 50, 100], [7]) 
