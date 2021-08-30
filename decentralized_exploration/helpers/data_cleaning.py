@@ -124,9 +124,11 @@ def compare_parameters(communication_levels, down_iterations):
     return all_data
 
 
-if __name__ == '__main__':
-    for fci in [2, 3, 4, 5, 7, 10]:
-        for pfc in [10, 20, 30, 40, 50, 60, 70, 80, 90]:
-            create_full_dataframe(communication_level=pfc, down_iterations=fci)
+if __name__ == '__main__':  
+    # for fci in [2, 3, 4, 5, 7, 10]:
+    #     for pfc in [10, 20, 30, 40, 50, 60, 70, 80, 90]:
+    #         create_full_dataframe(communication_level=pfc, down_iterations=fci)
     
-    print(compare_parameters([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100], [2, 3, 4, 5, 7, 10]))
+    df = compare_parameters([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100], [2, 3, 4, 5, 7, 10])
+
+    df.to_csv('./decentralized_exploration/results/all_data_summary.csv')  
