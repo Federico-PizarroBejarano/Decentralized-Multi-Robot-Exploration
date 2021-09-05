@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+from copy import deepcopy
 
 from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
 from decentralized_exploration.helpers.grid import convert_pixelmap_to_grid, merge_map
@@ -211,7 +212,7 @@ class RobotTeam:
             # plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
             # plt.pause(0.5)
             
-            grid_statistics =  [self._grid.percent_explored(), self._local_interaction(robot_states=world.robot_states, world=world), list(distances_travelled), world.get_position('robot_1'), world.get_position('robot_2'), world.get_position('robot_3'), time.time()-start_time]
+            grid_statistics =  [self._grid.percent_explored(), self._local_interaction(robot_states=world.robot_states, world=world), list(distances_travelled), world.get_position('robot_1'), world.get_position('robot_2'), world.get_position('robot_3'), deepcopy(self._pixel_map), time.time()-start_time]
             explored_per_iteration.append(grid_statistics)
             
             iteration += 1

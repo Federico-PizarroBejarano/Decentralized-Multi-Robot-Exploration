@@ -32,12 +32,12 @@ if __name__ == '__main__':
     for algorithm in algorithms:
         for test in range(1, 11):
             for starting_poses_key in all_starting_poses.keys():
-                for pfc in [10, 20, 30, 40, 50, 60, 70, 80, 90]:
-                    for fci in [2, 3, 4, 5, 7, 10]:
-                        filename = '{}_{}_{}_{}fc_{}iters.pkl'.format(algorithm, test, starting_poses_key, pfc, fci)
+                for pfc in [0, 100]:
+                    for fci in [7]:
+                        filename = '{}_{}_{}_{}fc_{}iters_rerun.pkl'.format(algorithm, test, starting_poses_key, pfc, fci)
 
                         if filename in all_files:
-                            print('{}_{}_{}_{}fc_{}iters.pkl'.format(algorithm, test, starting_poses_key, pfc, fci) + ' SKIPPED!!')
+                            print('{}_{}_{}_{}fc_{}iters_rerun.pkl'.format(algorithm, test, starting_poses_key, pfc, fci) + ' SKIPPED!!')
                             continue
 
                         print(algorithm, test, starting_poses_key, '{}% fail'.format(pfc), fci)

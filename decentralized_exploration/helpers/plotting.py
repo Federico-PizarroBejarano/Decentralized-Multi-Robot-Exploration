@@ -5,8 +5,10 @@ from matplotlib.patches import RegularPolygon, Circle
 from matplotlib.lines import Line2D
 import cPickle as pickle
 
+from decentralized_exploration.helpers.grid import convert_pixelmap_to_grid, merge_map
 
-def plot_grid(grid, plot, robot_states = {}, mode='value'):
+
+def plot_grid(grid, plot, robot_states = {}, mode='value', s=140):
     '''
     Plots a given Grid. If a robot_pos is given, will highlight the cell the robot is in in red
 
@@ -57,10 +59,13 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
 
     plot.set_aspect('equal')
 
-    pixel_robot_states = {}
-    for robot in robot_states.keys():
-        point=robot_states[robot].pixel_position
-        pixel_robot_states[point] = robot[-1]
+    if isinstance(robot_states, dict):
+        pixel_robot_states = {}
+        for robot in robot_states.keys():
+            point=robot_states[robot].pixel_position
+            pixel_robot_states[point] = robot[-1]
+    else:
+        pixel_robot_states = [tuple(pose) for pose in robot_states]
     
     # Add some coloured cells
     for x, y, c in zip(x_coord, y_coord, colors):  
@@ -72,11 +77,16 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
             elif rewards[(y, x)] < 0:
                 c = 'red'
         if (y, x) in pixel_robot_states:
-            c = 'y'
+            if pixel_robot_states.index((y, x)) == 0:
+                c = 'r'
+            elif pixel_robot_states.index((y, x)) == 1:
+                c = 'g'
+            else:
+                c = 'b'
             alpha = 1
-            plot.text(x, y, pixel_robot_states[(y, x)], ha='center', va='center', size=8)
+            # plot.text(x, y, pixel_robot_states[(y, x)], ha='center', va='center', size=8)
         
-        plot.scatter(x, y, color=c, alpha=alpha, marker='s', s=140)
+        plot.scatter(x, y, color=c, alpha=alpha, marker='s', s=s)
 
     plot.set_xlim(-0.5, 19.5)
     plot.set_ylim(-0.5, 19.5)
@@ -88,6 +98,39 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
     #                     Line2D([0], [0], marker='H', markerfacecolor='yellow', alpha=1, color='k', markersize=15, linewidth=0, label='Robot')]
 
     # plot.legend(handles=legend_elements, framealpha=0.9, loc='lower right')
+
+    plot.invert_yaxis()
+
+
+def plot_grid_simple(pixel_map, plot, robot_states = {}, s=140):
+    '''
+    Plots a given pixel map. If a robot_pos is given, will highlight the cell the robot is in in red
+
+    Parameters
+    ----------
+    plot (matplotlib.axes): a matplotlib axes object to be plotted on
+    robot_states (dict): an optional dictionary where the keys are the robot_ids and the values are RobotStates
+    mode (str) = either 'value' to show the value of each cell, 'reward' to show the reward at each cell, 
+        'probability' to show the probability of each robot exploring neighboring states, or blank to show nothing
+    '''
+
+    plot.cla()
+    plot.set_aspect('equal')
+    plot.axes.xaxis.set_visible(False)
+    plot.axes.yaxis.set_visible(False)
+
+    pixel_map[pixel_map == -1] = 0.5
+
+    pixel_robot_states = [tuple(pose) for pose in robot_states]
+    
+    plot.imshow(-pixel_map, cmap='gray')
+    
+    plot.scatter(pixel_robot_states[0][1], pixel_robot_states[0][0], color='r', marker='s', s=s)
+    plot.scatter(pixel_robot_states[1][1], pixel_robot_states[1][0], color='g', marker='s', s=s)
+    plot.scatter(pixel_robot_states[2][1], pixel_robot_states[2][0], color='b', marker='s', s=s)
+
+    plot.set_xlim(-0.5, 19.5)
+    plot.set_ylim(-0.5, 19.5)
 
     plot.invert_yaxis()
 
@@ -430,17 +473,75 @@ def plot_trajectory(filename, map_file='large_map_4'):
     plt.show()
 
 
+def create_trajectory_video(robot_poses, pixel_maps, world_size=(20, 20)):
+    fig = plt.figure()
+    titles = ['MADE_NET (Cen)', 'MADE_NET (Dec)', 'MDP', 'Utility', 'Greedy']
+
+    ax1 = fig.add_subplot(231)
+    ax2 = fig.add_subplot(232)
+    ax3 = fig.add_subplot(233)
+    ax4 = fig.add_subplot(234)
+    ax5 = fig.add_subplot(235)
+
+    axes = [ax1, ax2, ax3, ax4, ax5]
+
+    legend_elements = [Line2D([0], [0], marker='s', markerfacecolor='r', alpha=1, color='k', markersize=20, linewidth=0, label='Robot 1'), 
+                        Line2D([0], [0], marker='s', markerfacecolor='g', alpha=1, color='k', markersize=20, linewidth=0, label='Robot 2'),
+                        Line2D([0], [0], marker='s', markerfacecolor='b', alpha=1, color='k', markersize=20, linewidth=0, label='Robot 3'), 
+                        Line2D([0], [0], marker='s', markerfacecolor='w', alpha=1, color='k', markersize=20, linewidth=0, label='Free Space'),
+                        Line2D([0], [0], marker='s', markerfacecolor='k', alpha=1, color='k', markersize=20, linewidth=0, label='Obstacle'),
+                        Line2D([0], [0], marker='s', markerfacecolor='gray', alpha=1, color='k', markersize=20, linewidth=0, label='Unknown')]
+
+    fig.legend(handles=legend_elements, fontsize=14, framealpha=1, loc=(0.7, 0.20))
+
+    for i in range(len(robot_poses[0])):
+        for algo in range(len(robot_poses)):
+            plot_grid_simple(pixel_maps[algo][i], axes[algo], robot_poses[algo][i], s=85)
+            axes[algo].set_title(titles[algo])
+        plt.pause(0.5)
+
+
 if __name__ == '__main__':
-    plot_computation_time()
-    plot_variation()
-    plot_local_interactions()
+    # with open('./decentralized_exploration/results/trajectories/agt_trajectory.pkl', 'rb') as infile:
+    #     poses = pickle.load(infile)
+    # with open('./decentralized_exploration/results/trajectories/scanned_cells.pkl', 'rb') as infile:
+    #     masks = pickle.load(infile)
+    
+    # world_map = np.load('./decentralized_exploration/maps/test_1.npy')
+    # # plt.imshow(world_map)
+    # # plt.show()
+    # pixel_maps = []
 
-    plot_trajectory('greedy')
-    plot_trajectory('greedy_blocked')
-    plot_trajectory('greedy_no_comm')
+    # for mask in masks:
+    #     pixel_map = -np.ones((20, 20))
 
-    plot_trajectory('mdp')
-    plot_trajectory('mdp_blocked')
-    plot_trajectory('mdp_no_comm')
+    #     for cell in mask:
+    #         pixel_map[cell[0], cell[1]] = world_map[cell[0], cell[1]]
+        
+    #     pixel_maps.append(pixel_map)
+    #     # plt.imshow(pixel_map, cmap='gray')
+    #     # plt.pause(0.05)
+    
+    # all_robot_poses = []
+    
+    # for pose in range(len(poses[0])):
+    #     robot_poses = []
+    #     for robot in range(len(poses)):
+    #         robot_poses.append(poses[robot][pose])
+    #     all_robot_poses.append(robot_poses)
 
-    plot_exploration_rate()
+    # all_robot_poses.insert(0, [(0, 0), (1, 0), (0, 1)])
+    # all_robot_poses.insert(0, [(0, 0), (1, 0), (0, 1)])
+    # pixel_maps.insert(0, -np.ones((20, 20)))
+    # pixel_maps.append(world_map)
+
+    # np.save('./decentralized_exploration/results/trajectories/robot_poses.npy', all_robot_poses)
+    # np.save('./decentralized_exploration/results/trajectories/pixel_maps.npy', pixel_maps)
+
+    all_robot_poses = np.load('./decentralized_exploration/results/trajectories/robot_poses.npy')
+    pixel_maps = np.load('./decentralized_exploration/results/trajectories/pixel_maps.npy')  
+
+    all_robot_poses = [all_robot_poses]*5
+    pixel_maps = [pixel_maps]*5
+
+    create_trajectory_video(all_robot_poses, pixel_maps)

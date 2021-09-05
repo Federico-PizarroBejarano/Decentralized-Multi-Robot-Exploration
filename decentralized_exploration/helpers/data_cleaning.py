@@ -81,13 +81,13 @@ def create_full_dataframe(communication_level, down_iterations):
     for algorithm in algorithms:
         for map_num in maps:
             for starting_pose in all_starting_poses:
-                filename = '{}_{}_{}_{}fc_{}iters'.format(algorithm, map_num, starting_pose, communication_level, down_iterations)
+                filename = '{}_{}_{}_{}fc_{}iters_rerun'.format(algorithm, map_num, starting_pose, communication_level, down_iterations)
                 data = load_data(filename)
                 data_dict = create_data_entry(data)
 
                 all_data.loc[algorithm, map_num, starting_pose] = data_dict
 
-    all_data.to_pickle('./decentralized_exploration/results/all_data_{}fc_{}iters.pkl'.format(communication_level, down_iterations))
+    all_data.to_pickle('./decentralized_exploration/results/all_data_{}fc_{}iters_rerun.pkl'.format(communication_level, down_iterations))
     return all_data
 
 
@@ -98,7 +98,7 @@ def compare_parameters(communication_levels, down_iterations):
         'mdp'
     ]
 
-    idx = pd.MultiIndex.from_product([algorithms, communication_levels, down_iterations], names=['Algorithm', 'Prob FC', 'FC Interval'])
+    idx = pd.MultiIndex.from_product([algorithms, communication_levels], names=['Algorithm', 'Prob FC'])
     col = [ 'local_int', 
             'time',
             'total_dist',
@@ -116,13 +116,13 @@ def compare_parameters(communication_levels, down_iterations):
 
     for pfc in communication_levels:
         for fci in down_iterations:
-            filename = 'all_data_{}fc_{}iters.pkl'.format(pfc, fci)
+            filename = 'all_data_{}fc_{}iters_rerun.pkl'.format(pfc, fci)
             df = pd.read_pickle('./decentralized_exploration/results/'+filename)
 
             for algorithm in algorithms:
-                all_data.loc[algorithm, pfc, fci] = df.loc[algorithm].mean()
+                all_data.loc[algorithm, pfc] = df.loc[algorithm].mean()
 
-    all_data.to_pickle('./decentralized_exploration/results/all_data_summary.pkl')
+    all_data.to_pickle('./decentralized_exploration/results/all_data_summary_rerun.pkl')
     return all_data
 
 
@@ -185,12 +185,12 @@ def calculate_objective_function(dist_trav):
 
 
 if __name__ == '__main__':  
-    # for fci in [2, 3, 4, 5, 7, 10]:
-    #     for pfc in [10, 20, 30, 40, 50, 60, 70, 80, 90]:
+    # for fci in [7]:
+    #     for pfc in [100]:#, 10, 20, 30, 40, 50, 60, 70, 80, 90]:
     #         create_full_dataframe(communication_level=pfc, down_iterations=fci)
     
-    # df = compare_parameters([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100], [2, 3, 4, 5, 7, 10])
+    df = compare_parameters([0, 20, 50, 100], [7])
 
     # df.to_csv('./decentralized_exploration/results/all_data_summary.csv') 
 
-    get_exploration_rates([0, 20, 50, 100], [7]) 
+    # get_exploration_rates([0, 20, 50, 100], [7]) 
