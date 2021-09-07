@@ -27,28 +27,27 @@ def create_data_entry(data):
     
     data_dict['time'] += data[-1][-1]
     data_dict['total_dist'] += data[-1][2][0] + data[-1][2][1] + data[-1][2][2]
+    data_dict['to_100'] = len(data)
 
     for iteration in range(len(data)): 
         data_dict['local_int'] += int(len(data[iteration][1])/2)
 
-        if data[iteration][0] >= 1.0 and data_dict['to_100'] == 0:
-            data_dict['to_100'] = iteration
-        elif data[iteration][0] >= 0.9 and data_dict['to_90'] == 0:
-            data_dict['to_90'] = iteration
+        if data[iteration][0] >= 0.9 and data_dict['to_90'] == 0:
+            data_dict['to_90'] = iteration + 1
         elif data[iteration][0] >= 0.8 and data_dict['to_80'] == 0:
-            data_dict['to_80'] = iteration
+            data_dict['to_80'] = iteration + 1
         elif data[iteration][0] >= 0.7 and data_dict['to_70'] == 0:
-            data_dict['to_70'] = iteration
+            data_dict['to_70'] = iteration + 1
         elif data[iteration][0] >= 0.6 and data_dict['to_60'] == 0:
-            data_dict['to_60'] = iteration
+            data_dict['to_60'] = iteration + 1
         elif data[iteration][0] >= 0.5 and data_dict['to_50'] == 0:
-            data_dict['to_50'] = iteration
+            data_dict['to_50'] = iteration + 1
         elif data[iteration][0] >= 0.4 and data_dict['to_40'] == 0:
-            data_dict['to_40'] = iteration
+            data_dict['to_40'] = iteration + 1
         elif data[iteration][0] >= 0.3 and data_dict['to_30'] == 0:
-            data_dict['to_30'] = iteration
+            data_dict['to_30'] = iteration + 1
         elif data[iteration][0] >= 0.2 and data_dict['to_20'] == 0:
-            data_dict['to_20'] = iteration
+            data_dict['to_20'] = iteration + 1
     
     return data_dict
 
@@ -186,11 +185,12 @@ def calculate_objective_function(dist_trav):
 
 if __name__ == '__main__':  
     # for fci in [7]:
-    #     for pfc in [100]:#, 10, 20, 30, 40, 50, 60, 70, 80, 90]:
-    #         create_full_dataframe(communication_level=pfc, down_iterations=fci)
-    
+    #     for pfc in [0, 20, 50, 100]:#, 10, 20, 30, 40, 50, 60, 70, 80, 90]:
+    #         df = create_full_dataframe(communication_level=pfc, down_iterations=fci)
+    #         df.to_csv('./decentralized_exploration/results/all_data_{}fc_{}iters_rerun.csv'.format(pfc, fci)) 
+
     df = compare_parameters([0, 20, 50, 100], [7])
 
-    # df.to_csv('./decentralized_exploration/results/all_data_summary.csv') 
+    df.to_csv('./decentralized_exploration/results/all_data_summary_rerun.csv') 
 
     # get_exploration_rates([0, 20, 50, 100], [7]) 

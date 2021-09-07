@@ -18,6 +18,12 @@ def rename_files():
             os.rename(src, dst)
   
 
+def delete_files():
+    for _, filename in enumerate(os.listdir('./decentralized_exploration/results')):
+        if 'rerun' not in filename:
+            os.remove('./decentralized_exploration/results'+filename)
+  
+
 def fix_distances():
     for _, filename in enumerate(os.listdir('./decentralized_exploration/results')):
         if 'greedy' in filename or 'utility' in filename or 'mdp' in filename:
