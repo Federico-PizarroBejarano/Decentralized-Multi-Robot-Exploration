@@ -20,8 +20,8 @@ def rename_files():
 
 def delete_files():
     for _, filename in enumerate(os.listdir('./decentralized_exploration/results')):
-        if 'rerun' not in filename:
-            os.remove('./decentralized_exploration/results'+filename)
+        if 'rerun' not in filename and 'trajectories' not in filename:
+            os.remove('./decentralized_exploration/results/'+filename)
   
 
 def fix_distances():
@@ -52,4 +52,4 @@ def fix_distances():
                 pickle.dump(results, outfile, pickle.HIGHEST_PROTOCOL)
 
 if __name__ == '__main__':
-    fix_distances()
+    delete_files()
