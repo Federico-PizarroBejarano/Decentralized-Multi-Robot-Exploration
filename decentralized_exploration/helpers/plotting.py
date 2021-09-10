@@ -475,7 +475,7 @@ def plot_trajectory(filename, map_file='large_map_4'):
 
 def create_trajectory_video(robot_poses, pixel_maps, world_size=(20, 20)):
     fig = plt.figure()
-    titles = ['MADE_NET (Cen)', 'MADE_NET (Dec)', 'MDP', 'Utility', 'Greedy']
+    titles = ['MADE_NET (Cen)', 'MADE_NET (Dec)', 'MDP', 'Utility', 'Greedy'][::-1]
 
     ax1 = fig.add_subplot(231)
     ax2 = fig.add_subplot(232)
@@ -494,54 +494,26 @@ def create_trajectory_video(robot_poses, pixel_maps, world_size=(20, 20)):
 
     fig.legend(handles=legend_elements, fontsize=14, framealpha=1, loc=(0.7, 0.20))
 
-    for i in range(len(robot_poses[0])):
+    max_len = max([len(robot_poses[i]) for i in range(len(robot_poses))])
+
+    for i in range(max_len):
         for algo in range(len(robot_poses)):
+            if i >= len(robot_poses[algo]):
+                i = len(robot_poses[algo])-1
             plot_grid_simple(pixel_maps[algo][i], axes[algo], robot_poses[algo][i], s=85)
             axes[algo].set_title(titles[algo])
         plt.pause(0.5)
 
 
 if __name__ == '__main__':
-    # with open('./decentralized_exploration/results/trajectories/agt_trajectory.pkl', 'rb') as infile:
-    #     poses = pickle.load(infile)
-    # with open('./decentralized_exploration/results/trajectories/scanned_cells.pkl', 'rb') as infile:
-    #     masks = pickle.load(infile)
-    
-    # world_map = np.load('./decentralized_exploration/maps/test_1.npy')
-    # # plt.imshow(world_map)
-    # # plt.show()
-    # pixel_maps = []
+    comm_success = 100
+    trial = '3-TL'
 
-    # for mask in masks:
-    #     pixel_map = -np.ones((20, 20))
+    all_robot_poses = []
+    all_pixel_maps = []
 
-    #     for cell in mask:
-    #         pixel_map[cell[0], cell[1]] = world_map[cell[0], cell[1]]
-        
-    #     pixel_maps.append(pixel_map)
-    #     # plt.imshow(pixel_map, cmap='gray')
-    #     # plt.pause(0.05)
-    
-    # all_robot_poses = []
-    
-    # for pose in range(len(poses[0])):
-    #     robot_poses = []
-    #     for robot in range(len(poses)):
-    #         robot_poses.append(poses[robot][pose])
-    #     all_robot_poses.append(robot_poses)
+    for algo in ['greedy', 'utility', 'mdp', 'made-net-dt', 'made-net']:
+        all_robot_poses.append(np.load('./decentralized_exploration/results/trajectories/{}/{}/{}/robot_poses.npy'.format(comm_success, algo, trial)))
+        all_pixel_maps.append(np.load('./decentralized_exploration/results/trajectories/{}/{}/{}/pixel_maps.npy'.format(comm_success, algo, trial)))
 
-    # all_robot_poses.insert(0, [(0, 0), (1, 0), (0, 1)])
-    # all_robot_poses.insert(0, [(0, 0), (1, 0), (0, 1)])
-    # pixel_maps.insert(0, -np.ones((20, 20)))
-    # pixel_maps.append(world_map)
-
-    # np.save('./decentralized_exploration/results/trajectories/robot_poses.npy', all_robot_poses)
-    # np.save('./decentralized_exploration/results/trajectories/pixel_maps.npy', pixel_maps)
-
-    all_robot_poses = np.load('./decentralized_exploration/results/trajectories/robot_poses.npy')
-    pixel_maps = np.load('./decentralized_exploration/results/trajectories/pixel_maps.npy')  
-
-    all_robot_poses = [all_robot_poses]*5
-    pixel_maps = [pixel_maps]*5
-
-    create_trajectory_video(all_robot_poses, pixel_maps)
+    create_trajectory_video(all_robot_poses, all_pixel_maps)

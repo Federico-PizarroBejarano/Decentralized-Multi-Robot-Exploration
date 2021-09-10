@@ -1,8 +1,6 @@
 import os
 import numpy as np
-import pickle
-
-import matplotlib.pyplot as plt
+import cPickle as pickle
 
 def rename_files():
     for filename in os.listdir('./decentralized_exploration/results'):
@@ -104,5 +102,44 @@ def reformat_pickles():
                 np.save('./decentralized_exploration/results/trajectories/{}/{}/{}/pixel_maps.npy'.format(comm_success, algo, trial), pixel_maps)
 
 
+def adding_trajectories():
+    all_starting_poses = {  
+                        'TL':[(0, 0), (1, 0), (0, 1)], 
+                        'TR':[(0, 19), (1, 19), (0, 18)], 
+                        'BL':[(19, 0), (18, 0), (19, 1)], 
+                        'BR':[(19, 19), (18, 19), (19, 18)] 
+                    }
+    
+    all_starting_poses_key = {  
+                        'TL': 'top_left', 
+                        'TR': 'top_right', 
+                        'BL': 'bottom_left', 
+                        'BR': 'bottom_right' 
+                    }
+
+    for comm_success in [0, 50, 80, 100]:
+        for algo in ['greedy', 'utility', 'mdp']:
+            for trial in os.listdir('./decentralized_exploration/results/trajectories/{}/{}'.format(comm_success, 'made-net')):
+                print(comm_success, algo, trial)
+                trial_number = trial.split('-')[0]
+                starting_pose = all_starting_poses_key[trial[-2:]]
+
+                with open('./decentralized_exploration/results/{}_{}_{}_{}fc_7iters_rerun.pkl'.format(algo, trial_number, starting_pose, 100-comm_success), 'rb') as infile:
+                    all_data = pickle.load(infile)
+
+                all_robot_poses = [[data[3], data[4], data[5]] for data in all_data]
+                pixel_maps = [data[-2] for data in all_data]
+
+                all_robot_poses.insert(0, all_starting_poses[trial[-2:]])
+                all_robot_poses.insert(0, all_starting_poses[trial[-2:]])
+
+                world_map = np.load('./decentralized_exploration/maps/test_{}.npy'.format(trial.split('-')[0]))
+                pixel_maps.insert(0, -np.ones((20, 20)))
+                pixel_maps.append(world_map)
+
+                np.save('./decentralized_exploration/results/trajectories/{}/{}/{}/robot_poses.npy'.format(comm_success, algo, trial), all_robot_poses)
+                np.save('./decentralized_exploration/results/trajectories/{}/{}/{}/pixel_maps.npy'.format(comm_success, algo, trial), pixel_maps)
+
+
 if __name__ == '__main__':
-    reformat_pickles()
+    adding_trajectories()
