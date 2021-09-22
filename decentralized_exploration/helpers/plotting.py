@@ -475,7 +475,7 @@ def plot_trajectory(filename, map_file='large_map_4'):
 
 def create_trajectory_video(robot_poses, pixel_maps, world_size=(20, 20)):
     fig = plt.figure()
-    titles = ['MADE_NET (Cen)', 'MADE_NET (Dec)', 'MDP', 'Utility', 'Greedy'][::-1]
+    titles = ['MADE-Net', 'MADE-Net-Dt', 'Planning-based Method', 'Utility-based Method', 'Nearest Frontier Method'][::-1]
 
     ax1 = fig.add_subplot(231)
     ax2 = fig.add_subplot(232)
@@ -496,18 +496,30 @@ def create_trajectory_video(robot_poses, pixel_maps, world_size=(20, 20)):
 
     max_len = max([len(robot_poses[i]) for i in range(len(robot_poses))])
 
+    for algo in range(len(robot_poses)):
+        plot_grid_simple(pixel_maps[algo][0], axes[algo], robot_poses[algo][0], s=85)
+        axes[algo].set_title(titles[algo])
+    plt.pause(5)
+
     for i in range(max_len):
         for algo in range(len(robot_poses)):
             if i >= len(robot_poses[algo]):
-                i = len(robot_poses[algo])-1
-            plot_grid_simple(pixel_maps[algo][i], axes[algo], robot_poses[algo][i], s=85)
+                j = len(robot_poses[algo])-1
+            else:
+                j = i
+            plot_grid_simple(pixel_maps[algo][j], axes[algo], robot_poses[algo][j], s=85)
             axes[algo].set_title(titles[algo])
         plt.pause(0.5)
+    
+    for algo in range(len(robot_poses)):
+        plot_grid_simple(pixel_maps[algo][-1], axes[algo], robot_poses[algo][-1], s=85)
+        axes[algo].set_title(titles[algo])
+    plt.pause(5)
 
 
 if __name__ == '__main__':
-    comm_success = 100
-    trial = '3-TL'
+    comm_success = 0
+    trial = '2-BL'
 
     all_robot_poses = []
     all_pixel_maps = []
