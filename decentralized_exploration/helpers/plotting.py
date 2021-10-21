@@ -8,10 +8,9 @@ import cPickle as pickle
 from decentralized_exploration.helpers.grid import convert_pixelmap_to_grid, merge_map
 
 
-def plot_grid(grid, plot, robot_states = {}, mode='value', s=140):
+def plot_grid(grid, plot, robot_states = {}, mode='value'):
     '''
     Plots a given Grid. If a robot_pos is given, will highlight the cell the robot is in in red
-
     Parameters
     ----------
     grid (Grid): the grid to be plotted
@@ -59,13 +58,10 @@ def plot_grid(grid, plot, robot_states = {}, mode='value', s=140):
 
     plot.set_aspect('equal')
 
-    if isinstance(robot_states, dict):
-        pixel_robot_states = {}
-        for robot in robot_states.keys():
-            point=robot_states[robot].pixel_position
-            pixel_robot_states[point] = robot[-1]
-    else:
-        pixel_robot_states = [tuple(pose) for pose in robot_states]
+    pixel_robot_states = {}
+    for robot in robot_states.keys():
+        point=robot_states[robot].pixel_position
+        pixel_robot_states[point] = robot[-1]
     
     # Add some coloured cells
     for x, y, c in zip(x_coord, y_coord, colors):  
@@ -77,16 +73,11 @@ def plot_grid(grid, plot, robot_states = {}, mode='value', s=140):
             elif rewards[(y, x)] < 0:
                 c = 'red'
         if (y, x) in pixel_robot_states:
-            if pixel_robot_states.index((y, x)) == 0:
-                c = 'r'
-            elif pixel_robot_states.index((y, x)) == 1:
-                c = 'g'
-            else:
-                c = 'b'
+            c = 'y'
             alpha = 1
-            # plot.text(x, y, pixel_robot_states[(y, x)], ha='center', va='center', size=8)
+            plot.text(x, y, pixel_robot_states[(y, x)], ha='center', va='center', size=8)
         
-        plot.scatter(x, y, color=c, alpha=alpha, marker='s', s=s)
+        plot.scatter(x, y, color=c, alpha=alpha, marker='s', s=140)
 
     plot.set_xlim(-0.5, 19.5)
     plot.set_ylim(-0.5, 19.5)

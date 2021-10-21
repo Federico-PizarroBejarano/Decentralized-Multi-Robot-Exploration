@@ -2,6 +2,7 @@ import os
 import numpy as np
 import cPickle as pickle
 
+
 def rename_files():
     for filename in os.listdir('./decentralized_exploration/results'):
         if '_0fc' in filename:

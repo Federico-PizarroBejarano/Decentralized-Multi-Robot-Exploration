@@ -25,6 +25,7 @@ def convert_image_to_pixelmap(file_path):
 
     return pixel_map
 
+
 def convert_pickle3_to_npy(filename):
     with open('./decentralized_exploration/maps/{}.pickle'.format(filename), 'rb') as outfile:
         results = pickle.load(outfile)
