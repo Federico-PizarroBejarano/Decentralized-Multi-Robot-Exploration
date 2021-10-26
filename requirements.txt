@@ -1,6 +1,6 @@
 numpy
 scipy
 matplotlib
-imageio
+imageio==2.6.1
 abc
 pandas
