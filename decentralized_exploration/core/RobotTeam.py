@@ -32,6 +32,7 @@ class RobotTeam:
 
     # Tunable parameter
     local_interaction_dist = 4
+    plot_exploration = False
 
     def __init__(self, world_size, communication_range=float('inf'), blocked_by_obstacles=False, failed_communication_interval=0, probability_of_failed_communication=0):
         self._robots = {}
@@ -147,34 +148,35 @@ class RobotTeam:
         ----------
         world (World): a World object that the robot will explore
         '''
+        if self.plot_exploration:
+            fig1 = plt.figure(1)
+            ax1 = fig1.add_subplot(111)
 
-        fig1 = plt.figure(1)
-        ax1 = fig1.add_subplot(111)
+            fig2 = plt.figure(2)
+            ax2 = fig2.add_subplot(111)
 
-        fig2 = plt.figure(2)
-        ax2 = fig2.add_subplot(111)
+            fig3 = plt.figure(3)
+            ax3 = fig3.add_subplot(111)
 
-        fig3 = plt.figure(3)
-        ax3 = fig3.add_subplot(111)
-
-        mode = 'value'
-    
-        plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
-        plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
-        plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
+            mode = 'value'
         
-        plt.pause(0.05)
+            plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
+            plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
+            plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
+            
+            plt.pause(0.05)
 
         start_time = time.time()
 
         for robot in self._robots.values():
             robot.scan_environment(world=world)
             self._pixel_map = merge_map(grid=self._grid, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
-            plot_grid(grid=self._grid, plot=ax1, robot_states=world.robot_states, mode=mode)
-            plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
-            plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
-            plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
-            plt.pause(0.05)
+            if self.plot_exploration:
+                plot_grid(grid=self._grid, plot=ax1, robot_states=world.robot_states, mode=mode)
+                plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
+                plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
+                plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
+                plt.pause(0.05)
 
         self._grid.propagate_rewards()
 
@@ -206,17 +208,19 @@ class RobotTeam:
 
             self._grid.propagate_rewards()
 
-            plot_grid(grid=self._grid, plot=ax1, robot_states=world.robot_states, mode=mode)
-            plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
-            plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
-            plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
-            plt.pause(0.5)
+            if self.plot_exploration:
+                plot_grid(grid=self._grid, plot=ax1, robot_states=world.robot_states, mode=mode)
+                plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
+                plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
+                plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
+                plt.pause(0.5)
             
             grid_statistics =  [self._grid.percent_explored(), self._local_interaction(robot_states=world.robot_states, world=world), list(distances_travelled), world.get_position('robot_1'), world.get_position('robot_2'), world.get_position('robot_3'), deepcopy(self._pixel_map), time.time()-start_time]
             explored_per_iteration.append(grid_statistics)
             
             iteration += 1
         
-        plt.close('all')
+        if self.plot_exploration:
+            plt.close('all')
 
         return explored_per_iteration
