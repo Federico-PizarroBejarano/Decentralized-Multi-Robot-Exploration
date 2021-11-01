@@ -6,9 +6,7 @@ import os
 
 from decentralized_exploration.core.World import World
 from decentralized_exploration.core.RangeFinder import RangeFinder
-from decentralized_exploration.core.robots.RobotGreedy import RobotGreedy
-from decentralized_exploration.core.robots.RobotUtility import RobotUtility
-from decentralized_exploration.core.robots.RobotMDP import RobotMDP
+from decentralized_exploration.core.robots.RobotRandom import RobotRandom
 from decentralized_exploration.core.RobotTeam import RobotTeam
 from decentralized_exploration.helpers.RobotState import RobotState
 from decentralized_exploration.helpers.generate_pixelmap import generate_pixelmap
@@ -24,9 +22,7 @@ if __name__ == '__main__':
                         }
 
     algorithms = [
-                    'greedy', 
-                    'utility', 
-                    'mdp'
+                    'random', 
                 ]
 
     all_files = os.listdir('./decentralized_exploration/results')
@@ -72,12 +68,8 @@ if __name__ == '__main__':
                             starting_pos = starting_poses[r]
                             range_finder = RangeFinder(full_range=10, frequency=0.7)
 
-                            if algorithm == 'greedy':
-                                robot = RobotGreedy(robot_id='robot_' + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
-                            elif algorithm == 'utility':
-                                robot = RobotUtility(robot_id='robot_' + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
-                            elif algorithm == 'mdp':
-                                robot = RobotMDP(robot_id='robot_' + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
+                            if algorithm == 'random':
+                                robot = RobotRandom(robot_id='robot_' + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
                             
                             robot_state = RobotState(pixel_position=starting_pos)
 
