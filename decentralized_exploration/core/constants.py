@@ -11,3 +11,6 @@ class Actions():
 
 probability_of_failed_action = 10
 probability_of_failed_scan = 10
+
+UNOCCUPIED = 0
+OCCUPIED = 1

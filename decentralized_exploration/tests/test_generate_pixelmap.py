@@ -1,4 +1,3 @@
-from token import PERCENT
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -7,10 +6,6 @@ from ..helpers.generate_pixelmap import generate_pixelmap
 LENGTH = 100
 WIDTH = 100
 OBSTACLE_DENSITY = 0.3
-
-OCCUPIED = 1
-UNOCCUPIED = 0
-
 
 def test_generate_pixelmap():
     pixelmap = generate_pixelmap(LENGTH, WIDTH, OBSTACLE_DENSITY)
