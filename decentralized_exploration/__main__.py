@@ -1,3 +1,4 @@
+from matplotlib.pyplot import hexbin
 import numpy as np
 import random
 import cPickle as pickle
@@ -10,6 +11,7 @@ from decentralized_exploration.core.robots.RobotUtility import RobotUtility
 from decentralized_exploration.core.robots.RobotMDP import RobotMDP
 from decentralized_exploration.core.RobotTeam import RobotTeam
 from decentralized_exploration.helpers.RobotState import RobotState
+from decentralized_exploration.helpers.generate_pixelmap import generate_pixelmap
 from decentralized_exploration.helpers.grid import convert_pixelmap_to_grid
 
 
@@ -29,8 +31,10 @@ if __name__ == '__main__':
 
     all_files = os.listdir('./decentralized_exploration/results')
 
+    length, width, object_density = 20, 20, 0.3
+
     for algorithm in algorithms:
-        for test in range(1, 11):
+        for test in range(1):
             for starting_poses_key in all_starting_poses.keys():
                 for pfc in [0, 100]:
                     for fci in [7]:
@@ -41,7 +45,19 @@ if __name__ == '__main__':
                             continue
 
                         print(algorithm, test, starting_poses_key, '{}% fail'.format(pfc), fci)
-                        world_map = np.load('./decentralized_exploration/maps/test_{}.npy'.format(test))
+                        
+                        if os.path.isfile('./decentralized_exploration/maps/test_{}.npy'.format(test)): 
+                            world_map = np.load('./decentralized_exploration/maps/test_{}.npy'.format(test))
+
+                        else:
+                            world_map = generate_pixelmap(length, width, object_density)
+                            # ensure the robots starting positions are empty
+                            for start_positions in all_starting_poses.values():
+                                for start_position in start_positions:
+                                    world_map[start_position[0], start_position[1]] = 0
+                            np.save('./decentralized_exploration/maps/test_0', world_map)
+
+
                         completed_grid = convert_pixelmap_to_grid(pixel_map=world_map)
 
                         num_of_robots = 3
