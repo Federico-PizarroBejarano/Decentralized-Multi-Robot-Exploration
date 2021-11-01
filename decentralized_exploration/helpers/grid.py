@@ -202,23 +202,6 @@ class Grid():
             if self.all_cells[tuple(coord)].state != 0:
                 return False
         return True
-
-    def propagate_rewards(self, radius=1):
-        '''
-        Clears the reward from all cells and then re-calculates the reward  at every cell
-        '''
-
-        for cell in self.all_cells.values():
-            cell.reward = 0
-        
-        for cell in self.all_cells.values():
-            if cell.state == -1:
-                neighbours = self.cell_neighbours(center_cell=cell, radius=radius)
-
-                for neighbour in neighbours:
-                    if neighbour.state == 0 and self.clear_path(start_cell=cell, end_cell=cell):
-                        neighbour.reward += 1
-
     
     def find_closest_unknown(self, center_cell):
         '''

@@ -11,7 +11,6 @@ from ..helpers.decision_making import calculate_dist, calculate_coord, calculate
 
 def test_grid_creation(I, ax1):
     grid = convert_pixelmap_to_grid(I)
-    grid.propagate_rewards()
     return grid
 
 def test_field_of_view(I, unknown_I, robot_pos):

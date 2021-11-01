@@ -99,9 +99,6 @@ class AbstractRobot:
         for free_point in free_points:
             found_cell = self.grid.all_cells[free_point]
             found_cell.update_cell(state=0)
-        
-        self.grid.propagate_rewards()
-
 
     @abstractmethod
     def _choose_next_pose(self, current_position, iteration, robot_states):

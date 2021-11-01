@@ -178,14 +178,12 @@ class RobotTeam:
                 plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
                 plt.pause(0.05)
 
-        self._grid.propagate_rewards()
-
         iteration = 0
         explored_per_iteration = []
         distances_travelled = [0, 0, 0]
         last_positions = [(10000, 10000), (10000, 10000), (10000, 10000)]
 
-        while self._grid.has_rewards():
+        while iteration <= 300:
             if iteration >= 300:
                 print('TAKING TOO LONG')
                 1/0
@@ -205,8 +203,6 @@ class RobotTeam:
                 robot.explore_1_timestep(world=world, iteration=iteration)
                 self._pixel_map = merge_map(grid=self._grid, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
                 distances_travelled[int(robot.robot_id[-1])-1] += np.linalg.norm(np.array(last_positions[int(robot.robot_id[-1])-1]) - np.array(world.get_position(robot_id=robot.robot_id)))
-
-            self._grid.propagate_rewards()
 
             if self.plot_exploration:
                 plot_grid(grid=self._grid, plot=ax1, robot_states=world.robot_states, mode=mode)
