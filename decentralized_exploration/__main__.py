@@ -6,6 +6,7 @@ import os
 
 from decentralized_exploration.core.World import World
 from decentralized_exploration.core.RangeFinder import RangeFinder
+from decentralized_exploration.core.robots.RobotGreedy import RobotGreedy
 from decentralized_exploration.core.robots.RobotRandom import RobotRandom
 from decentralized_exploration.core.RobotTeam import RobotTeam
 from decentralized_exploration.helpers.RobotState import RobotState
@@ -22,7 +23,7 @@ if __name__ == '__main__':
                         }
 
     algorithms = [
-                    'random', 
+                    'greedy',
                 ]
 
     all_files = os.listdir('./decentralized_exploration/results')
@@ -70,6 +71,8 @@ if __name__ == '__main__':
 
                             if algorithm == 'random':
                                 robot = RobotRandom(robot_id='robot_' + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
+                            elif algorithm == 'greedy':
+                                robot = RobotGreedy(robot_id='robot_' + str(r+1), range_finder=range_finder, width=20, length=20, world_size=world_map.shape)
                             
                             robot_state = RobotState(pixel_position=starting_pos)
 

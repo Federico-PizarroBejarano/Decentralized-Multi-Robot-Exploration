@@ -5,10 +5,6 @@ from ..helpers.plotting import plot_grid
 from ..helpers.grid import convert_pixelmap_to_grid
 from ..helpers.field_of_view import field_of_view
 
-from ..helpers.RobotState import RobotState
-from ..helpers.decision_making import calculate_dist, calculate_coord, calculate_utility
-
-
 def test_grid_creation(I, ax1):
     grid = convert_pixelmap_to_grid(I)
     return grid
@@ -40,8 +36,6 @@ def main():
 
     grid = test_grid_creation(unknown_I, ax1)
     robot_states = []#[RobotState((5, 6))]
-    # calculate_dist(grid.all_cells[(0, 0)], grid, 1, 2)
-    calculate_utility(grid.all_cells[(0, 0)], grid, robot_states, 1, 2)
     plot_grid(grid, plot=ax1, robot_states={}, mode='utility')
 
     plt.show()

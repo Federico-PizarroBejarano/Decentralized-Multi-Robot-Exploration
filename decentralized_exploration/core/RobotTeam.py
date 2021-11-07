@@ -3,9 +3,7 @@ import matplotlib.pyplot as plt
 import time
 from copy import deepcopy
 
-from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
 from decentralized_exploration.helpers.grid import convert_pixelmap_to_grid, merge_map
-from decentralized_exploration.helpers.decision_making import check_distance_to_other_robot
 from decentralized_exploration.helpers.plotting import plot_grid
 
 
@@ -183,8 +181,8 @@ class RobotTeam:
         distances_travelled = [0, 0, 0]
         last_positions = [(10000, 10000), (10000, 10000), (10000, 10000)]
 
-        while iteration <= 300:
-            if iteration >= 300:
+        while iteration <= 100:
+            if iteration >= 100:
                 print('TAKING TOO LONG')
                 1/0
             print('Iteration #', iteration, '  % explored: ', self._grid.percent_explored())

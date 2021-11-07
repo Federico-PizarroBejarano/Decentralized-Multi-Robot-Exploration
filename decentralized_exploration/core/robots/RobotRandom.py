@@ -1,9 +1,9 @@
 import numpy as np
 
 from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
-from decentralized_exploration.core.constants import Actions, probability_of_failed_action
-from decentralized_exploration.helpers.decision_making import get_new_state, closest_reward, path_between_cells, possible_actions, get_action
-from decentralized_exploration.helpers.grid import Cell, merge_map
+from decentralized_exploration.core.constants import Actions
+from decentralized_exploration.helpers.decision_making import get_new_state, possible_actions
+from decentralized_exploration.helpers.grid import merge_map
 
 
 class RobotRandom(AbstractRobot):
