@@ -31,13 +31,13 @@ class RobotGreedy(AbstractRobot):
         current_cell = self.grid.all_cells[current_position]
 
         goal_cell = closest_frontier_cell(
-            current_cell=current_cell, grid=self.grid, robot_states=robot_states)
+            start_cell=current_cell, grid=self.grid, robot_states=robot_states)
 
         # All rewards have been found
         if goal_cell == None:
             return current_position
 
-        next_state = get_next_cell(source_cell=current_cell, dest_cell=goal_cell)
+        next_state = get_next_cell(start_cell=current_cell, end_cell=goal_cell)
         next_position = next_state.coord
 
         if np.random.randint(100) > probability_of_failed_action:
