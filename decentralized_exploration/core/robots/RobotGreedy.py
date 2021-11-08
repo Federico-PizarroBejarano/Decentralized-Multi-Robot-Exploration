@@ -68,7 +68,8 @@ class RobotGreedy(AbstractRobot):
             if message[robot_id]['pixel_map'] != []:
                 self._pixel_map = merge_map(
                     grid=self.grid, pixel_map=self.pixel_map, pixel_map_to_merge=message[robot_id]['pixel_map'])
-
+                self.grid.merge_frontier(frontier_to_merge=message[robot_id]['frontier'])
+        
         self._known_robots[self.robot_id] = {
             'last_updated': iteration,
         }

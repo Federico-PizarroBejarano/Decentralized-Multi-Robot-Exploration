@@ -1,7 +1,8 @@
 import numpy as np
 from abc import ABCMeta, abstractmethod
+from decentralized_exploration.core.constants import UNEXPLORED
 
-from decentralized_exploration.helpers.grid import Cell, convert_pixelmap_to_grid
+from decentralized_exploration.helpers.grid import convert_pixelmap_to_grid
 
 
 class AbstractRobot:
@@ -100,6 +101,20 @@ class AbstractRobot:
             found_cell = self.grid.all_cells[free_point]
             found_cell.update_cell(state=0)
 
+
+    def _update_frontier_after_scan(self, free_points):
+        self.grid.cleanup_frontier()
+
+        for free_point in free_points:
+            free_cell = self.grid.all_cells[free_point]
+            neighbours = self.grid.cell_neighbours(center_cell=free_cell, radius=1)
+
+            for neighbour in neighbours:
+                if neighbour.state == UNEXPLORED:
+                    self.grid.frontier.add(free_point)
+                    break
+    
+
     @abstractmethod
     def _choose_next_pose(self, current_position, iteration, robot_states):
         '''
@@ -139,7 +154,7 @@ class AbstractRobot:
         occupied_points, free_points = self._range_finder.scan(world=world, position=world.get_position(self.robot_id))
 
         self._update_map(occupied_points=occupied_points, free_points=free_points)
-        self.grid.all_cells[world.get_position(self.robot_id)].reward = 0
+        self._update_frontier_after_scan(free_points)
 
 
     def explore_1_timestep(self, world, iteration):
@@ -155,7 +170,7 @@ class AbstractRobot:
         self._known_robots[self.robot_id]['last_known_position'] = world.get_position(self.robot_id)
         
         new_position = self._choose_next_pose(current_position=world.get_position(self.robot_id), iteration=iteration, robot_states=world.robot_states)
-
+        
         self.scan_environment(world=world)
 
         world.move_robot(robot_id=self.robot_id, new_position=new_position)

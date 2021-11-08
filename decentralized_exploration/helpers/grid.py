@@ -1,6 +1,8 @@
 import math
 import numpy as np
 
+from decentralized_exploration.core.constants import UNEXPLORED
+
 class Cell:
     '''
     A class used to represent a cell in the grid layer
@@ -88,6 +90,7 @@ class Grid():
 
     def __init__(self):
         self.all_cells = {}
+        self.frontier = set()
     
     # Static Methods
     @staticmethod
@@ -224,6 +227,28 @@ class Grid():
             for neighbour in neighbours:
                 if neighbour.state == -1 and self.clear_path(start_cell=center_cell, end_cell=neighbour):
                     return neighbour
+
+    def merge_frontier(self, frontier_to_merge):
+        self.frontier |= frontier_to_merge
+        self.cleanup_frontier()
+
+
+    def cleanup_frontier(self):
+        coords_to_be_removed = set()
+
+        for coord in self.frontier:
+            cell = self.all_cells[coord] 
+            neighbours = self.cell_neighbours(center_cell=cell, radius=1)
+            to_be_removed = True
+
+            for neighbour in neighbours:
+                if neighbour.state == UNEXPLORED:
+                    to_be_removed = False
+
+            if to_be_removed:
+                coords_to_be_removed.add(coord) 
+
+        self.frontier -= coords_to_be_removed 
 
 
 def convert_pixelmap_to_grid(pixel_map):

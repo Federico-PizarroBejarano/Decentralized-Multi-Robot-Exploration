@@ -84,7 +84,8 @@ class RobotTeam:
                         if self._messages_to_skip <= 0:
                             message[robot.robot_id] = { 
                                 'robot_position': other_robot_position,
-                                'pixel_map': robot.pixel_map
+                                'pixel_map': robot.pixel_map,
+                                'frontier': robot.grid.frontier                           
                             }
                         else:
                             message[robot.robot_id] = { 
@@ -147,6 +148,9 @@ class RobotTeam:
         world (World): a World object that the robot will explore
         '''
         if self.plot_exploration:
+            fig0 = plt.figure(0)
+            ax0 = fig0.add_subplot(111)
+
             fig1 = plt.figure(1)
             ax1 = fig1.add_subplot(111)
 
@@ -158,6 +162,7 @@ class RobotTeam:
 
             mode = 'value'
         
+            plot_grid(grid=self._grid, plot=ax0, robot_states=world.robot_states, mode=mode)
             plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
             plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
             plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
@@ -169,8 +174,9 @@ class RobotTeam:
         for robot in self._robots.values():
             robot.scan_environment(world=world)
             self._pixel_map = merge_map(grid=self._grid, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
+            self._grid.merge_frontier(frontier_to_merge=robot.grid.frontier)
             if self.plot_exploration:
-                plot_grid(grid=self._grid, plot=ax1, robot_states=world.robot_states, mode=mode)
+                plot_grid(grid=self._grid, plot=ax0, robot_states=world.robot_states, mode=mode)
                 plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
                 plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
                 plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
@@ -190,9 +196,15 @@ class RobotTeam:
             if self._messages_to_skip <= 0 and np.random.randint(100) < self._probability_of_failed_communication:
                 self._messages_to_skip = self._failed_communication_interval
 
+            # Generate the frontier messages
+            messages = {}
             for robot in self._robots.values():
                 message = self._generate_message(robot_id=robot.robot_id,  world=world)
-                robot.communicate(message=message, iteration=iteration)
+                messages[robot.robot_id] = message
+            
+            # Then merge each of the frontiers
+            for robot in self._robots.values():
+                robot.communicate(message=messages[robot.robot_id], iteration=iteration)
             
             self._messages_to_skip -= 1
 
@@ -200,10 +212,11 @@ class RobotTeam:
                 last_positions[int(robot.robot_id[-1])-1] = world.get_position(robot_id=robot.robot_id)
                 robot.explore_1_timestep(world=world, iteration=iteration)
                 self._pixel_map = merge_map(grid=self._grid, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
+                self._grid.merge_frontier(frontier_to_merge=robot.grid.frontier)
                 distances_travelled[int(robot.robot_id[-1])-1] += np.linalg.norm(np.array(last_positions[int(robot.robot_id[-1])-1]) - np.array(world.get_position(robot_id=robot.robot_id)))
 
             if self.plot_exploration:
-                plot_grid(grid=self._grid, plot=ax1, robot_states=world.robot_states, mode=mode)
+                plot_grid(grid=self._grid, plot=ax0, robot_states=world.robot_states, mode=mode)
                 plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
                 plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
                 plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)

@@ -1,11 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import cm
-from matplotlib.patches import RegularPolygon, Circle
+from matplotlib.patches import Circle
 from matplotlib.lines import Line2D
 import cPickle as pickle
 
-from decentralized_exploration.helpers.grid import convert_pixelmap_to_grid, merge_map
 
 
 def plot_grid(grid, plot, robot_states = {}, mode='value'):
@@ -37,24 +35,6 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
                 rewards[cell.coord] = round(cell.V, 1)
                 if abs(round(cell.V, 1)) > max_value:
                     max_value = abs(round(cell.V, 1))
-    elif mode == 'reward':
-        for cell in all_cells:
-            if cell.reward != 0:
-                rewards[cell.coord] = round(cell.reward, 1)
-                if abs(round(cell.reward, 1)) > max_value:
-                    max_value = abs(round(cell.reward, 1))
-    elif mode == 'utility':
-        for cell in all_cells:
-            if cell.utility != 0 and abs(cell.utility) < 100 and cell.reward > 0:
-                rewards[cell.coord] = round(cell.utility, 1)
-                if abs(round(cell.utility, 1)) > max_value:
-                    max_value = abs(round(cell.utility, 1))
-    elif mode == 'probability':
-        for cell in all_cells:
-            if cell.probability != 0:
-                rewards[cell.coord] = round(cell.probability, 1)
-                if abs(round(cell.probability*100, 2)) > max_value:
-                    max_value = abs(round(cell.probability*100, 2))
 
     plot.set_aspect('equal')
 
@@ -76,19 +56,13 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
             c = 'y'
             alpha = 1
             plot.text(x, y, pixel_robot_states[(y, x)], ha='center', va='center', size=8)
+        elif (y, x) in grid.frontier:
+            plot.text(x, y, 'F', ha='center', va='center', size=8)
         
         plot.scatter(x, y, color=c, alpha=alpha, marker='s', s=140)
 
     plot.set_xlim(-0.5, 19.5)
     plot.set_ylim(-0.5, 19.5)
-
-    # legend_elements = [Line2D([0], [0], marker='H', markerfacecolor='1', alpha=0.5, color='k', markersize=15, linewidth=0, label='Free Space'), 
-    #                     Line2D([0], [0], marker='H', markerfacecolor='0.5', alpha=0.5, color='k', markersize=15, linewidth=0,label='Unknown Space'),
-    #                     Line2D([0], [0], marker='H', markerfacecolor='0', alpha=0.5, color='k', markersize=15, linewidth=0, label='Occupied Space'),
-    #                     Line2D([0], [0], marker='H', markerfacecolor='g', alpha=0.7, color='k', markersize=15, linewidth=0, label='Value'),
-    #                     Line2D([0], [0], marker='H', markerfacecolor='yellow', alpha=1, color='k', markersize=15, linewidth=0, label='Robot')]
-
-    # plot.legend(handles=legend_elements, framealpha=0.9, loc='lower right')
 
     plot.invert_yaxis()
 
