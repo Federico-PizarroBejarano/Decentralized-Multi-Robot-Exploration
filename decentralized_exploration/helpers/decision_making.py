@@ -1,7 +1,6 @@
 import numpy as np
-from heapdict import heapdict
 
-from decentralized_exploration.core.constants import UNEXPLORED, UNOCCUPIED, Actions
+from decentralized_exploration.core.constants import Actions
 
 
 def possible_actions(state, grid, robot_states):
@@ -125,76 +124,3 @@ def get_action(start_state, end_state):
         action = Actions.STAY_STILL
     
     return action
-
-
-def initialize_grid_for_search(start_cell, grid):
-    for cell in grid.all_cells.values():
-        cell.distance_from_start = float('inf')
-        cell.visited = False
-        cell.previous_cell = None
-        
-    start_cell.visited = True
-    start_cell.distance_from_start = 0
-
-
-def initialize_cell_queue(start_cell, grid, robot_states):
-    cell_queue = heapdict() 
-
-    other_robots = [robot_states[robot].pixel_position for robot in robot_states if robot_states[robot].pixel_position != start_cell.coord]
-
-    neighbours = grid.cell_neighbours(center_cell=start_cell, radius=1)
-    for neighbour in neighbours:
-        if neighbour.state == 0: 
-            neighbour.distance_from_start = start_cell.distance_from_start + 1
-            neighbour.previous_cell = start_cell
-
-            cell_queue[neighbour] = neighbour.distance_from_start
-
-            # Do not explore the neighbours with a robot in them
-            if neighbour.coord in other_robots:
-                neighbour.visited = True
-                cell_queue.popitem()
-
-    return cell_queue 
-
-
-def closest_frontier_cell(start_cell, grid, robot_states):
-    '''
-    Uses Dijkstra's algorithm to find the nearest free, frontier Cell.
-
-    Parameters
-    ----------
-    start_cell (Cell): the starting Cell position
-    grid (Grid): the Grid object representing the grid 
-
-    Returns
-    -------
-    cell (tuple): the closest frontier Cell
-    ''' 
-
-    initialize_grid_for_search(start_cell, grid)
-    cell_queue = initialize_cell_queue(start_cell, grid, robot_states, 'dijkstra')
-      
-    while(len(cell_queue) != 0):
-        cell = cell_queue.popitem()[0]
-        if cell.state == UNOCCUPIED:
-            for neighbour in grid.cell_neighbours(cell):
-                new_distance_from_start = cell.distance_from_start + 1
-                if new_distance_from_start < neighbour.distance_from_start:
-                    neighbour.previous_cell = cell
-                    neighbour.distance_from_start = new_distance_from_start 
-                    cell_queue[neighbour] = new_distance_from_start
-
-                # Terminate when we found a frontier cell (a cell that neighbours an unxplored cell)
-                if neighbour.state == UNEXPLORED:
-                    return cell
-    return None
-
-
-def get_next_cell(start_cell, end_cell):
-    next_cell = end_cell
-    
-    while next_cell.previous_cell != start_cell and next_cell.previous_cell != None:
-        next_cell = next_cell.previous_cell
-
-    return next_cell

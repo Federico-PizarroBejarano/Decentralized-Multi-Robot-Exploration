@@ -3,13 +3,15 @@ import numpy as np
 
 from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
 from decentralized_exploration.core.constants import Actions, probability_of_failed_action
-from decentralized_exploration.helpers.decision_making import closest_frontier_cell, get_new_state, get_next_cell, possible_actions, get_action
+from decentralized_exploration.core.search.ClosestFrontierSearcher import ClosestFrontierSearcher
+from decentralized_exploration.helpers.decision_making import get_new_state, possible_actions, get_action
 from decentralized_exploration.helpers.grid import merge_map
 
 
 class RobotGreedy(AbstractRobot):
     def __init__(self, robot_id, range_finder, width, length, world_size):
         super(RobotGreedy, self).__init__(robot_id, range_finder, width, length, world_size)
+        self.searcher = ClosestFrontierSearcher()
 
 
     # Private Methods
@@ -30,14 +32,13 @@ class RobotGreedy(AbstractRobot):
 
         current_cell = self.grid.all_cells[current_position]
 
-        goal_cell = closest_frontier_cell(
-            start_cell=current_cell, grid=self.grid, robot_states=robot_states)
+        goal_cell = self.searcher.search(start_cell=current_cell, end_cell=None, grid=self.grid, robot_states=robot_states)
 
         # All rewards have been found
         if goal_cell == None:
             return current_position
 
-        next_state = get_next_cell(start_cell=current_cell, end_cell=goal_cell)
+        next_state = self.searcher.get_next_cell(start_cell=current_cell, end_cell=goal_cell)
         next_position = next_state.coord
 
         if np.random.randint(100) > probability_of_failed_action:
