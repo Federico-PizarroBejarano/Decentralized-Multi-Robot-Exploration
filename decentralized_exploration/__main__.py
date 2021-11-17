@@ -1,7 +1,5 @@
-from matplotlib.pyplot import hexbin
 import numpy as np
-import random
-import cPickle as pickle
+import pickle
 import os
 
 from decentralized_exploration.core.World import World
