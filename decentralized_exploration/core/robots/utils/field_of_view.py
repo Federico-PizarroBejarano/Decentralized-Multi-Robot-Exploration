@@ -1,8 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
-from ..helpers.grid import Grid
-from ..core.constants import probability_of_failed_scan
+from decentralized_exploration.core.environment.grid import Grid
+from decentralized_exploration.core.constants import probability_of_failed_scan
 
 
 def field_of_view(world_map, robot_pos):

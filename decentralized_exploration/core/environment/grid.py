@@ -1,6 +1,3 @@
-import math
-import numpy as np
-
 from decentralized_exploration.core.constants import UNEXPLORED
 
 class Cell:
@@ -197,7 +194,7 @@ class Grid():
         clear (bool): True if clear, False otherwise
         '''
 
-        from ..helpers.field_of_view import bresenham
+        from decentralized_exploration.core.robots.utils.field_of_view import bresenham
 
         coords_of_line = bresenham(start=start_cell.coord, end=end_cell.coord)
         

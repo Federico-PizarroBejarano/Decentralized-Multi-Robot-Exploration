@@ -1,6 +1,6 @@
 import numpy as np
 
-from decentralized_exploration.helpers.field_of_view import bresenham
+from decentralized_exploration.core.robots.utils.field_of_view import bresenham
 
 class World:
     '''

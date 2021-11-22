@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from ..helpers.plotting import plot_map
-from ..helpers.field_of_view import field_of_view
+from decentralized_exploration.core.robots.utils.field_of_view import field_of_view
 
 
 def test_field_of_view(I, robot_pos):

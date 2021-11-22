@@ -1,11 +1,10 @@
-from matplotlib.pyplot import grid
 import numpy as np
 
 from decentralized_exploration.core.robots.AbstractRobot import AbstractRobot
 from decentralized_exploration.core.constants import Actions, probability_of_failed_action
 from decentralized_exploration.core.search.ClosestFrontierSearcher import ClosestFrontierSearcher
-from decentralized_exploration.helpers.decision_making import get_new_state, possible_actions, get_action
-from decentralized_exploration.helpers.grid import merge_map
+from decentralized_exploration.helpers.transition import get_new_state, possible_actions, get_action
+from decentralized_exploration.core.environment.grid import merge_map
 
 
 class RobotGreedy(AbstractRobot):

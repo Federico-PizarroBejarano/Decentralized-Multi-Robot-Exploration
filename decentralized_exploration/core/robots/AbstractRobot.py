@@ -2,7 +2,7 @@ import numpy as np
 from abc import ABCMeta, abstractmethod
 from decentralized_exploration.core.constants import UNEXPLORED
 
-from decentralized_exploration.helpers.grid import convert_pixelmap_to_grid
+from decentralized_exploration.core.environment.grid import convert_pixelmap_to_grid
 
 
 class AbstractRobot:

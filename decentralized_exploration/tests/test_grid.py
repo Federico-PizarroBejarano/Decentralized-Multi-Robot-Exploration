@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from ..helpers.plotting import plot_grid
-from ..helpers.grid import convert_pixelmap_to_grid
-from ..helpers.field_of_view import field_of_view
+from decentralized_exploration.core.environment.grid import convert_pixelmap_to_grid
+from decentralized_exploration.core.robots.utils.field_of_view import field_of_view
 
 def test_grid_creation(I, ax1):
     grid = convert_pixelmap_to_grid(I)

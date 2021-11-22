@@ -2,13 +2,13 @@ import numpy as np
 import pickle
 import os
 
-from decentralized_exploration.core.World import World
-from decentralized_exploration.core.RangeFinder import RangeFinder
+from decentralized_exploration.core.environment.World import World
+from decentralized_exploration.core.robots.utils.RangeFinder import RangeFinder
 from decentralized_exploration.core.robots.RobotGreedy import RobotGreedy
-from decentralized_exploration.core.RobotTeam import RobotTeam
-from decentralized_exploration.helpers.RobotState import RobotState
+from decentralized_exploration.core.robots.RobotTeam import RobotTeam
+from decentralized_exploration.core.robots.utils.RobotState import RobotState
 from decentralized_exploration.helpers.generate_pixelmap import generate_pixelmap
-from decentralized_exploration.helpers.grid import convert_pixelmap_to_grid
+from decentralized_exploration.core.environment.grid import convert_pixelmap_to_grid
 
 
 if __name__ == '__main__':

@@ -1,7 +1,5 @@
-from decentralized_exploration.core.constants import UNEXPLORED
-
 from decentralized_exploration.core.search.AbstractSearcher import AbstractSearcher
-from decentralized_exploration.helpers.grid import Grid
+from decentralized_exploration.core.environment.grid import Grid
 
 class AStarSearcher(AbstractSearcher):
 

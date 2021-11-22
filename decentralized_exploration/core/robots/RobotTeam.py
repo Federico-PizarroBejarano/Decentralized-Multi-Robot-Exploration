@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import time
 from copy import deepcopy
 
-from decentralized_exploration.helpers.grid import convert_pixelmap_to_grid, merge_map
+from decentralized_exploration.core.environment.grid import convert_pixelmap_to_grid, merge_map
 from decentralized_exploration.helpers.plotting import plot_grid
 
 
