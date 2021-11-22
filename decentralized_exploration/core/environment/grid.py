@@ -10,7 +10,6 @@ class Cell:
     x (int): the second coordinate
     reward (int): the reward associated with this cell
     V (float): the true value of a cell. Used for displaying computed values.
-    probability (float): the probability that another robot will visit a nearby cell
     distance_from_start (int): shortest path length from this cell to the start cell, used to calculate probability
     visited (bool): whether this cell was already visited, used to calculate probability
     previous_cell (Cell): the previous cell in the path to the start cell, used to calculate probability
@@ -23,22 +22,15 @@ class Cell:
     '''
 
     # Starting value for nOccupied should not be 0
-    def __init__(self, y, x, state=0, reward=0.0):
+    def __init__(self, y, x, state=0):
         self.y = y
         self.x = x
         self.state = state
-        self.reward = reward
-        self.V = 0.0
-        self.probability = 0.0
+
         self.distance_from_start = float('inf')
         self.visited = False
         self.previous_cell = None
-        self.dist = 0
-        self.norm_dist = 0
-        self.norm_reward = 0
-        self.coord_factor = 0
-        self.utility = 0
-    
+
     @property
     def coord(self):
         return (self.y, self.x)
@@ -75,12 +67,9 @@ class Grid():
     Public Methods
     --------------
     add_cell(new_cell): adds a given Cell object to the grid. 
-    has_rewards(): returns True if there are Cells with rewards in all_cells
     percent_explored(): returns the percentage of space explored
     cell_neighbours(center_cell): returns list of the adjacent neighbours of given Cell
-    propagate_rewards(): updates the reward of every cell
     clear_path(start_cell, end_cell): returns whether there is a clear pixel path between two cell
-    find_closest_unknown(center_cell): returns the closest cell that is unknown
     '''
 
     radius = 4
@@ -122,23 +111,7 @@ class Grid():
         '''
         
         self.all_cells[new_cell.coord] = new_cell
-        
 
-    def has_rewards(self):
-        '''
-        Checks whether there are cells left to explore 
-
-        Returns
-        -------
-        has_rewards (bool): True if there are cells with rewadrs in all_cells, False otherwise
-        '''
-
-        for cell in self.all_cells.values():
-            if cell.reward > 0:
-                return True
-        
-        return False
-    
     def percent_explored(self):
         '''
         Returns the percentage of cells that are explored
@@ -202,28 +175,6 @@ class Grid():
             if self.all_cells[tuple(coord)].state != 0:
                 return False
         return True
-    
-    def find_closest_unknown(self, center_cell):
-        '''
-        If the given cell has a reward, returns one of the unknown cells providing the reward
-
-        Parameters
-        ----------
-        center_cell (Cell): a Cell object representing the center cell
-
-        Returns
-        -------
-        unknown_cell (Cell): a Cell representing the neighbouring unknown cell, None if center_cell has no reward
-        '''
-
-        if center_cell.reward == 0:
-            return None
-        else:
-            neighbours = self.cell_neighbours(center_cell=center_cell, radius=self.radius)
-
-            for neighbour in neighbours:
-                if neighbour.state == -1 and self.clear_path(start_cell=center_cell, end_cell=neighbour):
-                    return neighbour
 
     def merge_frontier(self, frontier_to_merge):
         self.frontier |= frontier_to_merge

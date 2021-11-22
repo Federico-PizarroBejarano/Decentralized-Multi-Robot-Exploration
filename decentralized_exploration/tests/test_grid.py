@@ -36,7 +36,7 @@ def main():
 
     grid = test_grid_creation(unknown_I, ax1)
     robot_states = []#[RobotState((5, 6))]
-    plot_grid(grid, plot=ax1, robot_states={}, mode='utility')
+    plot_grid(grid, plot=ax1, robot_states={})
 
     plt.show()
 

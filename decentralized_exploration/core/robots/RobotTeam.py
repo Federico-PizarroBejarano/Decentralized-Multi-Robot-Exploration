@@ -160,12 +160,10 @@ class RobotTeam:
             fig3 = plt.figure(3)
             ax3 = fig3.add_subplot(111)
 
-            mode = 'value'
-        
-            plot_grid(grid=self._grid, plot=ax0, robot_states=world.robot_states, mode=mode)
-            plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
-            plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
-            plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
+            plot_grid(grid=self._grid, plot=ax0, robot_states=world.robot_states)
+            plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states)
+            plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states)
+            plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states)
             
             plt.pause(0.05)
 
@@ -176,10 +174,10 @@ class RobotTeam:
             self._pixel_map = merge_map(grid=self._grid, pixel_map=self._pixel_map, pixel_map_to_merge=robot.pixel_map)
             self._grid.merge_frontier(frontier_to_merge=robot.grid.frontier)
             if self.plot_exploration:
-                plot_grid(grid=self._grid, plot=ax0, robot_states=world.robot_states, mode=mode)
-                plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
-                plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
-                plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
+                plot_grid(grid=self._grid, plot=ax0, robot_states=world.robot_states)
+                plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states)
+                plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states)
+                plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states)
                 plt.pause(0.05)
 
         iteration = 0
@@ -216,10 +214,10 @@ class RobotTeam:
                 distances_travelled[int(robot.robot_id[-1])-1] += np.linalg.norm(np.array(last_positions[int(robot.robot_id[-1])-1]) - np.array(world.get_position(robot_id=robot.robot_id)))
 
             if self.plot_exploration:
-                plot_grid(grid=self._grid, plot=ax0, robot_states=world.robot_states, mode=mode)
-                plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states, mode=mode)
-                plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states, mode=mode)
-                plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states, mode=mode)
+                plot_grid(grid=self._grid, plot=ax0, robot_states=world.robot_states)
+                plot_grid(grid=self._robots['robot_1'].grid, plot=ax1, robot_states=world.robot_states)
+                plot_grid(grid=self._robots['robot_2'].grid, plot=ax2, robot_states=world.robot_states)
+                plot_grid(grid=self._robots['robot_3'].grid, plot=ax3, robot_states=world.robot_states)
                 plt.pause(0.5)
             
             grid_statistics =  [self._grid.percent_explored(), self._local_interaction(robot_states=world.robot_states, world=world), list(distances_travelled), world.get_position('robot_1'), world.get_position('robot_2'), world.get_position('robot_3'), deepcopy(self._pixel_map), time.time()-start_time]

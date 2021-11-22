@@ -6,7 +6,7 @@ import pickle
 
 
 
-def plot_grid(grid, plot, robot_states = {}, mode='value'):
+def plot_grid(grid, plot, robot_states={}):
     '''
     Plots a given Grid. If a robot_pos is given, will highlight the cell the robot is in in red
     Parameters
@@ -29,23 +29,16 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
     rewards = {}
     max_value = -float('inf')
 
-    if mode == 'value':
-        for cell in all_cells:
-            if cell.V != 0 and cell.state == 0:
-                rewards[cell.coord] = round(cell.V, 1)
-                if abs(round(cell.V, 1)) > max_value:
-                    max_value = abs(round(cell.V, 1))
-
     plot.set_aspect('equal')
 
     pixel_robot_states = {}
     for robot in robot_states.keys():
         point=robot_states[robot].pixel_position
         pixel_robot_states[point] = robot[-1]
-    
+
     # Add some coloured cells
-    for x, y, c in zip(x_coord, y_coord, colors):  
-        alpha = 0.75      
+    for x, y, c in zip(x_coord, y_coord, colors):
+        alpha = 0.75
         if (y, x) in rewards:
             alpha = abs(rewards[(y, x)]/max_value)
             if rewards[(y, x)] > 0:
@@ -58,7 +51,7 @@ def plot_grid(grid, plot, robot_states = {}, mode='value'):
             plot.text(x, y, pixel_robot_states[(y, x)], ha='center', va='center', size=8)
         elif (y, x) in grid.frontier:
             plot.text(x, y, 'F', ha='center', va='center', size=8)
-        
+
         plot.scatter(x, y, color=c, alpha=alpha, marker='s', s=140)
 
     plot.set_xlim(-0.5, 19.5)
@@ -87,9 +80,9 @@ def plot_grid_simple(pixel_map, plot, robot_states = {}, s=140):
     pixel_map[pixel_map == -1] = 0.5
 
     pixel_robot_states = [tuple(pose) for pose in robot_states]
-    
+
     plot.imshow(-pixel_map, cmap='gray')
-    
+
     plot.scatter(pixel_robot_states[0][1], pixel_robot_states[0][0], color='r', marker='s', s=s)
     plot.scatter(pixel_robot_states[1][1], pixel_robot_states[1][0], color='g', marker='s', s=s)
     plot.scatter(pixel_robot_states[2][1], pixel_robot_states[2][0], color='b', marker='s', s=s)
@@ -154,7 +147,7 @@ def process_one_test(filename):
     to_99_pc = []
 
     for test in results:
-        total_iterations = test.shape[0] 
+        total_iterations = test.shape[0]
         iterations_to_99_pc = total_iterations
         iterations_to_90_pc = total_iterations
         iterations_to_75_pc = total_iterations
@@ -199,7 +192,7 @@ def plot_local_interactions():
     greedy_results = []
     for file in greedy_filenames:
         greedy_results.append(process_one_test(filename=file))
-    
+
     mdp_results = []
     for file in mdp_filenames:
         mdp_results.append(process_one_test(filename=file))
@@ -263,7 +256,7 @@ def plot_variation():
     greedy_results = []
     for file in greedy_filenames:
         greedy_results.append(process_one_test(filename=file))
-    
+
     mdp_results = []
     for file in mdp_filenames:
         mdp_results.append(process_one_test(filename=file))
@@ -288,7 +281,7 @@ def plot_variation():
     plt.xticks(range(10), x_axis, fontsize=14)
     ax.set_ylabel('Number of Iterations', weight = 'bold', fontsize=17)
 
-    legend_elements = [ Line2D([0], [0], color='cornflowerblue', lw=3, label='STD of Local Interations'), 
+    legend_elements = [ Line2D([0], [0], color='cornflowerblue', lw=3, label='STD of Local Interations'),
                         Line2D([0], [0], color='tomato', lw=3, label='STD of Mission Time'),]
 
     ax.legend(handles=legend_elements, framealpha=0.95, fontsize=13)
@@ -312,7 +305,7 @@ def plot_exploration_rate():
         with open('./decentralized_exploration/results/{}.pkl'.format(file), 'rb') as infile:
             results.append(pickle.load(infile))
             to_99_pc.append(process_one_test(filename=file)['to_99_pc'])
-    
+
     fig = plt.figure()
     ax = fig.add_subplot('111')
 
@@ -325,14 +318,14 @@ def plot_exploration_rate():
                 if it < results[result][i].shape[0] and results[result][i][it, 0]/0.93 < 0.99:
                     percent_explored[it] += results[result][i][it, 0]/0.93
                     runs_hit[it] += 1
-        
+
         percent_explored = [percent_explored[i]/runs_hit[i]*100 for i in range(len(percent_explored))]
-    
+
         if 'Greedy' in labels[result]:
             linestyle = 'dashed'
         else:
             linestyle = 'solid'
-        
+
         if 'Ind' in labels[result]:
             color = 'violet'
         elif 'Full' in labels[result]:
@@ -366,7 +359,7 @@ def plot_trajectory(filename, map_file='large_map_4'):
 
     with open('./decentralized_exploration/results/trajectories/{}.pkl'.format(filename), 'rb') as infile:
         results = pickle.load(infile)
-    
+
     interactions = [r[1] for r in results]
     robot_1_traj = [r[2] for r in results]
     robot_2_traj = [r[3] for r in results]
@@ -392,7 +385,7 @@ def plot_trajectory(filename, map_file='large_map_4'):
                 ax.plot(robot_2_interactions[:, 1]+2.5, robot_2_interactions[:, 0]+2.5, c='yellow', linewidth=8)
                 robot_1_interactions = []
                 robot_2_interactions = []
-            
+
 
     robot_1_traj = np.array(robot_1_traj)
     robot_2_traj = np.array(robot_2_traj)
@@ -428,7 +421,7 @@ def plot_trajectory(filename, map_file='large_map_4'):
     legend_elements = [ Line2D([0], [0], color=cm_red(1/2.0), lw=3, label='Robot 1'),
                         Line2D([0], [0], color=cm_blue(1/2.0), lw=3, linestyle='dashed', label='Robot 2'),
                         Line2D([0], [0], color='yellow', lw=8, label='Local interactions'),
-                        start_loc, 
+                        start_loc,
                         end_loc,
                         starting_area]
 
@@ -450,9 +443,9 @@ def create_trajectory_video(robot_poses, pixel_maps, world_size=(20, 20)):
 
     axes = [ax1, ax2, ax3, ax4, ax5]
 
-    legend_elements = [Line2D([0], [0], marker='s', markerfacecolor='r', alpha=1, color='k', markersize=20, linewidth=0, label='Robot 1'), 
+    legend_elements = [Line2D([0], [0], marker='s', markerfacecolor='r', alpha=1, color='k', markersize=20, linewidth=0, label='Robot 1'),
                         Line2D([0], [0], marker='s', markerfacecolor='g', alpha=1, color='k', markersize=20, linewidth=0, label='Robot 2'),
-                        Line2D([0], [0], marker='s', markerfacecolor='b', alpha=1, color='k', markersize=20, linewidth=0, label='Robot 3'), 
+                        Line2D([0], [0], marker='s', markerfacecolor='b', alpha=1, color='k', markersize=20, linewidth=0, label='Robot 3'),
                         Line2D([0], [0], marker='s', markerfacecolor='w', alpha=1, color='k', markersize=20, linewidth=0, label='Free Space'),
                         Line2D([0], [0], marker='s', markerfacecolor='k', alpha=1, color='k', markersize=20, linewidth=0, label='Obstacle'),
                         Line2D([0], [0], marker='s', markerfacecolor='gray', alpha=1, color='k', markersize=20, linewidth=0, label='Unknown')]
@@ -475,7 +468,7 @@ def create_trajectory_video(robot_poses, pixel_maps, world_size=(20, 20)):
             plot_grid_simple(pixel_maps[algo][j], axes[algo], robot_poses[algo][j], s=85)
             axes[algo].set_title(titles[algo])
         plt.pause(0.5)
-    
+
     for algo in range(len(robot_poses)):
         plot_grid_simple(pixel_maps[algo][-1], axes[algo], robot_poses[algo][-1], s=85)
         axes[algo].set_title(titles[algo])
