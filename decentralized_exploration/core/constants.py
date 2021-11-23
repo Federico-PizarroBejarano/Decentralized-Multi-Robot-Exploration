@@ -15,3 +15,9 @@ probability_of_failed_scan = 10
 UNEXPLORED = -1
 UNOCCUPIED = 0
 OCCUPIED = 1
+
+SEED = 0
+
+LENGTH = 20
+WIDTH = 20
+

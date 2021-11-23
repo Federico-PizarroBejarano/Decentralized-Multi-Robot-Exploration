@@ -1,7 +1,8 @@
 import numpy as np
 
-from decentralized_exploration.core.constants import OCCUPIED, UNOCCUPIED
+from decentralized_exploration.core.constants import OCCUPIED, UNOCCUPIED, SEED
 
+np.random.seed(SEED)
 
 def generate_pixelmap(length, width, obstacle_density):
     pixelmap = np.random.rand(length, width)
