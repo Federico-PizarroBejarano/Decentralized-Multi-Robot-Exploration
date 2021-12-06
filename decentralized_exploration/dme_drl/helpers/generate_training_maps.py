@@ -2,6 +2,7 @@ import os
 import random
 
 import numpy as np
+import yaml
 
 from decentralized_exploration.core.constants import SEED, LENGTH, WIDTH
 from decentralized_exploration.helpers.generate_pixelmap import generate_pixelmap
@@ -20,8 +21,13 @@ os.makedirs(MAPPATH, exist_ok=True)
 id_to_density = {}
 filepaths = []
 
+config = None
+config_path = '/Users/richardren/VisualStudioCodeProjects/Decentralized-Multi-Robot-Exploration/decentralized_exploration/dme_drl/assets/config.yaml'
+with open(config_path) as stream:
+	config = yaml.load(stream, Loader=yaml.SafeLoader)
+
 for id, OBSTACLE_DENSITY in enumerate(OBSTACLE_DENSITIES):
-	pixelmap = generate_pixelmap(LENGTH, WIDTH, OBSTACLE_DENSITY)
+	pixelmap = generate_pixelmap(LENGTH, WIDTH, OBSTACLE_DENSITY, config['color']['free'], config['color']['obstacle'])
 	filename = 'map-{:02d}'.format(id)
 	filepath = MAPPATH + filename
 
