@@ -1,7 +1,7 @@
 import numpy as np
 
 from decentralized_exploration.core.environment.grid import Grid
-from decentralized_exploration.core.constants import probability_of_failed_scan
+from decentralized_exploration.core.constants import probability_of_failed_scan, OCCUPIED
 
 
 def field_of_view(world_map, robot_pos):
@@ -57,7 +57,7 @@ def field_of_view(world_map, robot_pos):
     return all_occupied_points, all_free_points
 
 
-def bresenham(start, end, world_map=np.array([])):
+def bresenham(start, end, world_map=np.array([]), occupied_val=OCCUPIED):
     '''
     Given a world map, a starting pixel coordinate, and an end pixel coordinate returns all pixels 
     in line of sight using bresenham's algorithm
@@ -123,7 +123,7 @@ def bresenham(start, end, world_map=np.array([])):
     if world_map.shape[0] != 0:
         for p in range(len(points)):
             point = points[p]
-            if world_map[point[0]][point[1]] == 1:
+            if world_map[point[0]][point[1]] == occupied_val:
                 return points[:p] + [points[p]]
     
     return points

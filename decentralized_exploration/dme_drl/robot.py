@@ -3,6 +3,7 @@ import yaml
 import cv2
 import matplotlib.pyplot as plt
 import decentralized_exploration.dme_drl.sim_utils as sim_utils
+from decentralized_exploration.core.robots.utils.field_of_view import field_of_view, bresenham
 from decentralized_exploration.dme_drl.navigate import AStar, AStarSimple
 import os
 
@@ -17,6 +18,8 @@ class Robot():
         self.robot_radius = self.config['robots']['robotRadius']
         self.comm_range = self.config['robots']['commRange']
         self.sync_range = self.config['robots']['syncRange']
+        self.sensor_range = 4
+        self.probability_of_failed_scan = 0
         self.laser_range = self.config['laser']['range']
         self.laser_fov = self.config['laser']['fov']
         self.laser_resol = self.config['laser']['resolution']
@@ -58,7 +61,8 @@ class Robot():
         self.pose = self._init_pose()
         self.slam_map = np.ones_like(self.maze) * self.config['color']['uncertain']
         self.last_map = self.slam_map.copy()
-        self._build_map()
+        occupied_points, free_points = self._scan()
+        self._update_map(occupied_points, free_points)
         self.last_map = np.copy(self.slam_map)
         obs = self.get_obs()
         return obs
@@ -70,66 +74,52 @@ class Robot():
         plt.imshow(state, cmap='gray')
         plt.pause(0.0001)
 
-    def _build_map_with_rangeCoordMat(self, y_range_coord_mat, x_range_coord_mat):
-        """build map after moving"""
-        y_range_coord_mat = (np.round(y_range_coord_mat)).astype(np.int)
-        x_range_coord_mat = (np.round(x_range_coord_mat)).astype(np.int)
-        in_bound_ind = sim_utils.within_bound(np.array([y_range_coord_mat, x_range_coord_mat]), self.maze.shape)
+    def _scan(self):
+        world_size = self.maze.shape
+        radius = self.sensor_range
+        y, x = self.pose
 
-        """delete points outside boundaries"""
-        outside_ind = np.argmax(~in_bound_ind, axis=1)  # 找到每一个角度上的第一个不在世界范围内的索引，为[极径]
-        ok_ind = np.where(outside_ind == 0)[0]  # 当这个索引为0时表示这个角度的射线可以不用考虑（因为根本就不发出射线），为[极角]
-        need_amend_ind = np.where(outside_ind != 0)[0]  # 真正需要修改的是那些发出了射线但是中途被截断的，need_amend_ind的数值表示的是度数，为[极角]
-        outside_ind = np.delete(outside_ind, ok_ind)  # 从outside_ind去除不用考虑的射线，为[极径]
-        inside_ind = np.copy(outside_ind)  # index_ind表示的是每一个角度中在世界范围内的射线，为[极径]
-        inside_ind[inside_ind != 0] -= 1  # -1使得目标达到inside_ind的边界，为[极径]
-        bound_ele_x = x_range_coord_mat[
-            need_amend_ind, inside_ind]  # [need_amend_ind,inside_ind]表示的是在世界范围内的矩阵，为探测范围内的边缘点的x值
-        bound_ele_y = y_range_coord_mat[need_amend_ind, inside_ind]  # [need_amend_ind,inside_ind]与上同理，为探测范围内的边缘点的y值
+        all_free_points = set()
+        all_occupied_points = set()
 
-        count = 0
-        for i in need_amend_ind:
-            x_range_coord_mat[i, ~in_bound_ind[i, :]] = bound_ele_x[count]  # 将每一条射线不在世界范围内的坐标都设置为其边缘点的坐标，这样修改便不会延伸
-            y_range_coord_mat[i, ~in_bound_ind[i, :]] = bound_ele_y[count]
-            count += 1
+        for yi in (max(y - radius, 0), min(y + radius, world_size[0] - 1)):
+            for xi in range(max(x - radius, 0), min(x + radius, world_size[1] - 1) + 1):
+                all_points = bresenham(start=self.pose, end=[yi, xi], world_map=self.maze, occupied_val=self.config['color']['obstacle'])
+                all_free_points = all_free_points.union(set(all_points[:-1]))
+                if self.maze[all_points[-1][0], all_points[-1][1]] == self.config['color']['obstacle']:
+                    all_occupied_points.add(all_points[-1])
+                else:
+                    all_free_points.add(all_points[-1])
 
-        """find obstacles along the (laser) ray"""
-        x_rangeCoordMat_ = np.clip(x_range_coord_mat, 0, self.maze.shape[1] - 1)
-        y_rangeCoordMat_ = np.clip(y_range_coord_mat, 0, self.maze.shape[0] - 1)
-        obstacle_ind = np.argmax(self.maze[y_rangeCoordMat_, x_rangeCoordMat_] ==
-                                 self.config['color']['obstacle'], axis=1)  # 找到每一条射线中极径最小的点，存储为[极径]，即被遮挡
-        obstacle_ind[obstacle_ind == 0] = x_range_coord_mat.shape[1]  # 对于紧挨着障碍物的点，将它的极径设置为最远，即未被遮挡
+        all_occupied = list(all_occupied_points)
+        all_free = list(all_free_points)
 
-        """产生形如[[1,2,3,...],[1,2,3,...],[1,2,3,...]]的矩阵来与障碍物的坐标进行比较"""
-        bx = np.arange(x_range_coord_mat.shape[1]).reshape(1, x_range_coord_mat.shape[1])
-        by = np.ones((x_range_coord_mat.shape[0], 1))
-        b = np.matmul(by, bx)
+        keep_occ = [np.random.randint(100) > self.probability_of_failed_scan for i in range(len(all_occupied))]
+        keep_free = [np.random.randint(100) > self.probability_of_failed_scan for i in range(len(all_free))]
+        all_occupied_points = set([all_occupied[p] for p in range(len(all_occupied)) if keep_occ[p]])
+        all_free_points = set([all_free[p] for p in range(len(all_free)) if keep_free[p]])
 
-        """获取机器人可以感知的点的坐标"""
-        b = b <= obstacle_ind.reshape(obstacle_ind.shape[0], 1)  # 未被遮挡的点的坐标存储在b中
-        y_coord = y_range_coord_mat[b]
-        x_coord = x_range_coord_mat[b]
+        return all_occupied_points, all_free_points
 
-        """ no slam error """
-        self.slam_map[y_coord, x_coord] = self.maze[y_coord, x_coord]
+    def _update_map(self, occupied_points, free_points):
+        occupied_points = [p for p in occupied_points if self.slam_map[p[0], p[1]] == self.config['color']['uncertain']]
+        free_points = [p for p in free_points if self.slam_map[p[0], p[1]] == self.config['color']['uncertain']]
 
-        """ dilate/close to fill the holes """
-        # self.dslamMap= cv2.morphologyEx(self.slamMap,cv2.MORPH_CLOSE,np.ones((3,3)))
-        # self.slam_map = cv2.dilate(self.slam_map, np.ones((3, 3)), iterations=1)
-        return self.slam_map
+        occ_rows, occ_cols = [p[0] for p in occupied_points], [p[1] for p in occupied_points]
+        free_rows, free_cols = [p[0] for p in free_points], [p[1] for p in free_points]
 
-    def _build_map(self):
-        pose = self.pose
-        y_range_coord_mat = pose[0] - np.matmul(np.sin(self._angles_vect), self._radius_vect)
-        x_range_coord_mat = pose[1] + np.matmul(np.cos(self._angles_vect), self._radius_vect)
-        self._build_map_with_rangeCoordMat(y_range_coord_mat, x_range_coord_mat)
+        self.slam_map[occ_rows, occ_cols] = self.config['color']['obstacle']
+        self.slam_map[free_rows, free_cols] = self.config['color']['free']
+
+        # update the map
         return np.copy(self.slam_map)
 
     def _move_one_step(self, next_point):
         if not self._is_crashed(next_point):
             self.pose = next_point
             map_temp = np.copy(self.slam_map)  # 临时地图，存储原有的slam地图
-            self._build_map()
+            occupied_points, free_points = self._scan()
+            self._update_map(occupied_points, free_points)
             map_incrmnt = np.count_nonzero(map_temp - self.slam_map)  # map increment
             # self.render()
             return map_incrmnt

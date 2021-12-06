@@ -188,8 +188,7 @@ class World(gym.Env):
         return distance < range and self._clear_path_between_robots(robot1, robot2)
 
     def _clear_path_between_robots(self, robot1, robot2):
-
-        coords_of_line = bresenham(start=robot1.pose, end=robot2.pose, world_map=self.maze)
+        coords_of_line = bresenham(start=robot1.pose, end=robot2.pose, world_map=self.maze, occupied_val=self.config['color']['obstacle'])
         Y = [c[0] for c in coords_of_line]
         X = [c[1] for c in coords_of_line]
         points_in_line = self.slam_map[Y, X] # is this maze or slam map
