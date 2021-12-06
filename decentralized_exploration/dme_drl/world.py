@@ -56,7 +56,7 @@ class World(gym.Env):
         obs_n = []
         pose_n = []
         for i,rbt in enumerate(self.robots):
-            obs_n.append(cv2.resize(rbt.get_obs(),(100,100),interpolation=cv2.INTER_NEAREST))
+            obs_n.append(rbt.get_obs())
             pose = np.ones((1, self.number * 2)) * (-1)
             pose[:,2*i] = rbt.pose[0]
             pose[:,2*i+1] = rbt.pose[1]
@@ -124,7 +124,7 @@ class World(gym.Env):
                 info = 'NOOP'
             else:
                 obs, rwd, done, info = rbt.step(action_n[i])
-            obs_n.append(cv2.resize(obs,(100,100),interpolation=cv2.INTER_NEAREST))
+            obs_n.append(obs)
             rwd_n.append(rwd)
             info_n.append(info)
             pose = np.ones((1, self.number * 2)) * (-1)
