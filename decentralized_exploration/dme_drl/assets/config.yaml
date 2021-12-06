@@ -1,7 +1,7 @@
 # world settings
 json_dir: /../HouseExpo/json
 png_dir: /../assets/png
-map_id_train_set: /../assets/map_id_100.txt
+map_id_train_set: /assets/maps/train/filepaths.txt
 map_id_eval_set: /../assets/mapset_eval.txt
 
 # [GC,LC,NC]
@@ -9,10 +9,10 @@ comm_mode: GC
 
 # robots settings
 robots:
-  number: 2
+  number: 3
   robotRadius: 3
-  commRange: 60
-  syncRange: 20
+  commRange: 60 # fix range
+  syncRange: 20 #
   startPose:
     x: 0
     y: 0

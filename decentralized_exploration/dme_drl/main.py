@@ -7,7 +7,7 @@ import time
 import os
 import yaml
 
-from decentralized_exploration.dme_drl import robot_exploration_v1
+from decentralized_exploration.dme_drl import world
 from decentralized_exploration.dme_drl.maddpg.MADDPG import MADDPG
 from decentralized_exploration.dme_drl.sim_utils import onehot_from_action
 
@@ -21,7 +21,7 @@ food_reward = 10.
 poison_reward = -1.
 encounter_reward = 0.01
 n_coop = 2
-world = robot_exploration_v1.RobotExplorationT1()
+world = world.World()
 reward_record = []
 
 np.random.seed(1234)
@@ -46,8 +46,8 @@ win = None
 param = None
 avg = None
 load_model = False
-CONFIG_PATH = os.getcwd() + '/../assets/config.yaml'
-MODEL_DIR = os.getcwd() + '/../model/'
+CONFIG_PATH = os.getcwd() + '/assets/config.yaml'
+MODEL_DIR = os.getcwd() + '/model/'
 
 maddpg = MADDPG(n_agents, n_states, n_actions, n_pose, batch_size, capacity,
                 episodes_before_train)

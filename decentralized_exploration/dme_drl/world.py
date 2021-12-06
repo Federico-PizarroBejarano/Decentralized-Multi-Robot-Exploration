@@ -1,22 +1,22 @@
-import gym
-import yaml
 import os
+
 import cv2
-import numpy as np
+import gym
 import matplotlib.pyplot as plt
-from sim_utils import draw_maps
-from robot import Robot
+import numpy as np
+import yaml
+
+from decentralized_exploration.dme_drl.robot import Robot
+from decentralized_exploration.core.robots.utils.field_of_view import bresenham
 
 
-class RobotExplorationT1(gym.Env):
-    def __init__(self,config_path=os.getcwd()+'/../assets/config.yaml', number=None):
+class World(gym.Env):
+    def __init__(self,config_path=os.getcwd()+'/assets/config.yaml', number=None):
         np.random.seed(1234)
         with open(config_path) as stream:
             self.config = yaml.load(stream, Loader=yaml.SafeLoader)
         self.map_id_set_train = np.loadtxt(os.getcwd()+self.config['map_id_train_set'], str)
-        self.map_id_set_eval = np.loadtxt(os.getcwd()+self.config['map_id_eval_set'],str)
-        draw_maps(self.map_id_set_train,os.getcwd()+self.config['json_dir'],os.getcwd()+self.config['png_dir'])
-        draw_maps(self.map_id_set_eval, os.getcwd() + self.config['json_dir'], os.getcwd() + self.config['png_dir'])
+        # self.map_id_set_eval = np.loadtxt(os.getcwd()+self.config['map_id_eval_set'],str)
         if number is None:
             self.number = self.config['robots']['number']
         else:
@@ -36,13 +36,13 @@ class RobotExplorationT1(gym.Env):
     def reset(self,random=True):
         if random:
             self.map_id = np.random.choice(self.map_id_set_train)
-        else:
-            self.map_id = self.map_id_set_eval[0]
-            self.map_id_set_eval = np.delete(self.map_id_set_eval,0)
+        # else:
+            # self.map_id = self.map_id_set_eval[0]
+            # self.map_id_set_eval = np.delete(self.map_id_set_eval,0)
         print('map id： ',self.map_id)
         self.frontiers = [[] for i in range(self.config['frontiers']['number'])]
         self.target_points = []
-        self.maze = self.map_loader(self.map_id)
+        self.maze = np.load(self.map_id).astype('uint8')
         self.slam_map = np.ones_like(self.maze) * self.config['color']['uncertain']
         self.last_map = np.copy(self.slam_map)
         self.track_map = np.copy(self.maze)
@@ -66,46 +66,26 @@ class RobotExplorationT1(gym.Env):
             # no communication
             pass
         else:
-            for i, self_rbt in enumerate(self.robots):
-                for j, other_rbt in enumerate(self.robots):
+            for i, robot1 in enumerate(self.robots):
+                for j, robot2 in enumerate(self.robots):
                     if not i==j:
+                        distance = max(abs(robot1.pose[1] - robot2.pose[1]),
+                                       abs(robot1.pose[0] - robot2.pose[0]))
                         if self.config['comm_mode'] == 'GC':
                             # complete communication
-                            if np.linalg.norm(np.array(self_rbt.pose) - np.array(other_rbt.pose)) < self.config['robots']['commRange']:
-                                self._communicate(self_rbt, other_rbt)
+                            if self._can_communicate(distance, self.config['robots']['commRange'], robot1, robot2):
+                                self._communicate(robot1, robot2)
                         else:
                             # layers communication
-                            if np.linalg.norm(np.array(self_rbt.pose) - np.array(other_rbt.pose)) < self.config['robots']['commRange']:
+                            if self._can_communicate(distance, self.config['robots']['commRange'], robot1, robot2):
                                 # exchange position information
-                                pose_n[i][:,2*j] = other_rbt.pose[0]
-                                pose_n[i][:,2*j+1] = other_rbt.pose[1]
+                                pose_n[i][:,2*j] = robot2.pose[0]
+                                pose_n[i][:,2*j+1] = robot2.pose[1]
 
-                            if np.linalg.norm(np.array(self_rbt.pose)-np.array(other_rbt.pose)) < self.config['robots']['syncRange']:
+                            if self._can_communicate(distance, self.config['robots']['syncRange'], robot1, robot2):
                                 # exchange complete information
-                                self._communicate(self_rbt, other_rbt)
+                                self._communicate(robot1, robot2)
         return obs_n,pose_n
-
-    def map_loader(self,map_id,padding=5):
-        png_dir = os.getcwd()+self.config['png_dir']
-        file_path = os.path.join(png_dir,map_id)+'.png'
-        map_raw = cv2.imread(file_path,cv2.IMREAD_GRAYSCALE)
-        maze=np.zeros_like(map_raw)
-        maze[map_raw==0] = self.config['color']['obstacle']
-        maze[map_raw==255] = self.config['color']['free']
-        index = np.where(maze==self.config['color']['obstacle'])
-        [index_row_max,index_row_min,index_col_max,index_col_min] = [np.max(index[0]),np.min(index[0]),np.max(index[1]),np.min(index[1])]
-        maze = maze[index_row_min:index_row_max+1,index_col_min:index_col_max+1]
-        maze = np.lib.pad(maze, padding, mode='constant', constant_values=self.config['color']['obstacle'])
-        maze = cv2.resize(maze,(self.config['map']['x'],self.config['map']['y']),interpolation=cv2.INTER_NEAREST)
-        # map = cv2.dilate(map, np.ones((3, 3)), iterations=2)
-        return maze
-
-    def trackmap_loader(self,map_id,padding=5):
-        png_dir = os.getcwd()+self.config['png_dir']
-        file_path = os.path.join(png_dir, map_id) + '.png'
-        map_raw = cv2.imread(file_path)
-        map = cv2.resize(map_raw, (self.config['map']['x'], self.config['map']['y']), interpolation=cv2.INTER_NEAREST)
-        return map
 
     def seed(self, seed=None):
         pass
@@ -155,17 +135,19 @@ class RobotExplorationT1(gym.Env):
         if self.config['comm_mode'] == 'NC':
             # no communication
             pass
-        else:
+        else: # might need to add a check if obstacles are blocking communication
             for i, self_rbt in enumerate(self.robots):
                 for j, other_rbt in enumerate(self.robots):
                     if not i == j:
+                        distance = max(abs(self_rbt.pose[1] - self_rbt.pose[1]),
+                                       abs(self_rbt.pose[0] - self_rbt.pose[0]))
                         if self.config['comm_mode'] == 'LC':
-                            if np.linalg.norm(np.array(self_rbt.pose) - np.array(other_rbt.pose)) < self.config['robots']['commRange']:
+                            if distance < self.config['robots']['commRange']:
                                 # layers communication
                                 pose_n[i][:, 2 * j] = other_rbt.pose[0]
                                 pose_n[i][:, 2 * j + 1] = other_rbt.pose[1]
                                 self.data_transmitted = self.data_transmitted+pose_n[i].size
-                            if np.linalg.norm(np.array(self_rbt.pose) - np.array(other_rbt.pose)) < self.config['robots']['syncRange']:
+                            if distance < self.config['robots']['syncRange']:
                                 # complete communication
                                 self._communicate(self_rbt, other_rbt)
                                 self.data_transmitted += self_rbt.slam_map.size
@@ -202,9 +184,24 @@ class RobotExplorationT1(gym.Env):
         self._track()
         return done
 
+    def _can_communicate(self, distance, range, robot1, robot2):
+        return distance < range and self._clear_path_between_robots(robot1, robot2)
+
+    def _clear_path_between_robots(self, robot1, robot2):
+
+        coords_of_line = bresenham(start=robot1.pose, end=robot2.pose, world_map=self.maze)
+        Y = [c[0] for c in coords_of_line]
+        X = [c[1] for c in coords_of_line]
+        points_in_line = self.slam_map[Y, X] # is this maze or slam map
+
+        if np.any(points_in_line == self.config['color']['obstacle']):
+            return False
+        else:
+            return True
+
     def _communicate(self, rbt0, rbt1):
         bit_map = np.zeros_like(self.slam_map)
-        merge_map = np.ones_like(self.slam_map) * 50
+        merge_map = np.ones_like(self.slam_map) * self.config['color']['uncertain']
         for rbt in [rbt0,rbt1]:
             bit_map = np.bitwise_or(bit_map, rbt.slam_map != self.config['color']['uncertain'])
         idx = np.where(bit_map == 1)
@@ -259,11 +256,11 @@ class RobotExplorationT1(gym.Env):
 
 
 if __name__ == '__main__':
-    env = RobotExplorationT1()
-    for i in range(1000):
-        obs_n = env.reset()
-        for _ in range(100):
-            action_n = np.random.randint(0,8,2)
-            obs_n,rwd_n,done_n,info_n = env.step(action_n)
-            print('reward:',np.sum(rwd_n))
-        print('完成一个Episode，执行结果为',np.all(done_n))
+    env = World()
+    # for i in range(1000):
+    #     obs_n = env.reset()
+    #     for _ in range(100):
+    #         action_n = np.random.randint(0,8,2)
+    #         obs_n,rwd_n,done_n,info_n = env.step(action_n)
+    #         print('reward:',np.sum(rwd_n))
+    #     print('完成一个Episode，执行结果为',np.all(done_n))

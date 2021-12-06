@@ -80,7 +80,7 @@ class RobotTeam:
                 distance = max(abs(robot_position[1]-other_robot_position[1]), abs(robot_position[0]-other_robot_position[0]))
 
                 if distance <= self._communication_range:
-                    if self._blocked_by_obstacles == False or world.clear_path_between_robots(robot1=robot.robot_id, robot2=robot_id):
+                    if self._blocked_by_obstacles == False or world._clear_path_between_robots(robot1=robot.robot_id, robot2=robot_id):
                         if self._messages_to_skip <= 0:
                             message[robot.robot_id] = { 
                                 'robot_position': other_robot_position,
@@ -119,7 +119,7 @@ class RobotTeam:
                 dist_between_robots = max(abs(robot_position[1]-other_robot_position[1]), abs(robot_position[0]-other_robot_position[0]))
 
                 if robot != second_robot and dist_between_robots < self.local_interaction_dist:
-                    if self._blocked_by_obstacles == False or world.clear_path_between_robots(robot1=robot, robot2=second_robot):                 
+                    if self._blocked_by_obstacles == False or world._clear_path_between_robots(robot1=robot, robot2=second_robot):
                         local_interactions.append((int(robot[-1]), int(second_robot[-1])))
 
         return local_interactions
