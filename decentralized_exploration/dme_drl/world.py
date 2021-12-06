@@ -136,26 +136,26 @@ class World(gym.Env):
             # no communication
             pass
         else: # might need to add a check if obstacles are blocking communication
-            for i, self_rbt in enumerate(self.robots):
-                for j, other_rbt in enumerate(self.robots):
+            for i, robot1 in enumerate(self.robots):
+                for j, robot2 in enumerate(self.robots):
                     if not i == j:
-                        distance = max(abs(self_rbt.pose[1] - self_rbt.pose[1]),
-                                       abs(self_rbt.pose[0] - self_rbt.pose[0]))
+                        distance = max(abs(robot1.pose[1] - robot1.pose[1]),
+                                       abs(robot1.pose[0] - robot1.pose[0]))
                         if self.config['comm_mode'] == 'LC':
-                            if distance < self.config['robots']['commRange']:
                                 # layers communication
-                                pose_n[i][:, 2 * j] = other_rbt.pose[0]
-                                pose_n[i][:, 2 * j + 1] = other_rbt.pose[1]
-                                self.data_transmitted = self.data_transmitted+pose_n[i].size
-                            if distance < self.config['robots']['syncRange']:
-                                # complete communication
-                                self._communicate(self_rbt, other_rbt)
-                                self.data_transmitted += self_rbt.slam_map.size
+                                if self._can_communicate(distance, self.config['robots']['commRange'], robot1, robot2):
+                                    # exchange position information
+                                    pose_n[i][:, 2 * j] = robot2.pose[0]
+                                    pose_n[i][:, 2 * j + 1] = robot2.pose[1]
+
+                                if self._can_communicate(distance, self.config['robots']['syncRange'], robot1, robot2):
+                                    # exchange complete information
+                                    self._communicate(robot1, robot2)
                         else:
-                            if np.linalg.norm(np.array(self_rbt.pose) - np.array(other_rbt.pose)) < self.config['robots']['commRange']:
-                                # complete communication
-                                self._communicate(self_rbt, other_rbt)
-                                self.data_transmitted += self_rbt.slam_map.size
+                            if self._can_communicate(distance, self.config['robots']['syncRange'], robot1, robot2):
+                                # exchange complete information
+                                self._communicate(robot1, robot2)
+                                self.data_transmitted += robot1.slam_map.size
 
         # self.render()
         self._track()
