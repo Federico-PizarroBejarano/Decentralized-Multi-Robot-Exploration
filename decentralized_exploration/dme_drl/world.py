@@ -23,7 +23,6 @@ class World(gym.Env):
             self.number = number
         # parameters will be set in reset func
         self.map_id = None
-        self.frontiers = []
         self.target_points = []
         self.maze = np.zeros([1, 1])
         self.slam_map = np.zeros_like(self.maze)
@@ -40,7 +39,6 @@ class World(gym.Env):
             # self.map_id = self.map_id_set_eval[0]
             # self.map_id_set_eval = np.delete(self.map_id_set_eval,0)
         print('map id： ',self.map_id)
-        self.frontiers = [[] for i in range(self.config['frontiers']['number'])]
         self.target_points = []
         self.maze = np.load(self.map_id).astype('uint8')
         self.slam_map = np.ones_like(self.maze) * self.config['color']['uncertain']
@@ -208,10 +206,6 @@ class World(gym.Env):
         rbt0.slam_map = merge_map
         rbt1.slam_map = merge_map
         return
-
-    def get_frontiers(self):
-        for rbt in self.robots:
-            rbt.get_frontiers()
 
     def select_action_greedy(self):
         self.target_points=[]
