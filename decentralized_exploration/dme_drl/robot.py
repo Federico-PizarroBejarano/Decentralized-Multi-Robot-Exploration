@@ -31,7 +31,8 @@ class Robot():
         self.robot_list = None
         self.world = None
         self.path = None
-        self.frontiers = []
+        self.frontier = set()
+        self.frontier_by_direction = []
 
         """ pre calculate radius and angle vector that will be used in building map """
         radius_vect = np.arange(self.laser_range + 1)
@@ -63,6 +64,7 @@ class Robot():
         self.last_map = self.slam_map.copy()
         occupied_points, free_points = self._scan()
         self._update_map(occupied_points, free_points)
+        self._update_frontier_after_scan(free_points)
         self.last_map = np.copy(self.slam_map)
         obs = self.get_obs()
         return obs
@@ -114,12 +116,52 @@ class Robot():
         # update the map
         return np.copy(self.slam_map)
 
+    def _is_in_world(self, y, x):
+        return 0 <= y < self.maze.shape[0] and 0 <= x < self.maze.shape[1]
+
+    def _get_neighbours(self, coords, radius=1):
+        neighbours = []
+        y, x = coords[0], coords[1]
+
+        for dy in range(-radius, radius + 1):
+            for dx in range(-radius, radius + 1):
+                neighbour_y = y + dy
+                neighbour_x = x + dx
+                if self._is_in_world(neighbour_y, neighbour_x):
+                    neighbours.append((neighbour_y, neighbour_x))
+
+        return neighbours
+
+    def _is_frontier(self, coords):
+        neighbours = self._get_neighbours(coords)
+        for neighbour in neighbours:
+            if self.maze[neighbour] == self.config['color']['uncertain']:
+                return True
+        return False
+
+    def _cleanup_frontier(self):
+        coords_to_be_removed = set()
+
+        for coords in self.frontier:
+            if not self._is_frontier(coords):
+                coords_to_be_removed.add(coords)
+
+        self.frontier -= coords_to_be_removed
+
+    def _update_frontier_after_scan(self, free_points):
+        self._cleanup_frontier()
+
+        for free_point in free_points:
+            if self._is_frontier(free_point):
+                self.frontier.add(free_point)
+
     def _move_one_step(self, next_point):
         if not self._is_crashed(next_point):
             self.pose = next_point
             map_temp = np.copy(self.slam_map)  # 临时地图，存储原有的slam地图
             occupied_points, free_points = self._scan()
             self._update_map(occupied_points, free_points)
+            self._update_frontier_after_scan(free_points)
             map_incrmnt = np.count_nonzero(map_temp - self.slam_map)  # map increment
             # self.render()
             return map_incrmnt
@@ -128,9 +170,9 @@ class Robot():
 
     def step(self, action):
         y, x = self.pose
-        y_dsti, x_dsti = self.frontiers[action][0]
+        y_dsti, x_dsti = self.frontier_by_direction[action][0]
         distance_min = np.sqrt((y - y_dsti) ** 2 + (x - x_dsti) ** 2)
-        for (y_, x_) in self.frontiers[action]:
+        for (y_, x_) in self.frontier_by_direction[action]:
             distance = np.sqrt((y - y_) ** 2 + (x - x_) ** 2)
             if distance < distance_min:
                 y_dsti, x_dsti = y_, x_
@@ -216,7 +258,7 @@ class Robot():
     def get_frontiers(self):
         """获取前沿，采用地图相减的算法"""
         slam_map = np.copy(self.slam_map).astype(np.uint8)
-        self.frontiers = [[] for _ in range(self.config['frontiers']['number'])]
+        self.frontier_by_direction = [[] for _ in range(self.config['frontiers']['number'])]
         contour = []
         map = np.copy(self.maze).astype(np.uint8)
         clr_fre = self.config['color']['free']
@@ -244,25 +286,25 @@ class Robot():
             if self.maze[y, x] == self.config['color']['free']:
                 if x > rx:
                     if 1 <= tan[idx]:
-                        self.frontiers[0].append((y, x))
+                        self.frontier_by_direction[0].append((y, x))
                     elif 0 <= tan[idx] < 1:
-                        self.frontiers[1].append((y, x))
+                        self.frontier_by_direction[1].append((y, x))
                     elif -1 <= tan[idx] < 0:
-                        self.frontiers[2].append((y, x))
+                        self.frontier_by_direction[2].append((y, x))
                     elif tan[idx] < -1:
-                        self.frontiers[3].append((y, x))
+                        self.frontier_by_direction[3].append((y, x))
                 else:
                     if 1 <= tan[idx]:
-                        self.frontiers[4].append((y, x))
+                        self.frontier_by_direction[4].append((y, x))
                     elif 0 <= tan[idx] < 1:
-                        self.frontiers[5].append((y, x))
+                        self.frontier_by_direction[5].append((y, x))
                     elif -1 <= tan[idx] < 0:
-                        self.frontiers[6].append((y, x))
+                        self.frontier_by_direction[6].append((y, x))
                     elif tan[idx] < -1:
-                        self.frontiers[7].append((y, x))
+                        self.frontier_by_direction[7].append((y, x))
 
-        if len(self.frontiers) > 0:
-            return np.copy(self.frontiers)
+        if len(self.frontier_by_direction) > 0:
+            return np.copy(self.frontier_by_direction)
         else:
             raise Exception('Exception: None Contour!')
 
@@ -274,7 +316,7 @@ class Robot():
             return np.inf
 
     def select_action(self):
-        f_points = [point for front in self.frontiers for point in front]
+        f_points = [point for front in self.frontier_by_direction for point in front]
         f_dis = list(map(self.eular_dis, f_points))
         return f_points[np.argmin(f_dis)]
 
@@ -282,21 +324,21 @@ class Robot():
         return np.mean(x, axis=0)
 
     def select_action_greedy(self):
-        centers = list(map(self.center_point, self.frontiers))
+        centers = list(map(self.center_point, self.frontier_by_direction))
         cen_dis = list(map(self.eular_dis, centers))
         action = np.argmin(cen_dis)
-        f_dis = list(map(self.eular_dis, self.frontiers[action]))
-        return self.frontiers[action][np.argmin(f_dis)]
+        f_dis = list(map(self.eular_dis, self.frontier_by_direction[action]))
+        return self.frontier_by_direction[action][np.argmin(f_dis)]
         # return self.select_action()
 
     def select_action_randomly(self):
         action = np.random.randint(8)
-        while len(self.frontiers[action]) == 0:
+        while len(self.frontier_by_direction[action]) == 0:
             action = np.random.randint(8)
         return action
 
     def select_target_randomly(self):
-        f_points = [point for front in self.frontiers for point in front]
+        f_points = [point for front in self.frontier_by_direction for point in front]
         target = f_points[np.random.randint(0, len(f_points))]
         return target
 
