@@ -59,30 +59,20 @@ class World(gym.Env):
             pose[:,2*i] = rbt.pose[0]
             pose[:,2*i+1] = rbt.pose[1]
             pose_n.append(pose)
-        # if robots are in communication range, they communicate with others according to the mode
-        if self.config['comm_mode'] == 'NC':
-            # no communication
-            pass
-        else:
-            for i, robot1 in enumerate(self.robots):
-                for j, robot2 in enumerate(self.robots):
-                    if not i==j:
-                        distance = max(abs(robot1.pose[1] - robot2.pose[1]),
-                                       abs(robot1.pose[0] - robot2.pose[0]))
-                        if self.config['comm_mode'] == 'GC':
-                            # complete communication
-                            if self._can_communicate(distance, self.config['robots']['commRange'], robot1, robot2):
-                                self._communicate(robot1, robot2)
-                        else:
-                            # layers communication
-                            if self._can_communicate(distance, self.config['robots']['commRange'], robot1, robot2):
-                                # exchange position information
-                                pose_n[i][:,2*j] = robot2.pose[0]
-                                pose_n[i][:,2*j+1] = robot2.pose[1]
 
-                            if self._can_communicate(distance, self.config['robots']['syncRange'], robot1, robot2):
-                                # exchange complete information
-                                self._communicate(robot1, robot2)
+        for i, robot1 in enumerate(self.robots):
+            for j, robot2 in enumerate(self.robots):
+                if not i==j:
+                    distance = max(abs(robot1.pose[1] - robot2.pose[1]),
+                                   abs(robot1.pose[0] - robot2.pose[0]))
+                    if self._can_communicate(distance, self.config['robots']['commRange'], robot1, robot2):
+                        # exchange position information
+                        pose_n[i][:,2*j] = robot2.pose[0]
+                        pose_n[i][:,2*j+1] = robot2.pose[1]
+
+                    if self._can_communicate(distance, self.config['robots']['syncRange'], robot1, robot2):
+                        # exchange complete information
+                        self._communicate(robot1, robot2)
         return obs_n,pose_n
 
     def seed(self, seed=None):
@@ -139,21 +129,15 @@ class World(gym.Env):
                     if not i == j:
                         distance = max(abs(robot1.pose[1] - robot1.pose[1]),
                                        abs(robot1.pose[0] - robot1.pose[0]))
-                        if self.config['comm_mode'] == 'LC':
-                                # layers communication
-                                if self._can_communicate(distance, self.config['robots']['commRange'], robot1, robot2):
-                                    # exchange position information
-                                    pose_n[i][:, 2 * j] = robot2.pose[0]
-                                    pose_n[i][:, 2 * j + 1] = robot2.pose[1]
+                        # layers communication
+                        if self._can_communicate(distance, self.config['robots']['commRange'], robot1, robot2):
+                            # exchange position information
+                            pose_n[i][:, 2 * j] = robot2.pose[0]
+                            pose_n[i][:, 2 * j + 1] = robot2.pose[1]
 
-                                if self._can_communicate(distance, self.config['robots']['syncRange'], robot1, robot2):
-                                    # exchange complete information
-                                    self._communicate(robot1, robot2)
-                        else:
-                            if self._can_communicate(distance, self.config['robots']['syncRange'], robot1, robot2):
-                                # exchange complete information
-                                self._communicate(robot1, robot2)
-                                self.data_transmitted += robot1.slam_map.size
+                        if self._can_communicate(distance, self.config['robots']['syncRange'], robot1, robot2):
+                            # exchange complete information
+                            self._communicate(robot1, robot2)
 
         # self.render()
         self._track()
@@ -161,26 +145,6 @@ class World(gym.Env):
         #if done:
             #self.track()
         return obs_n,rwd_n,done,info_n,pose_n
-
-    def move_to_targets(self):
-        """
-        does the similar work as step func, but it dose not
-        return anything, this func is used in GRE and RDM policy
-        """
-        for i,r in enumerate(self.robots):
-            target_point = self.target_points[i]
-            r.move_to_target(target_point)
-        self._merge_map()
-        for i, self_rbt in enumerate(self.robots):
-            for j, other_rbt in enumerate(self.robots):
-                if not i == j:
-                    if np.linalg.norm(np.array(self_rbt.pose) - np.array(other_rbt.pose)) < self.config['robots']['syncRange']:
-                        # complete communication
-                        self._communicate(self_rbt, other_rbt)
-        done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) > 0.95
-        # self.render()
-        self._track()
-        return done
 
     def _can_communicate(self, distance, range, robot1, robot2):
         return distance < range and self._clear_path_between_robots(robot1, robot2)
