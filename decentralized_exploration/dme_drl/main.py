@@ -106,7 +106,7 @@ for i_episode in range(n_episode):
         action = []
         for i,probs in enumerate(action_probs):
             rbt = world.robots[i]
-            for j,frt in enumerate(rbt.get_frontiers()):
+            for j,frt in enumerate(rbt.get_and_update_frontier_by_direction()):
                 if len(frt) == 0:
                     action_probs_valid[i][j] = 0
             action.append(categorical.Categorical(probs=th.tensor(action_probs_valid[i])).sample())
@@ -114,7 +114,7 @@ for i_episode in range(n_episode):
         action = th.tensor(onehot_from_action(action))
         acts = np.argmax(action,axis=1)
         for i in range(len(acts)):
-            if len(world.robots[i].frontiers[acts[i]]) == 0:
+            if len(world.robots[i].frontier_by_direction[acts[i]]) == 0:
                 # NOOP 指令
                 acts[i] = -1
 

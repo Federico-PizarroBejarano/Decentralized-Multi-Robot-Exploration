@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import yaml
 
+from decentralized_exploration.dme_drl.frontier_utils import merge_frontiers
 from decentralized_exploration.dme_drl.robot import Robot
 from decentralized_exploration.core.robots.utils.field_of_view import bresenham
 
@@ -73,6 +74,7 @@ class World(gym.Env):
                     if self._can_communicate(distance, self.config['robots']['syncRange'], robot1, robot2):
                         # exchange complete information
                         self._communicate(robot1, robot2)
+                        self._merge_frontiers_after_communicate(robot1, robot2)
         return obs_n,pose_n
 
     def seed(self, seed=None):
@@ -120,24 +122,21 @@ class World(gym.Env):
             pose[:, 2 * i + 1] = rbt.pose[1]
             pose_n.append(pose)
         self._merge_map()
-        if self.config['comm_mode'] == 'NC':
-            # no communication
-            pass
-        else: # might need to add a check if obstacles are blocking communication
-            for i, robot1 in enumerate(self.robots):
-                for j, robot2 in enumerate(self.robots):
-                    if not i == j:
-                        distance = max(abs(robot1.pose[1] - robot1.pose[1]),
-                                       abs(robot1.pose[0] - robot1.pose[0]))
-                        # layers communication
-                        if self._can_communicate(distance, self.config['robots']['commRange'], robot1, robot2):
-                            # exchange position information
-                            pose_n[i][:, 2 * j] = robot2.pose[0]
-                            pose_n[i][:, 2 * j + 1] = robot2.pose[1]
+        for i, robot1 in enumerate(self.robots):
+            for j, robot2 in enumerate(self.robots):
+                if not i == j:
+                    distance = max(abs(robot1.pose[1] - robot1.pose[1]),
+                                   abs(robot1.pose[0] - robot1.pose[0]))
+                    # layers communication
+                    if self._can_communicate(distance, self.config['robots']['commRange'], robot1, robot2):
+                        # exchange position information
+                        pose_n[i][:, 2 * j] = robot2.pose[0]
+                        pose_n[i][:, 2 * j + 1] = robot2.pose[1]
 
-                        if self._can_communicate(distance, self.config['robots']['syncRange'], robot1, robot2):
-                            # exchange complete information
-                            self._communicate(robot1, robot2)
+                    if self._can_communicate(distance, self.config['robots']['syncRange'], robot1, robot2):
+                        # exchange complete information
+                        self._communicate(robot1, robot2)
+                        self._merge_frontiers_after_communicate(robot1, robot2)
 
         # self.render()
         self._track()
@@ -160,16 +159,20 @@ class World(gym.Env):
         else:
             return True
 
-    def _communicate(self, rbt0, rbt1):
+    def _communicate(self, rbt1, rbt2):
         bit_map = np.zeros_like(self.slam_map)
         merge_map = np.ones_like(self.slam_map) * self.config['color']['uncertain']
-        for rbt in [rbt0,rbt1]:
+        for rbt in [rbt1, rbt2]:
             bit_map = np.bitwise_or(bit_map, rbt.slam_map != self.config['color']['uncertain'])
         idx = np.where(bit_map == 1)
         merge_map[idx] = self.maze[idx]
-        rbt0.slam_map = merge_map
         rbt1.slam_map = merge_map
+        rbt2.slam_map = merge_map
         return
+
+    def _merge_frontiers_after_communicate(self, rbt1, rbt2):
+        merged_frontiers = merge_frontiers(rbt1.slam_map, rbt1.frontier, rbt2.frontier, rbt1.pose, rbt1.config)
+        rbt1.frontier = merged_frontiers
 
     def select_action_greedy(self):
         self.target_points=[]

@@ -4,6 +4,7 @@ import cv2
 import matplotlib.pyplot as plt
 import decentralized_exploration.dme_drl.sim_utils as sim_utils
 from decentralized_exploration.core.robots.utils.field_of_view import field_of_view, bresenham
+from decentralized_exploration.dme_drl.frontier_utils import update_frontier_after_scan
 from decentralized_exploration.dme_drl.navigate import AStar, AStarSimple
 import os
 
@@ -64,7 +65,7 @@ class Robot():
         self.last_map = self.slam_map.copy()
         occupied_points, free_points = self._scan()
         self._update_map(occupied_points, free_points)
-        self._update_frontier_after_scan(free_points)
+        self.frontier = update_frontier_after_scan(self.slam_map, self.frontier, free_points, self.pose, self.config)
         self.last_map = np.copy(self.slam_map)
         obs = self.get_obs()
         return obs
@@ -116,52 +117,13 @@ class Robot():
         # update the map
         return np.copy(self.slam_map)
 
-    def _is_in_world(self, y, x):
-        return 0 <= y < self.maze.shape[0] and 0 <= x < self.maze.shape[1]
-
-    def _get_neighbours(self, coords, radius=1):
-        neighbours = []
-        y, x = coords[0], coords[1]
-
-        for dy in range(-radius, radius + 1):
-            for dx in range(-radius, radius + 1):
-                neighbour_y = y + dy
-                neighbour_x = x + dx
-                if self._is_in_world(neighbour_y, neighbour_x):
-                    neighbours.append((neighbour_y, neighbour_x))
-
-        return neighbours
-
-    def _is_frontier(self, coords):
-        neighbours = self._get_neighbours(coords)
-        for neighbour in neighbours:
-            if self.maze[neighbour] == self.config['color']['uncertain']:
-                return True
-        return False
-
-    def _cleanup_frontier(self):
-        coords_to_be_removed = set()
-
-        for coords in self.frontier:
-            if not self._is_frontier(coords):
-                coords_to_be_removed.add(coords)
-
-        self.frontier -= coords_to_be_removed
-
-    def _update_frontier_after_scan(self, free_points):
-        self._cleanup_frontier()
-
-        for free_point in free_points:
-            if self._is_frontier(free_point):
-                self.frontier.add(free_point)
-
     def _move_one_step(self, next_point):
         if not self._is_crashed(next_point):
             self.pose = next_point
             map_temp = np.copy(self.slam_map)  # 临时地图，存储原有的slam地图
             occupied_points, free_points = self._scan()
             self._update_map(occupied_points, free_points)
-            self._update_frontier_after_scan(free_points)
+            self.frontier = update_frontier_after_scan(self.slam_map, self.frontier, free_points, self.pose, self.config)
             map_incrmnt = np.count_nonzero(map_temp - self.slam_map)  # map increment
             # self.render()
             return map_incrmnt
@@ -252,56 +214,38 @@ class Robot():
     def get_obs(self):
         """每一个机器人都获取自己观察视野内的本地地图"""
         observation = self.get_state()
-        self.get_frontiers()
+        self.get_and_update_frontier_by_direction()
         return observation
 
-    def get_frontiers(self):
+    def get_and_update_frontier_by_direction(self):
         """获取前沿，采用地图相减的算法"""
-        slam_map = np.copy(self.slam_map).astype(np.uint8)
         self.frontier_by_direction = [[] for _ in range(self.config['frontiers']['number'])]
-        contour = []
-        map = np.copy(self.maze).astype(np.uint8)
-        clr_fre = self.config['color']['free']
-        clr_obs = self.config['color']['obstacle']
-        clr_unc = self.config['color']['uncertain']
 
-        slam_map_ = np.copy(slam_map)
-        slam_map_[slam_map_ == clr_fre] = 25
-        slam_map_[slam_map_ == clr_obs] = 0
-        slam_map_[slam_map_ == clr_unc] = 0
-        canny_0 = cv2.Canny(slam_map_, 10, 25)
-        canny_0[map == clr_obs] = 0
-
-        slam_map_ = np.copy(slam_map)
-        slam_map_[slam_map_ == clr_fre] = clr_unc
-        canny_1 = cv2.Canny(slam_map_, 50, 100)
-
-        canny_0[canny_1 == 255] = 0
-
-        coord = np.where(canny_0 == 255)
         ry, rx = self.pose[0], self.pose[1]
+        for y, x in self.frontier:
+            if x - rx != 0:
+                tan = (y - ry) / (x - rx)
+            else:
+                tan = np.sign(y-ry)
 
-        tan = (coord[0] - ry) / (coord[1] - rx)
-        for idx, (y, x) in enumerate(zip(coord[0], coord[1])):
-            if self.maze[y, x] == self.config['color']['free']:
-                if x > rx:
-                    if 1 <= tan[idx]:
-                        self.frontier_by_direction[0].append((y, x))
-                    elif 0 <= tan[idx] < 1:
-                        self.frontier_by_direction[1].append((y, x))
-                    elif -1 <= tan[idx] < 0:
-                        self.frontier_by_direction[2].append((y, x))
-                    elif tan[idx] < -1:
-                        self.frontier_by_direction[3].append((y, x))
-                else:
-                    if 1 <= tan[idx]:
-                        self.frontier_by_direction[4].append((y, x))
-                    elif 0 <= tan[idx] < 1:
-                        self.frontier_by_direction[5].append((y, x))
-                    elif -1 <= tan[idx] < 0:
-                        self.frontier_by_direction[6].append((y, x))
-                    elif tan[idx] < -1:
-                        self.frontier_by_direction[7].append((y, x))
+            if x > rx:
+                if 1 <= tan:
+                    self.frontier_by_direction[0].append((y, x))
+                elif 0 <= tan < 1:
+                    self.frontier_by_direction[1].append((y, x))
+                elif -1 <= tan < 0:
+                    self.frontier_by_direction[2].append((y, x))
+                elif tan < -1:
+                    self.frontier_by_direction[3].append((y, x))
+            else:
+                if 1 <= tan:
+                    self.frontier_by_direction[4].append((y, x))
+                elif 0 <= tan < 1:
+                    self.frontier_by_direction[5].append((y, x))
+                elif -1 <= tan < 0:
+                    self.frontier_by_direction[6].append((y, x))
+                elif tan < -1:
+                    self.frontier_by_direction[7].append((y, x))
 
         if len(self.frontier_by_direction) > 0:
             return np.copy(self.frontier_by_direction)
