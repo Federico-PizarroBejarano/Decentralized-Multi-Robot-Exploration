@@ -150,9 +150,6 @@ class Robot():
                 counter += 1
                 map_incrmnt = self._move_one_step(point)
                 incrmnt_his.append(map_incrmnt)
-                if np.sum(incrmnt_his) > 3600:
-                    # print('地图增量超过阈值，提前终止探索过程')
-                    break
         obs = self.get_obs()
         rwd = self.reward(counter, incrmnt_his)
         done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(
