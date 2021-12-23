@@ -18,7 +18,7 @@ class Critic(basic_module.BasicModule):
         self.conv1 = nn.Conv2d(self.n_agent,16,8,4)
         self.conv2 = nn.Conv2d(16,32,4,2)
         self.i2h1 = nn.Linear(4128,self.hidden_dim)
-        self.rnn = nn.LSTM(3872, self.hidden_dim)
+        self.rnn = nn.LSTM(32, self.hidden_dim)
         self.fc = nn.Linear(self.hidden_dim+dim_action*n_agent+dim_pose*n_agent*n_agent,1)
 
 

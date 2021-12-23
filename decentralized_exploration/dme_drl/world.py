@@ -31,6 +31,8 @@ class World(gym.Env):
         self.track_map = np.zeros_like(self.slam_map)
         self.data_transmitted = 0
         self.robots = []
+        self.robot_sensor_range = self.config['robots']['sensorRange']
+        self.probability_of_failed_communication = self.config['robots']['probabilityOfFailedCommunication']
         self.reset()
 
     def reset(self,random=True):
@@ -66,15 +68,13 @@ class World(gym.Env):
                 if not i==j:
                     distance = max(abs(robot1.pose[1] - robot2.pose[1]),
                                    abs(robot1.pose[0] - robot2.pose[0]))
-                    if self._can_communicate(distance, self.config['robots']['commRange'], robot1, robot2):
+                    if self._is_in_range(distance, robot1, robot2):
                         # exchange position information
                         pose_n[i][:,2*j] = robot2.pose[0]
                         pose_n[i][:,2*j+1] = robot2.pose[1]
-
-                    if self._can_communicate(distance, self.config['robots']['syncRange'], robot1, robot2):
-                        # exchange complete information
-                        self._communicate(robot1, robot2)
-                        self._merge_frontiers_after_communicate(robot1, robot2)
+                        if self._can_communicate():
+                            self._communicate(robot1, robot2)
+                            self._merge_frontiers_after_communicate(robot1, robot2)
         return obs_n,pose_n
 
     def seed(self, seed=None):
@@ -128,15 +128,14 @@ class World(gym.Env):
                     distance = max(abs(robot1.pose[1] - robot1.pose[1]),
                                    abs(robot1.pose[0] - robot1.pose[0]))
                     # layers communication
-                    if self._can_communicate(distance, self.config['robots']['commRange'], robot1, robot2):
+                    if self._is_in_range(distance, robot1, robot2):
                         # exchange position information
                         pose_n[i][:, 2 * j] = robot2.pose[0]
                         pose_n[i][:, 2 * j + 1] = robot2.pose[1]
-
-                    if self._can_communicate(distance, self.config['robots']['syncRange'], robot1, robot2):
-                        # exchange complete information
-                        self._communicate(robot1, robot2)
-                        self._merge_frontiers_after_communicate(robot1, robot2)
+                        if self._can_communicate():
+                            # exchange complete information
+                            self._communicate(robot1, robot2)
+                            self._merge_frontiers_after_communicate(robot1, robot2)
 
         # self.render()
         self._track()
@@ -145,8 +144,11 @@ class World(gym.Env):
             #self.track()
         return obs_n,rwd_n,done,info_n,pose_n
 
-    def _can_communicate(self, distance, range, robot1, robot2):
-        return distance < range and self._clear_path_between_robots(robot1, robot2)
+    def _can_communicate(self):
+        return np.random.randint(100) > self.probability_of_failed_communication
+
+    def _is_in_range(self, distance, robot1, robot2):
+        return distance <= self.robot_sensor_range and self._clear_path_between_robots(robot1, robot2)
 
     def _clear_path_between_robots(self, robot1, robot2):
         coords_of_line = bresenham(start=robot1.pose, end=robot2.pose, world_map=self.maze, occupied_val=self.config['color']['obstacle'])
@@ -173,24 +175,6 @@ class World(gym.Env):
     def _merge_frontiers_after_communicate(self, rbt1, rbt2):
         merged_frontiers = merge_frontiers(rbt1.slam_map, rbt1.frontier, rbt2.frontier, rbt1.pose, rbt1.config)
         rbt1.frontier = merged_frontiers
-
-    def select_action_greedy(self):
-        self.target_points=[]
-        for r in self.robots:
-            self.target_points.append(r.select_action_greedy())
-        return self.target_points
-
-    def select_action_randomly(self):
-        act = []
-        for rbt in self.robots:
-            act.append(rbt.select_action_randomly())
-        return act
-
-    def select_target_randomly(self):
-        self.target_points = []
-        for rbt in self.robots:
-            self.target_points.append(rbt.select_target_randomly())
-        return None
 
     def close(self):
         pass

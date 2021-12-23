@@ -17,14 +17,8 @@ class Robot():
         self.id = rbt_id
         self.maze = maze
         self.robot_radius = self.config['robots']['robotRadius']
-        self.comm_range = self.config['robots']['commRange']
-        self.sync_range = self.config['robots']['syncRange']
-        self.sensor_range = 4
-        self.probability_of_failed_scan = 0
-        self.laser_range = self.config['laser']['range']
-        self.laser_fov = self.config['laser']['fov']
-        self.laser_resol = self.config['laser']['resolution']
-        self.state_size = (self.config['stateSize']['y'], self.config['stateSize']['x'])
+        self.sensor_range = self.config['robots']['sensorRange']
+        self.probability_of_failed_scan = self.config['robots']['probabilityOfFailedScan']
         self.slam_map = np.ones_like(self.maze) * self.config['color']['uncertain']
         self.pose = self._init_pose()
         self.last_map = self.slam_map.copy()
@@ -34,15 +28,6 @@ class Robot():
         self.path = None
         self.frontier = set()
         self.frontier_by_direction = []
-
-        """ pre calculate radius and angle vector that will be used in building map """
-        radius_vect = np.arange(self.laser_range + 1)
-        self._radius_vect = radius_vect.reshape(1, radius_vect.shape[0])
-        # generate radius vector of [0,1,2,...,laser_range]
-
-        angles_vect = np.arange(-self.laser_fov * 0.5, self.laser_fov * 0.5, step=self.laser_resol)
-        self._angles_vect = angles_vect.reshape(angles_vect.shape[0], 1)
-        # generate angles vector from -laser_angle/2 to laser_angle
 
     def _init_pose(self):
         if self.config['robots']['resetRandomPose'] == 1:
@@ -157,29 +142,7 @@ class Robot():
         info = 'Robot %d has moved to the target point' % (self.id)
         return obs, rwd, done, info
 
-    def move_to_target(self, target):
-        """
-        move robot to the target position
-        :param target: target position, type of np.array
-        :return:
-        """
-        self.destination = target
-        if target is None:
-            obs = self.get_obs()
-            done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(
-                self.maze == self.config['color']['free']) > 0.95
-            info = "No.%d robot fails to move." % self.id
-            return obs, 0, done, info
-        self.path = self.navigator.navigate(self.maze, self.pose, self.destination)
-        if self.path is None:
-            raise Exception("The target point is not accessible")
-        for point in self.path:
-            self._move_one_step(point)
-        obs = self.get_obs()
-        done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(
-            self.maze == self.config['color']['free']) > 0.95
-        info = "No.%d robot moves successfully." % self.id
-        return obs, None, done, info
+
 
     def reward(self, counter, incrmnt_his):
         """reward function"""
@@ -248,40 +211,6 @@ class Robot():
             return np.copy(self.frontier_by_direction)
         else:
             raise Exception('Exception: None Contour!')
-
-    def eular_dis(self, point):
-        try:
-            x, y = point
-            return np.linalg.norm([self.pose[0] - x, self.pose[1] - y])
-        except TypeError:
-            return np.inf
-
-    def select_action(self):
-        f_points = [point for front in self.frontier_by_direction for point in front]
-        f_dis = list(map(self.eular_dis, f_points))
-        return f_points[np.argmin(f_dis)]
-
-    def center_point(self, x):
-        return np.mean(x, axis=0)
-
-    def select_action_greedy(self):
-        centers = list(map(self.center_point, self.frontier_by_direction))
-        cen_dis = list(map(self.eular_dis, centers))
-        action = np.argmin(cen_dis)
-        f_dis = list(map(self.eular_dis, self.frontier_by_direction[action]))
-        return self.frontier_by_direction[action][np.argmin(f_dis)]
-        # return self.select_action()
-
-    def select_action_randomly(self):
-        action = np.random.randint(8)
-        while len(self.frontier_by_direction[action]) == 0:
-            action = np.random.randint(8)
-        return action
-
-    def select_target_randomly(self):
-        f_points = [point for front in self.frontier_by_direction for point in front]
-        target = f_points[np.random.randint(0, len(f_points))]
-        return target
 
     @property
     def path_length(self):

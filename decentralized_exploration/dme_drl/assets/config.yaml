@@ -10,26 +10,17 @@ comm_mode: GC
 # robots settings
 robots:
   number: 3
-  robotRadius: 3
-  commRange: 60 # fix range
-  syncRange: 20 #
+  robotRadius: 0
+  sensorRange: 4
   startPose:
     x: 0
     y: 0
   resetRandomPose: 1
+  probabilityOfFailedScan: -1
+  probabilityOfFailedCommunication: -1
   w1: 0.00002
   w2: 0.001
   w3: 0.1
-  subregionSize:
-    y: 20
-    x: 20
-
-# sensor settings
-laser:
-  range: 40
-  fov: 360
-  resolution: 0.1
-
 
 # others
 stateSize:

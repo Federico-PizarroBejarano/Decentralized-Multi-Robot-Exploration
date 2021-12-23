@@ -4,4 +4,5 @@
 *.pyc
 *DS_Store*
 decentralized_exploration/dme_drl/assets/maps
+decentralized_exploration/dme_drl/model
 decentralized_exploration/runs
