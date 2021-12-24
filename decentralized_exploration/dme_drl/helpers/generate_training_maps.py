@@ -9,7 +9,7 @@ from decentralized_exploration.helpers.generate_pixelmap import generate_pixelma
 
 random.seed(SEED)
 
-NUM_TRAINING_MAPS = 5
+NUM_TRAINING_MAPS = 100
 
 MIN_OBSTACLE_DENSITY = .3
 MAX_OBSTACLE_DENSITY = .4
