@@ -25,9 +25,7 @@ class Node(object):
                 self.G = father.G + 1.414
             else:
                 self.G = father.G + 1
-            x_dis = np.abs(self.i-end_i)
-            y_dis = np.abs(self.j-end_j)
-            self.H = x_dis + y_dis + (1.414 - 2) * min(x_dis, y_dis)
+            self.H = np.sqrt((self.i-end_i)**2 + (self.j-end_j)**2)
             self.F = self.G+self.H
         else:
             self.G = 0
