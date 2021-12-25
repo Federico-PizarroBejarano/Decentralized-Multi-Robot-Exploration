@@ -2,9 +2,9 @@ import torch as t
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from sim_utils import gumbel_softmax
+from decentralized_exploration.dme_drl.sim_utils import gumbel_softmax
 
-from maddpg import basic_module
+from decentralized_exploration.dme_drl.maddpg import basic_module
 
 class Critic(basic_module.BasicModule):
     def __init__(self, n_agent, dim_observation, dim_action, dim_pose):
