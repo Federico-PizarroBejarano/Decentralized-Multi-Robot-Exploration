@@ -4,7 +4,7 @@ import cv2
 import matplotlib.pyplot as plt
 import decentralized_exploration.dme_drl.sim_utils as sim_utils
 from decentralized_exploration.core.robots.utils.field_of_view import field_of_view, bresenham
-from decentralized_exploration.dme_drl.frontier_utils import update_frontier_after_scan
+from decentralized_exploration.dme_drl.frontier_utils import update_frontier
 from decentralized_exploration.dme_drl.navigate import AStar, AStarSimple
 import os
 
@@ -50,7 +50,7 @@ class Robot():
         self.last_map = self.slam_map.copy()
         occupied_points, free_points = self._scan()
         self._update_map(occupied_points, free_points)
-        self.frontier = update_frontier_after_scan(self.slam_map, self.frontier, free_points, self.pose, self.config)
+        self.frontier = update_frontier(self.slam_map, self.frontier, self.pose, self.config)
         self.last_map = np.copy(self.slam_map)
         obs = self.get_obs()
         return obs
@@ -108,7 +108,7 @@ class Robot():
             map_temp = np.copy(self.slam_map)  # 临时地图，存储原有的slam地图
             occupied_points, free_points = self._scan()
             self._update_map(occupied_points, free_points)
-            self.frontier = update_frontier_after_scan(self.slam_map, self.frontier, free_points, self.pose, self.config)
+            self.frontier = update_frontier(self.slam_map, self.frontier, self.pose, self.config)
             map_incrmnt = np.count_nonzero(map_temp - self.slam_map)  # map increment
             # self.render()
             return map_incrmnt

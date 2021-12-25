@@ -1,3 +1,5 @@
+import numpy as np
+
 def is_in_map(_map, y, x):
 	return 0 <= y < _map.shape[0] and 0 <= x < _map.shape[1]
 
@@ -34,10 +36,11 @@ def cleanup_frontier(_map, frontier, pose, config):
 	frontier -= coords_to_be_removed
 	return frontier
 
-def update_frontier_after_scan(_map, frontier, free_points, pose, config):
+def update_frontier(_map, frontier, pose, config):
+	free_points = np.argwhere(_map == config['color']['free'])
 	for free_point in free_points:
 		if is_frontier(_map, free_point, config):
-			frontier.add(free_point)
+			frontier.add((free_point[0], free_point[1]))
 
 	return cleanup_frontier(_map, frontier, pose, config)
 
