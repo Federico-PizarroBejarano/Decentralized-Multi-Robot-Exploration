@@ -7,6 +7,7 @@ import cv2
 
 # def distance(node1, node2):
 #     return max(abs(node1.i-node2.i),abs(node1.j-node2.j))
+from decentralized_exploration.dme_drl.paths import CONFIG_PATH
 
 height = 200
 width = 200
@@ -44,9 +45,9 @@ class Node(object):
 
 
 class AStar:
-    def __init__(self,config_path=os.getcwd()+'/assets/config.yaml'):
+    def __init__(self):
         self._map_color = {'uncertain': 50, 'free': 0, 'obstacle': 100, 'self': 250,'others':200}
-        with open(config_path) as stream:
+        with open(CONFIG_PATH) as stream:
             self.config = yaml.load(stream, Loader=yaml.SafeLoader)
         self._open_list = {}
         self._close_list = {}

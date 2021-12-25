@@ -7,8 +7,6 @@ import numpy as np
 import json
 import cv2
 
-CONFIG_PATH = os.getcwd()+'/../assets/config.ymal'
-
 def within_bound(p,shape,r=0):
     """ check if point p [y;x] or [y;x;theta] with radius r is inside world of shape (h,w)
     return bool if p is single point | return bool matrix (vector) if p: [y;x] where y & x are matrix (vector) """
@@ -136,11 +134,3 @@ def draw_map(file_name, json_path, save_path):
     if not os.path.exists(save_path):
         os.mkdir(save_path)
     cv2.imwrite(save_path + "/" + file_name + '.png', cnt_map)
-
-
-def draw_maps(map_ids, json_path, save_path):
-    json_path = os.path.join(os.getcwd(),json_path)
-    save_path = os.path.join(os.getcwd(),save_path)
-    for map_id in map_ids:
-        draw_map(map_id,json_path,save_path)
-    print('Draw the map successfully.')

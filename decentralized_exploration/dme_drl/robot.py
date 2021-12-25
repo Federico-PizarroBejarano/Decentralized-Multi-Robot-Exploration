@@ -5,14 +5,15 @@ import matplotlib.pyplot as plt
 import decentralized_exploration.dme_drl.sim_utils as sim_utils
 from decentralized_exploration.core.robots.utils.field_of_view import field_of_view, bresenham
 from decentralized_exploration.dme_drl.frontier_utils import update_frontier
+from decentralized_exploration.dme_drl.paths import CONFIG_PATH
 from decentralized_exploration.dme_drl.navigate import AStar, AStarSimple
 import os
 
 
 class Robot():
 
-    def __init__(self, rbt_id, maze, config_path=os.getcwd() + '/assets/config.yaml'):
-        with open(config_path) as stream:
+    def __init__(self, rbt_id, maze):
+        with open(CONFIG_PATH) as stream:
             self.config = yaml.load(stream, Loader=yaml.SafeLoader)
         self.id = rbt_id
         self.maze = maze

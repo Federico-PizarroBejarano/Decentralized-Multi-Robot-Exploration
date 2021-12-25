@@ -7,21 +7,23 @@ import time
 import os
 import yaml
 
-from decentralized_exploration.dme_drl import world
+from decentralized_exploration.dme_drl.paths import PROJECT_PATH, CONFIG_PATH, MODEL_DIR
+from decentralized_exploration.dme_drl.world import World
 from decentralized_exploration.dme_drl.maddpg.MADDPG import MADDPG
 from decentralized_exploration.dme_drl.sim_utils import onehot_from_action
+
 
 # do not render the scene
 e_render = False
 # tensorboard writer
 time_now = time.strftime("%m%d_%H%M%S")
-writer = SummaryWriter(os.getcwd()+'/../runs/'+time_now)
+writer = SummaryWriter(PROJECT_PATH + '/runs/' + time_now)
 
 food_reward = 10.
 poison_reward = -1.
 encounter_reward = 0.01
 n_coop = 2
-world = world.World()
+world = World()
 reward_record = []
 
 np.random.seed(1234)
@@ -46,19 +48,17 @@ win = None
 param = None
 avg = None
 load_model = False
-CONFIG_PATH = os.getcwd() + '/assets/config.yaml'
-MODEL_DIR = os.getcwd() + '/model/'
 
 maddpg = MADDPG(n_agents, n_states, n_actions, n_pose, batch_size, capacity,
                 episodes_before_train)
-with open(CONFIG_PATH,'r') as stream:
+with open(CONFIG_PATH, 'r') as stream:
     config = yaml.safe_load(stream)
 
 if load_model:
     if not os.path.exists(MODEL_DIR):
         pass
     else:
-        checkpoints = th.load(MODEL_DIR+'/model/model-%d.pth'%(config['robots']['number']))
+        checkpoints = th.load(MODEL_DIR + '/model/model-%d.pth' % (config['robots']['number']))
         for i, actor in enumerate(maddpg.actors):
             actor.load_state_dict(checkpoints['actor_%d' % (i)])
             maddpg.actors_target[i] = deepcopy(actor)
@@ -164,7 +164,7 @@ for i_episode in range(n_episode):
             dicts['critic_%d' % (i)] = maddpg.critics_target[i].state_dict()
             dicts['actor_optim_%d' % (i)] = maddpg.actor_optimizer[i].state_dict()
             dicts['critic_optim_%d' % (i)] = maddpg.critic_optimizer[i].state_dict()
-        th.save(dicts, MODEL_DIR+'/model-%d.pth'%(config['robots']['number']))
+        th.save(dicts, MODEL_DIR + '/model-%d.pth' % (config['robots']['number']))
     print('Episode: %d, reward = %f' % (i_episode, total_reward))
     reward_record.append(total_reward)
     # visual

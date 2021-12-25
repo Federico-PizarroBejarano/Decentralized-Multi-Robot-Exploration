@@ -7,16 +7,17 @@ import numpy as np
 import yaml
 
 from decentralized_exploration.dme_drl.frontier_utils import merge_frontiers
+from decentralized_exploration.dme_drl.paths import PROJECT_PATH, CONFIG_PATH
 from decentralized_exploration.dme_drl.robot import Robot
 from decentralized_exploration.core.robots.utils.field_of_view import bresenham
 
 
 class World(gym.Env):
-    def __init__(self,config_path=os.getcwd()+'/assets/config.yaml', number=None):
+    def __init__(self, number=None):
         np.random.seed(1234)
-        with open(config_path) as stream:
+        with open(CONFIG_PATH) as stream:
             self.config = yaml.load(stream, Loader=yaml.SafeLoader)
-        self.map_id_set_train = np.loadtxt(os.getcwd()+self.config['map_id_train_set'], str)
+        self.map_id_set_train = np.loadtxt(PROJECT_PATH + self.config['map_id_train_set'], str)
         # self.map_id_set_eval = np.loadtxt(os.getcwd()+self.config['map_id_eval_set'],str)
         if number is None:
             self.number = self.config['robots']['number']
@@ -37,7 +38,7 @@ class World(gym.Env):
 
     def reset(self,random=True):
         if random:
-            self.map_id = np.random.choice(self.map_id_set_train)
+            self.map_id = PROJECT_PATH + np.random.choice(self.map_id_set_train)
         # else:
             # self.map_id = self.map_id_set_eval[0]
             # self.map_id_set_eval = np.delete(self.map_id_set_eval,0)
