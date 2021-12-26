@@ -7,14 +7,11 @@ import time
 import os
 import yaml
 
-from decentralized_exploration.dme_drl.paths import PROJECT_PATH, CONFIG_PATH, MODEL_DIR
+from decentralized_exploration.dme_drl.constants import render_world, PROJECT_PATH, CONFIG_PATH, MODEL_DIR
 from decentralized_exploration.dme_drl.world import World
 from decentralized_exploration.dme_drl.maddpg.MADDPG import MADDPG
 from decentralized_exploration.dme_drl.sim_utils import onehot_from_action
 
-
-# do not render the scene
-e_render = False
 # tensorboard writer
 time_now = time.strftime("%m%d_%H%M%S")
 writer = SummaryWriter(PROJECT_PATH + '/runs/' + time_now)
@@ -98,7 +95,7 @@ for i_episode in range(n_episode):
     wrong_step = 0
     for t in range(max_steps):
         # render every 100 episodes to speed up training
-        if i_episode % 100 == 0 and e_render:
+        if render_world:
             world.render()
         obs_history = obs_history.type(FloatTensor)
         action_probs = maddpg.select_action(obs_history, pose).data.cpu()
@@ -109,6 +106,10 @@ for i_episode in range(n_episode):
             for j,frt in enumerate(rbt.get_and_update_frontier_by_direction()):
                 if len(frt) == 0:
                     action_probs_valid[i][j] = 0
+            # if np.array_equal(action_probs_valid[i], np.zeros_like(action_probs_valid[i])):
+            #     print(rbt.id, rbt.pose)
+            #     print(rbt.slam_map)
+            #     np.save('empty_frontier', rbt.slam_map)
             action.append(categorical.Categorical(probs=th.tensor(action_probs_valid[i])).sample())
 
         action = th.tensor(onehot_from_action(action))
@@ -151,6 +152,7 @@ for i_episode in range(n_episode):
             c_loss, a_loss = maddpg.update_policy()
         if done:
             break
+    exit()
 
     # if not discard:
     maddpg.episode_done += 1

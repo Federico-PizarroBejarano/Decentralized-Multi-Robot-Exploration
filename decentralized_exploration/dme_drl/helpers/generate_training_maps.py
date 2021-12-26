@@ -5,7 +5,7 @@ import numpy as np
 import yaml
 
 from decentralized_exploration.core.constants import SEED, LENGTH, WIDTH
-from decentralized_exploration.dme_drl.paths import CONFIG_PATH
+from decentralized_exploration.dme_drl.constants import CONFIG_PATH
 from decentralized_exploration.helpers.generate_pixelmap import generate_pixelmap
 
 random.seed(SEED)

@@ -1,13 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import os
 import yaml
 import cv2
 
 
 # def distance(node1, node2):
 #     return max(abs(node1.i-node2.i),abs(node1.j-node2.j))
-from decentralized_exploration.dme_drl.paths import CONFIG_PATH
+from decentralized_exploration.dme_drl.constants import CONFIG_PATH
 
 height = 200
 width = 200

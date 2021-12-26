@@ -1,3 +1,4 @@
+# Setup the paths
 import os
 
 if 'chi-hong' in os.getcwd():
@@ -7,3 +8,8 @@ else:
 
 CONFIG_PATH = PROJECT_PATH + '/assets/config.yaml'
 MODEL_DIR = PROJECT_PATH + '/model/'
+
+# Setup the render
+render_world = False
+render_robot_map = False
+

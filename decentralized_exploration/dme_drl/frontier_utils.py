@@ -25,9 +25,8 @@ def is_frontier(_map, coords, config):
 	return False
 
 
-def cleanup_frontier(_map, frontier, pose, config):
+def cleanup_frontier(_map, frontier, config):
 	coords_to_be_removed = set()
-	coords_to_be_removed.add(pose)
 
 	for coords in frontier:
 		if not is_frontier(_map, coords, config):
@@ -36,15 +35,26 @@ def cleanup_frontier(_map, frontier, pose, config):
 	frontier -= coords_to_be_removed
 	return frontier
 
-def update_frontier(_map, frontier, pose, config):
+def update_frontier(_map, frontier, config):
 	free_points = np.argwhere(_map == config['color']['free'])
 	for free_point in free_points:
 		if is_frontier(_map, free_point, config):
 			frontier.add((free_point[0], free_point[1]))
+	return cleanup_frontier(_map, frontier, config)
 
-	return cleanup_frontier(_map, frontier, pose, config)
+def update_frontier_and_remove_pose(_map, frontier, pose, config):
+	updated_frontier = update_frontier(_map, frontier, config)
+	return remove_pose_from_frontier(updated_frontier, pose)
 
-def merge_frontiers(_map, frontier1, frontier2, pose, config):
-	merged_frontiers = frontier1 | frontier2
-	return cleanup_frontier(_map, merged_frontiers, pose, config)
+def merge_frontiers(_map, frontier1, frontier2, config):
+	union_of_frontiers = frontier1 | frontier2
+	return cleanup_frontier(_map, union_of_frontiers, config)
 
+def merge_frontiers_and_remove_pose(_map, frontier1, frontier2, pose, config):
+	merged_frontiers = merge_frontiers(_map, frontier1, frontier2, config)
+	return remove_pose_from_frontier(merged_frontiers, pose)
+
+def remove_pose_from_frontier(frontier, pose):
+	if pose in frontier:
+		frontier.remove(pose)
+	return frontier

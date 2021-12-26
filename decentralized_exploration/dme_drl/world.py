@@ -1,15 +1,14 @@
-import os
-
 import cv2
 import gym
 import matplotlib.pyplot as plt
 import numpy as np
 import yaml
 
-from decentralized_exploration.dme_drl.frontier_utils import merge_frontiers
-from decentralized_exploration.dme_drl.paths import PROJECT_PATH, CONFIG_PATH
+from decentralized_exploration.dme_drl.frontier_utils import merge_frontiers_and_remove_pose, remove_pose_from_frontier, \
+    cleanup_frontier
 from decentralized_exploration.dme_drl.robot import Robot
 from decentralized_exploration.core.robots.utils.field_of_view import bresenham
+from decentralized_exploration.dme_drl.constants import render_world, PROJECT_PATH, CONFIG_PATH
 
 
 class World(gym.Env):
@@ -34,6 +33,10 @@ class World(gym.Env):
         self.robots = []
         self.robot_sensor_range = self.config['robots']['sensorRange']
         self.probability_of_failed_communication = self.config['robots']['probabilityOfFailedCommunication']
+        self.frontier = set()
+        if render_world:
+            self.fig = plt.figure('global')
+            self.ax = self.fig.add_subplot(111)
         self.reset()
 
     def reset(self,random=True):
@@ -92,14 +95,48 @@ class World(gym.Env):
                     color[2] = 255
                     cv2.rectangle(self.track_map, (p[1], p[0]), (p[1]+1, p[0]+1), color, -1)
 
-    def render(self, mode='human'):
-        state = np.copy(self._get_state())
-        for rbt in self.robots:
-            cv2.circle(state, (rbt.pose[1], rbt.pose[0]),rbt.robot_radius,color=self.config['color']['self'], thickness=-1)
-        plt.figure(100)
-        plt.clf()
-        plt.imshow(state,cmap='gray')
-        plt.pause(0.0001)
+    def render(self):
+        # update the global frontier
+        global_frontier = set()
+
+        for robot in self.robots:
+            global_frontier |= robot.frontier
+
+        for robot in self.robots:
+            global_frontier = remove_pose_from_frontier(global_frontier, robot.pose)
+
+        global_frontier = cleanup_frontier(self.slam_map, global_frontier, self.config)
+
+        self.ax.cla()
+        self.ax.set_aspect('equal')
+
+        # plot the terrain
+        for y in range(self.slam_map.shape[0]):
+            for x in range(self.slam_map.shape[1]):
+                val = self.slam_map[y,x]
+                if val == self.config['color']['uncertain']:
+                    c = 'gray'
+                if val == self.config['color']['obstacle']:
+                    c = 'black'
+                if val == self.config['color']['free']:
+                    c = 'white'
+
+                self.ax.scatter(x, y, color=c, alpha=0.75, marker='s', s=140)
+
+        # plot the robots
+        for robot in self.robots:
+            self.ax.scatter(robot.pose[1], robot.pose[0], color='y', marker='s', alpha=1, s=140)
+            self.ax.text(robot.pose[1], robot.pose[0], s=robot.id, ha='center', va='center', size=8)
+
+        for node in global_frontier:
+            self.ax.text(node[1], node[0], 'F', ha='center', va='center', size=8)
+
+        self.ax.set_xlim(-0.5, 19.5)
+        self.ax.set_ylim(-0.5, 19.5)
+
+        self.ax.invert_yaxis()
+
+        plt.pause(0.05)
 
     def step(self, action_n):
         # action_n: 0~7
@@ -174,7 +211,7 @@ class World(gym.Env):
         return
 
     def _merge_frontiers_after_communicate(self, rbt1, rbt2):
-        merged_frontiers = merge_frontiers(rbt1.slam_map, rbt1.frontier, rbt2.frontier, rbt1.pose, rbt1.config)
+        merged_frontiers = merge_frontiers_and_remove_pose(rbt1.slam_map, rbt1.frontier, rbt2.frontier, rbt1.pose, rbt1.config)
         rbt1.frontier = merged_frontiers
 
     def close(self):
