@@ -30,8 +30,8 @@ class Robot():
         self.frontier_by_direction = []
         if render_robot_map:
             self.fig = plt.figure('robot ' + str(self.id))
+            self.fig.clf()
             self.ax = self.fig.add_subplot(111)
-
 
     def _init_pose(self):
         if self.config['robots']['resetRandomPose'] == 1:
@@ -60,11 +60,35 @@ class Robot():
         return obs
 
     def render(self):
-        state = self.get_obs()
-        plt.figure(self.id)
-        plt.clf()
-        plt.imshow(state, cmap='gray')
-        plt.pause(0.0001)
+        self.ax.cla()
+        self.ax.set_aspect('equal')
+
+        # plot the terrain
+        for y in range(self.slam_map.shape[0]):
+            for x in range(self.slam_map.shape[1]):
+                val = self.slam_map[y, x]
+                if val == self.config['color']['uncertain']:
+                    c = 'gray'
+                if val == self.config['color']['obstacle']:
+                    c = 'black'
+                if val == self.config['color']['free']:
+                    c = 'white'
+
+                self.ax.scatter(x, y, color=c, alpha=0.75, marker='s', s=140)
+
+        # plot the robot
+        self.ax.scatter(self.pose[1], self.pose[0], color='y', marker='s', alpha=1, s=140)
+        self.ax.text(self.pose[1], self.pose[0], s=self.id, ha='center', va='center', size=8)
+
+        for node in self.frontier:
+            self.ax.text(node[1], node[0], 'F', ha='center', va='center', size=8)
+
+        self.ax.set_xlim(-0.5, 19.5)
+        self.ax.set_ylim(-0.5, 19.5)
+
+        self.ax.invert_yaxis()
+
+        plt.pause(0.05)
 
     def _scan(self):
         world_size = self.maze.shape
@@ -114,7 +138,8 @@ class Robot():
             self._update_map(occupied_points, free_points)
             self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
             map_incrmnt = np.count_nonzero(map_temp - self.slam_map)  # map increment
-            # self.render()
+            if render_robot_map:
+	            self.render()
             return map_incrmnt
         else:
             return -1
