@@ -136,7 +136,7 @@ class World(gym.Env):
 
         self.ax.invert_yaxis()
 
-        plt.pause(0.05)
+        plt.pause(0.5)
 
     def step(self, action_n):
         # action_n: 0~7

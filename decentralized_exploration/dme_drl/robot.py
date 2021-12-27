@@ -88,7 +88,7 @@ class Robot():
 
         self.ax.invert_yaxis()
 
-        plt.pause(0.05)
+        plt.pause(0.5)
 
     def _scan(self):
         world_size = self.maze.shape
