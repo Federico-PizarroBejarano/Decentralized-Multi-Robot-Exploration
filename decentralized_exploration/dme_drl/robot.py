@@ -8,6 +8,7 @@ from decentralized_exploration.dme_drl.frontier_utils import update_frontier_and
 from decentralized_exploration.dme_drl.constants import CONFIG_PATH, render_robot_map
 from decentralized_exploration.dme_drl.navigate import AStar
 
+ID = 0
 
 class Robot():
 
@@ -28,7 +29,7 @@ class Robot():
         self.path = None
         self.frontier = set()
         self.frontier_by_direction = []
-        if render_robot_map:
+        if render_robot_map and self.id == ID:
             self.fig = plt.figure('robot ' + str(self.id))
             self.fig.clf()
             self.ax = self.fig.add_subplot(111)
@@ -51,11 +52,10 @@ class Robot():
         self.maze = maze
         self.pose = self._init_pose()
         self.slam_map = np.ones_like(self.maze) * self.config['color']['uncertain']
-        self.last_map = self.slam_map.copy()
         occupied_points, free_points = self._scan()
         self._update_map(occupied_points, free_points)
         self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
-        self.last_map = np.copy(self.slam_map)
+        self.last_map = self.slam_map.copy()
         obs = self.get_obs()
         return obs
 
@@ -138,7 +138,7 @@ class Robot():
             self._update_map(occupied_points, free_points)
             self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
             map_incrmnt = np.count_nonzero(map_temp - self.slam_map)  # map increment
-            if render_robot_map:
+            if render_robot_map and self.id == ID:
 	            self.render()
             return map_incrmnt
         else:
@@ -164,6 +164,7 @@ class Robot():
                 counter += 1
                 map_incrmnt = self._move_one_step(point)
                 incrmnt_his.append(map_incrmnt)
+        self.last_map = self.slam_map.copy()
         obs = self.get_obs()
         rwd = self.reward(counter, incrmnt_his)
         done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(

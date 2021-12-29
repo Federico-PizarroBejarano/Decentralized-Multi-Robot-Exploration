@@ -1,5 +1,7 @@
 import numpy as np
+np.set_printoptions(linewidth=150)
 import torch as th
+th.set_printoptions(profile="full", linewidth=150)
 from tensorboardX import SummaryWriter
 from copy import copy,deepcopy
 from torch.distributions import categorical
@@ -7,7 +9,7 @@ import time
 import os
 import yaml
 
-from decentralized_exploration.dme_drl.constants import render_world, PROJECT_PATH, CONFIG_PATH, MODEL_DIR
+from decentralized_exploration.dme_drl.constants import render_world, PROJECT_PATH, CONFIG_PATH, MODEL_DIR, logging
 from decentralized_exploration.dme_drl.world import World
 from decentralized_exploration.dme_drl.maddpg.MADDPG import MADDPG
 from decentralized_exploration.dme_drl.sim_utils import onehot_from_action
@@ -98,6 +100,20 @@ for i_episode in range(n_episode):
         if render_world:
             world.render()
         obs_history = obs_history.type(FloatTensor)
+        if logging:
+            print('time step: {}'.format(t))
+            for id in range(n_agents):
+                print('\t', 'robot {}'.format(id), pose[id])
+                for tau in range(6):
+                    print('\t\t', 'obs @ t-{}'.format(tau))
+                    ob = obs_history[id][tau * 20:(tau + 1) * 20].numpy().astype('uint8')
+                    print('\t\t', ob)
+                    if tau == 0:
+                        assert(np.array_equal(ob, world.robots[id].last_map))
+                        print('\t\t', 'map @ t-{}'.format(tau))
+                        for r in world.robots[id].slam_map:
+                            print('\t\t', r)
+
         action_probs = maddpg.select_action(obs_history, pose).data.cpu()
         action_probs_valid = np.copy(action_probs)
         action = []
@@ -110,6 +126,7 @@ for i_episode in range(n_episode):
             #     print(rbt.id, rbt.pose)
             #     print(rbt.slam_map)
             #     np.save('empty_frontier', rbt.slam_map)
+            #
             action.append(categorical.Categorical(probs=th.tensor(action_probs_valid[i])).sample())
 
         action = th.tensor(onehot_from_action(action))
@@ -152,7 +169,6 @@ for i_episode in range(n_episode):
             c_loss, a_loss = maddpg.update_policy()
         if done:
             break
-    exit()
 
     # if not discard:
     maddpg.episode_done += 1

@@ -13,3 +13,4 @@ MODEL_DIR = PROJECT_PATH + '/model/'
 render_world = False
 render_robot_map = False
 
+logging = True
