@@ -107,6 +107,15 @@ class Robot():
                 else:
                     all_free_points.add(all_points[-1])
 
+        for yi in range(max(y - radius, 0), min(y + radius, world_size[0] - 1) + 1):
+            for xi in (max(x - radius, 0), min(x + radius, world_size[1] - 1)):
+                all_points = bresenham(start=self.pose, end=[yi, xi], world_map=self.maze, occupied_val=self.config['color']['obstacle'])
+                all_free_points = all_free_points.union(set(all_points[:-1]))
+                if self.maze[all_points[-1][0], all_points[-1][1]] == self.config['color']['obstacle']:
+                        all_occupied_points.add(all_points[-1])
+                else:
+                    all_free_points.add(all_points[-1])
+
         all_occupied = list(all_occupied_points)
         all_free = list(all_free_points)
 

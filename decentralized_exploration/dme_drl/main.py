@@ -1,7 +1,12 @@
 import numpy as np
+np.random.seed(1234)
 np.set_printoptions(linewidth=150)
 import torch as th
+th.manual_seed(1234)
 th.set_printoptions(profile="full", linewidth=150)
+import random
+random.seed(1234)
+
 from tensorboardX import SummaryWriter
 from copy import copy,deepcopy
 from torch.distributions import categorical
@@ -25,9 +30,6 @@ n_coop = 2
 world = World()
 reward_record = []
 
-np.random.seed(1234)
-th.manual_seed(1234)
-world.seed(1234)
 n_agents = world.number
 n_states = world.number
 n_actions = 8
@@ -123,10 +125,10 @@ for i_episode in range(n_episode):
                 if len(frt) == 0:
                     action_probs_valid[i][j] = 0
             if np.array_equal(action_probs_valid[i], np.zeros_like(action_probs_valid[i])):
-                print('map id: {}'.format(world.map_id_set_train))
+                print('map id: {}'.format(world.map_id))
                 for robot in world.robots:
                     np.save('check/robot-{}-map-time-step-{}'.format(robot.id, t), robot.slam_map)
-                    np.save('check/robot-{}-obs-time-step-{}'.format(robot.id, t), robot.get_state)
+                    np.save('check/robot-{}-obs-time-step-{}'.format(robot.id, t), robot.get_state())
             action.append(categorical.Categorical(probs=th.tensor(action_probs_valid[i])).sample())
 
         action = th.tensor(onehot_from_action(action))

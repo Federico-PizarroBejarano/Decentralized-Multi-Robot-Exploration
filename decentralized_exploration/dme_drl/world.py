@@ -13,7 +13,6 @@ from decentralized_exploration.dme_drl.constants import render_world, PROJECT_PA
 
 class World(gym.Env):
     def __init__(self, number=None):
-        np.random.seed(1234)
         with open(CONFIG_PATH) as stream:
             self.config = yaml.load(stream, Loader=yaml.SafeLoader)
         self.map_id_set_train = np.loadtxt(PROJECT_PATH + self.config['map_id_train_set'], str)
