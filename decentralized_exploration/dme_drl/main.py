@@ -100,19 +100,19 @@ for i_episode in range(n_episode):
         if render_world:
             world.render()
         obs_history = obs_history.type(FloatTensor)
-        if logging:
-            print('time step: {}'.format(t))
-            for id in range(n_agents):
-                print('\t', 'robot {}'.format(id), pose[id])
-                for tau in range(6):
-                    print('\t\t', 'obs @ t-{}'.format(tau))
-                    ob = obs_history[id][tau * 20:(tau + 1) * 20].numpy().astype('uint8')
-                    print('\t\t', ob)
-                    if tau == 0:
-                        assert(np.array_equal(ob, world.robots[id].last_map))
-                        print('\t\t', 'map @ t-{}'.format(tau))
-                        for r in world.robots[id].slam_map:
-                            print('\t\t', r)
+        # if logging:
+        #     print('time step: {}'.format(t))
+        #     for id in range(n_agents):
+        #         print('\t', 'robot {}'.format(id), pose[id])
+        #         for tau in range(6):
+        #             print('\t\t', 'obs @ t-{}'.format(tau))
+        #             ob = obs_history[id][tau * 20:(tau + 1) * 20].numpy().astype('uint8')
+        #             print('\t\t', ob)
+        #             if tau == 0:
+        #                 assert(np.array_equal(ob, world.robots[id].last_map))
+        #                 print('\t\t', 'map @ t-{}'.format(tau))
+        #                 for r in world.robots[id].slam_map:
+        #                     print('\t\t', r)
 
         action_probs = maddpg.select_action(obs_history, pose).data.cpu()
         action_probs_valid = np.copy(action_probs)
@@ -122,11 +122,11 @@ for i_episode in range(n_episode):
             for j,frt in enumerate(rbt.get_and_update_frontier_by_direction()):
                 if len(frt) == 0:
                     action_probs_valid[i][j] = 0
-            # if np.array_equal(action_probs_valid[i], np.zeros_like(action_probs_valid[i])):
-            #     print(rbt.id, rbt.pose)
-            #     print(rbt.slam_map)
-            #     np.save('empty_frontier', rbt.slam_map)
-            #
+            if np.array_equal(action_probs_valid[i], np.zeros_like(action_probs_valid[i])):
+                print('map id: {}'.format(world.map_id_set_train))
+                for robot in world.robots:
+                    np.save('check/robot-{}-map-time-step-{}'.format(robot.id, t), robot.slam_map)
+                    np.save('check/robot-{}-obs-time-step-{}'.format(robot.id, t), robot.get_state)
             action.append(categorical.Categorical(probs=th.tensor(action_probs_valid[i])).sample())
 
         action = th.tensor(onehot_from_action(action))
