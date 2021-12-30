@@ -254,3 +254,13 @@ class Robot():
     @property
     def path_length(self):
         return len(self.path)
+
+if __name__ == "__main__":
+    maze = np.load('/Users/richardren/VisualStudioCodeProjects/Decentralized-Multi-Robot-Exploration/decentralized_exploration/dme_drl/assets/maps/train/map-57.npy')
+    robot = Robot(2, maze)
+    robot.pose = 6,4
+    robot.robot_list = [robot]
+    occ_points, free_points = robot._scan()
+    robot._update_map(occ_points, free_points)
+    plt.imshow(robot.get_state())
+    plt.show()
