@@ -97,6 +97,7 @@ for i_episode in range(n_episode):
     total_reward = 0.0
     rr = np.zeros((n_agents,))
     wrong_step = 0
+    empty_frontier = False
     for t in range(max_steps):
         # render every 100 episodes to speed up training
         if render_world:
@@ -109,12 +110,16 @@ for i_episode in range(n_episode):
         #         for tau in range(6):
         #             print('\t\t', 'obs @ t-{}'.format(tau))
         #             ob = obs_history[id][tau * 20:(tau + 1) * 20].numpy().astype('uint8')
-        #             print('\t\t', ob)
-        #             if tau == 0:
-        #                 assert(np.array_equal(ob, world.robots[id].last_map))
-        #                 print('\t\t', 'map @ t-{}'.format(tau))
-        #                 for r in world.robots[id].slam_map:
-        #                     print('\t\t', r)
+        #             print('\t\t', 150 in ob and 200 in ob)
+                    # if tau == 0:
+                    #     assert(np.array_equal(ob, world.robots[id].last_map)
+                    # last map is precomm and so is the obs
+                    # last_map = world.robots[id].last_map
+                    # slam_map = world.robots[id].slam_map
+                    # print('\t\t', 'last map @ t-0'.format(tau))
+                    # print('\t\t', 150 in last_map or 200 in last_map)
+                    # print('\t\t', 'slam map @ t-0'.format(tau))
+                    # print('\t\t', 150 in slam_map or 200 in last_map)
 
         action_probs = maddpg.select_action(obs_history, pose).data.cpu()
         action_probs_valid = np.copy(action_probs)
@@ -125,11 +130,13 @@ for i_episode in range(n_episode):
                 if len(frt) == 0:
                     action_probs_valid[i][j] = 0
             if np.array_equal(action_probs_valid[i], np.zeros_like(action_probs_valid[i])):
-                print('map id: {}'.format(world.map_id))
-                for robot in world.robots:
-                    np.save('check/robot-{}-map-time-step-{}'.format(robot.id, t), robot.slam_map)
-                    np.save('check/robot-{}-obs-time-step-{}'.format(robot.id, t), robot.get_state())
-            action.append(categorical.Categorical(probs=th.tensor(action_probs_valid[i])).sample())
+                empty_frontier = True
+                break
+            else:
+                action.append(categorical.Categorical(probs=th.tensor(action_probs_valid[i])).sample())
+
+        if empty_frontier:
+            break
 
         action = th.tensor(onehot_from_action(action))
         acts = np.argmax(action,axis=1)
@@ -172,31 +179,31 @@ for i_episode in range(n_episode):
         if done:
             break
 
-    # if not discard:
-    maddpg.episode_done += 1
-    if maddpg.episode_done % 100 == 0:
-        print('Save Models......')
-        if not os.path.exists(MODEL_DIR):
-            os.makedirs(MODEL_DIR)
-        dicts = {}
-        for i in range(maddpg.n_agents):
-            dicts['actor_%d' % (i)] = maddpg.actors_target[i].state_dict()
-            dicts['critic_%d' % (i)] = maddpg.critics_target[i].state_dict()
-            dicts['actor_optim_%d' % (i)] = maddpg.actor_optimizer[i].state_dict()
-            dicts['critic_optim_%d' % (i)] = maddpg.critic_optimizer[i].state_dict()
-        th.save(dicts, MODEL_DIR + '/model-%d.pth' % (config['robots']['number']))
-    print('Episode: %d, reward = %f' % (i_episode, total_reward))
-    reward_record.append(total_reward)
-    # visual
-    writer.add_scalars('scalar/reward',{'total_rwd':total_reward,'r0_rwd':rr[0],'r1_rwd':rr[1]},i_episode)
-    if i_episode > episodes_before_train and i_episode % 10 == 0:
-        writer.add_scalars('scalar/mean_rwd',{'mean_reward':np.mean(reward_record[-100:])}, i_episode)
-    if not c_loss is None:
-        writer.add_scalars('loss/c_loss',{'r0':c_loss[0],'r1':c_loss[1]},i_episode)
-    if not a_loss is None:
-        writer.add_scalars('loss/a_loss',{'r0':a_loss[0],'r1':a_loss[1]},i_episode)
+    if not empty_frontier:
+        maddpg.episode_done += 1
+        if maddpg.episode_done % 100 == 0:
+            print('Save Models......')
+            if not os.path.exists(MODEL_DIR):
+                os.makedirs(MODEL_DIR)
+            dicts = {}
+            for i in range(maddpg.n_agents):
+                dicts['actor_%d' % (i)] = maddpg.actors_target[i].state_dict()
+                dicts['critic_%d' % (i)] = maddpg.critics_target[i].state_dict()
+                dicts['actor_optim_%d' % (i)] = maddpg.actor_optimizer[i].state_dict()
+                dicts['critic_optim_%d' % (i)] = maddpg.critic_optimizer[i].state_dict()
+            th.save(dicts, MODEL_DIR + '/model-%d.pth' % (config['robots']['number']))
+        print('Episode: %d, reward = %f' % (i_episode, total_reward))
+        reward_record.append(total_reward)
+        # visual
+        writer.add_scalars('scalar/reward',{'total_rwd':total_reward,'r0_rwd':rr[0],'r1_rwd':rr[1]},i_episode)
+        if i_episode > episodes_before_train and i_episode % 10 == 0:
+            writer.add_scalars('scalar/mean_rwd',{'mean_reward':np.mean(reward_record[-100:])}, i_episode)
+        if not c_loss is None:
+            writer.add_scalars('loss/c_loss',{'r0':c_loss[0],'r1':c_loss[1]},i_episode)
+        if not a_loss is None:
+            writer.add_scalars('loss/a_loss',{'r0':a_loss[0],'r1':a_loss[1]},i_episode)
 
-    if maddpg.episode_done == maddpg.episodes_before_train:
-        print('training now begins...')
+        if maddpg.episode_done == maddpg.episodes_before_train:
+            print('training now begins...')
 
 world.close()
