@@ -23,34 +23,23 @@ from decentralized_exploration.dme_drl.sim_utils import onehot_from_action
 time_now = time.strftime("%m%d_%H%M%S")
 writer = SummaryWriter(PROJECT_PATH + '/runs/' + time_now)
 
-food_reward = 10.
-poison_reward = -1.
-encounter_reward = 0.01
-n_coop = 2
 world = World()
 reward_record = []
 
 n_agents = world.number
-n_states = world.number
 n_actions = 8
 n_pose = 2
-# capacity = 1000000
 capacity = 5000
-# batch_size = 1000
 batch_size = 100
 
 n_episode = 200000
-# max_steps = 1000
 max_steps = 50
-# episodes_before_train = 1000
 episodes_before_train = 100
+skipped_episodes = 0
 
-win = None
-param = None
-avg = None
 load_model = False
 
-maddpg = MADDPG(n_agents, n_states, n_actions, n_pose, batch_size, capacity,
+maddpg = MADDPG(n_agents, n_agents, n_actions, n_pose, batch_size, capacity,
                 episodes_before_train)
 with open(CONFIG_PATH, 'r') as stream:
     config = yaml.safe_load(stream)
@@ -96,10 +85,8 @@ for i_episode in range(n_episode):
         obs_history = th.from_numpy(obs_history).float()
     total_reward = 0.0
     rr = np.zeros((n_agents,))
-    wrong_step = 0
     empty_frontier = False
     for t in range(max_steps):
-        # render every 100 episodes to speed up training
         if render_world:
             world.render()
         obs_history = obs_history.type(FloatTensor)
@@ -120,7 +107,6 @@ for i_episode in range(n_episode):
                     # print('\t\t', 150 in last_map or 200 in last_map)
                     # print('\t\t', 'slam map @ t-0'.format(tau))
                     # print('\t\t', 150 in slam_map or 200 in last_map)
-
         action_probs = maddpg.select_action(obs_history, pose).data.cpu()
         action_probs_valid = np.copy(action_probs)
         action = []
@@ -130,6 +116,7 @@ for i_episode in range(n_episode):
                 if len(frt) == 0:
                     action_probs_valid[i][j] = 0
             if np.array_equal(action_probs_valid[i], np.zeros_like(action_probs_valid[i])):
+                skipped_episodes += 1
                 empty_frontier = True
                 break
             else:
@@ -195,13 +182,14 @@ for i_episode in range(n_episode):
         print('Episode: %d, reward = %f' % (i_episode, total_reward))
         reward_record.append(total_reward)
         # visual
-        writer.add_scalars('scalar/reward',{'total_rwd':total_reward,'r0_rwd':rr[0],'r1_rwd':rr[1]},i_episode)
+        writer.add_scalars('scalar/reward',{'total_rwd':total_reward,'r0_rwd':rr[0],'r1_rwd':rr[1], 'r2_rwd':rr[2]},i_episode)
+        writer.add_scalars('scalar/skipped_episodes', {'skipped_episodes':skipped_episodes}, i_episode)
         if i_episode > episodes_before_train and i_episode % 10 == 0:
             writer.add_scalars('scalar/mean_rwd',{'mean_reward':np.mean(reward_record[-100:])}, i_episode)
         if not c_loss is None:
-            writer.add_scalars('loss/c_loss',{'r0':c_loss[0],'r1':c_loss[1]},i_episode)
+            writer.add_scalars('loss/c_loss',{'r0':c_loss[0],'r1':c_loss[1], 'r2': c_loss[2]},i_episode)
         if not a_loss is None:
-            writer.add_scalars('loss/a_loss',{'r0':a_loss[0],'r1':a_loss[1]},i_episode)
+            writer.add_scalars('loss/a_loss',{'r0':a_loss[0],'r1':a_loss[1], 'r2': a_loss[2]},i_episode)
 
         if maddpg.episode_done == maddpg.episodes_before_train:
             print('training now begins...')
