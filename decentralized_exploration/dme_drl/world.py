@@ -191,7 +191,7 @@ class World(gym.Env):
         coords_of_line = bresenham(start=robot1.pose, end=robot2.pose, world_map=self.maze, occupied_val=self.config['color']['obstacle'])
         Y = [c[0] for c in coords_of_line]
         X = [c[1] for c in coords_of_line]
-        points_in_line = self.slam_map[Y, X] # is this maze or slam map
+        points_in_line = self.maze[Y, X]
 
         if np.any(points_in_line == self.config['color']['obstacle']):
             return False
@@ -238,10 +238,23 @@ class World(gym.Env):
 
 if __name__ == '__main__':
     env = World()
-    # for i in range(1000):
-    #     obs_n = env.reset()
-    #     for _ in range(100):
-    #         action_n = np.random.randint(0,8,2)
-    #         obs_n,rwd_n,done_n,info_n = env.step(action_n)
-    #         print('reward:',np.sum(rwd_n))
-    #     print('完成一个Episode，执行结果为',np.all(done_n))
+    maze = np.load('/Users/richardren/VisualStudioCodeProjects/Decentralized-Multi-Robot-Exploration/decentralized_exploration/dme_drl/assets/maps/train/map-57.npy')
+    env.maze = maze
+    r1 = Robot(1, maze)
+    r1.pose = (3,0)
+    r2 = Robot(2, maze)
+    free_cells = np.argwhere(maze == 0)
+    legal_free_cells = set()
+    for free_cell in free_cells:
+        legal_free_cells.add((free_cell[0], free_cell[1]))
+    illegal_free_cells = [(3,0), (4,0), (5,0), (6,0), (5,1), (4,2)]
+    for illegal_free_cell in illegal_free_cells:
+        legal_free_cells.remove(illegal_free_cell)
+    for free_cell in legal_free_cells:
+        r2.pose = free_cell
+        if env._clear_path_between_robots(r1, r2):
+            cv2.rectangle(r1.maze, r2.pose[::-1], r2.pose[::-1], env.config['color']['others'])
+    cv2.rectangle(r1.maze, r1.pose[::-1], r1.pose[::-1], env.config['color']['self'])
+
+    plt.imshow(r1.maze)
+    plt.show()
