@@ -16,7 +16,7 @@ class World(gym.Env):
         with open(CONFIG_PATH) as stream:
             self.config = yaml.load(stream, Loader=yaml.SafeLoader)
         self.map_id_set_train = np.loadtxt(PROJECT_PATH + self.config['map_id_train_set'], str)
-        # self.map_id_set_eval = np.loadtxt(os.getcwd()+self.config['map_id_eval_set'],str)
+        self.map_id_set_eval = np.loadtxt(PROJECT_PATH + self.config['map_id_train_set'], str) # change to eval set
         if number is None:
             self.number = self.config['robots']['number']
         else:
@@ -41,9 +41,8 @@ class World(gym.Env):
     def reset(self,random=True):
         if random:
             self.map_id = PROJECT_PATH + np.random.choice(self.map_id_set_train)
-        # else:
-            # self.map_id = self.map_id_set_eval[0]
-            # self.map_id_set_eval = np.delete(self.map_id_set_eval,0)
+        else:
+            self.map_id = PROJECT_PATH + self.map_id_set_eval[0]
         print('map id： ',self.map_id)
         self.target_points = []
         self.maze = np.load(self.map_id).astype('uint8')
