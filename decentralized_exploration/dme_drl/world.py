@@ -1,3 +1,4 @@
+import os
 import cv2
 import gym
 import matplotlib.pyplot as plt
@@ -9,7 +10,7 @@ from decentralized_exploration.dme_drl.frontier_utils import merge_frontiers_and
 from decentralized_exploration.dme_drl.robot import Robot
 from decentralized_exploration.core.robots.utils.field_of_view import bresenham
 from decentralized_exploration.dme_drl.constants import render_world, PROJECT_PATH, CONFIG_PATH, manual_check, \
-    RESET_WORLD_PATH, ID_TO_COLOR
+    RESET_WORLD_PATH, ID_TO_COLOR, STEP_WORLD_PATH
 
 
 class World(gym.Env):
@@ -35,12 +36,16 @@ class World(gym.Env):
         self.robot_sensor_range = self.config['robots']['sensorRange']
         self.probability_of_failed_communication = self.config['robots']['probabilityOfFailedCommunication']
         self.frontier = set()
+        self.episode = -1
+        self.time_step = -1
         if render_world or manual_check:
             self.fig = plt.figure('global')
             self.ax = self.fig.add_subplot(111)
         self.reset()
 
     def reset(self,random=True):
+        self.episode += 1
+        self.time_step = -1
         if random:
             self.map_id = PROJECT_PATH + np.random.choice(self.map_id_set_train)
         else:
@@ -81,9 +86,9 @@ class World(gym.Env):
                         pose_n[i][:,2*j] = robot2.pose[0]
                         pose_n[i][:,2*j+1] = robot2.pose[1]
                         if self._can_communicate():
-                            self._communicate(robot1, robot2)
                             if manual_check:
                                 self.render(self.slam_map, RESET_WORLD_PATH + 'reset_robot_{}_before_comm'.format(robot1.id))
+                            self._communicate(robot1, robot2)
                             self._merge_frontiers_after_communicate(robot1, robot2)
                             if manual_check:
                                 self.render(self.slam_map, RESET_WORLD_PATH + 'reset_robot_{}_after_comm'.format(robot1.id))
@@ -155,10 +160,17 @@ class World(gym.Env):
 
     def step(self, action_n):
         # action_n: 0~7
+        self.time_step += 1
         obs_n = []
         rwd_n = []
         info_n = []
         pose_n = []
+
+        if manual_check:
+            new_path = STEP_WORLD_PATH + 'step_world_e{}_t{}/'.format(self.episode, self.time_step)
+            os.makedirs(new_path, exist_ok=True)
+            self.render(self.slam_map, new_path + 'before_merge_and_comm')
+
         for i, rbt in enumerate(self.robots):
             if action_n[i] == -1:
                 # NOOP
@@ -175,6 +187,8 @@ class World(gym.Env):
             pose[:, 2 * i + 1] = rbt.pose[1]
             pose_n.append(pose)
         self.slam_map = self._merge_map(self.slam_map)
+        if manual_check:
+            self.render(self.slam_map, new_path + 'after_merge_before_comm')
         for i, robot1 in enumerate(self.robots):
             for j, robot2 in enumerate(self.robots):
                 if not i == j:
@@ -186,10 +200,16 @@ class World(gym.Env):
                         pose_n[i][:, 2 * j] = robot2.pose[0]
                         pose_n[i][:, 2 * j + 1] = robot2.pose[1]
                         if self._can_communicate():
-                            # exchange complete information
+                            if manual_check:
+                                self.render(self.slam_map, new_path + 'robot_{}_before_comm'.format(robot1.id))
                             self._communicate(robot1, robot2)
                             self._merge_frontiers_after_communicate(robot1, robot2)
+                            if manual_check:
+                                self.render(self.slam_map, new_path + 'robot_{}_after_comm'.format(robot1.id))
 
+        if manual_check:
+            self.after_comm_map = self._merge_map(self.slam_map)
+            self.render(self.slam_map, new_path + 'after_merge_and_comm')
         # self.render()
         self._track()
         done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) > 0.95

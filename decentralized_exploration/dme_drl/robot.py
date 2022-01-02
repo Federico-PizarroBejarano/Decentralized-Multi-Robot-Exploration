@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import yaml
 import cv2
@@ -6,7 +7,7 @@ import decentralized_exploration.dme_drl.sim_utils as sim_utils
 from decentralized_exploration.core.robots.utils.field_of_view import bresenham
 from decentralized_exploration.dme_drl.frontier_utils import update_frontier_and_remove_pose
 from decentralized_exploration.dme_drl.constants import CONFIG_PATH, render_robot_map, RESET_ROBOT_PATH, manual_check, \
-    ID_TO_COLOR
+    ID_TO_COLOR, STEP_ROBOT_PATH, ACTION_TO_NAME
 from decentralized_exploration.dme_drl.navigate import AStar
 
 ID = 0
@@ -28,6 +29,7 @@ class Robot():
         self.robot_list = None
         self.world = None
         self.path = None
+        self.destination = None
         self.frontier = set()
         self.frontier_by_direction = []
         if render_robot_map or manual_check:# and self.id == ID:
@@ -81,9 +83,14 @@ class Robot():
 
                 self.ax.scatter(x, y, color=c, alpha=0.75, marker='s', s=140)
 
+        # plot the destination
+        if self.destination:
+            self.ax.scatter(self.destination[1], self.destination[0], color='y', marker='s', alpha=1, s=140)
+
         # plot the robot
         self.ax.scatter(self.pose[1], self.pose[0], color=ID_TO_COLOR[self.id], marker='s', alpha=1, s=140)
         self.ax.text(self.pose[1], self.pose[0], s=self.id, ha='center', va='center', size=8)
+
 
         for node in self.frontier:
             self.ax.text(node[1], node[0], 'F', ha='center', va='center', size=8)
@@ -147,16 +154,18 @@ class Robot():
         # update the map
         return np.copy(self.slam_map)
 
-    def _move_one_step(self, next_point):
+    def _move_one_step(self, next_point, new_path=None):
         if not self._is_crashed(next_point):
             self.pose = next_point
             map_temp = np.copy(self.slam_map)  # 临时地图，存储原有的slam地图
+            if manual_check:
+                self.render(new_path + 'substep_{}_before_scan'.format(self.counter))
             occupied_points, free_points = self._scan()
             self._update_map(occupied_points, free_points)
             self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
             map_incrmnt = np.count_nonzero(map_temp - self.slam_map)  # map increment
-            # if render_robot_map and self.id == ID:
-	        #     self.render()
+            if manual_check:
+                self.render(new_path + 'substep_{}_after_scan'.format(self.counter))
             return map_incrmnt
         else:
             return -1
@@ -172,18 +181,26 @@ class Robot():
                 distance_min = distance
         self.destination = (y_dsti, x_dsti)
         self.path = self.navigator.navigate(self.maze, self.pose, self.destination)
-        counter = 0
+        self.counter = 0
         if self.path is None:
             raise Exception('The target point is not accessible')
         else:
             incrmnt_his = []  # map increament list, record the history of it
             for i, point in enumerate(self.path):
-                counter += 1
-                map_incrmnt = self._move_one_step(point)
+                if manual_check:
+                    new_path = STEP_ROBOT_PATH + 'step_robot_{}_e{}_t{}_{}/'.format(self.id, self.world.episode,
+                                                                            self.world.time_step,
+                                                                            ACTION_TO_NAME[action])
+                    os.makedirs(new_path, exist_ok=True)
+                    self.render(new_path + 'substep_{}'.format(self.counter))
+
+                self.counter += 1
+                map_incrmnt = self._move_one_step(point, new_path)
                 incrmnt_his.append(map_incrmnt)
+        self.destination = None
         self.last_map = self.slam_map.copy()
         obs = self.get_obs()
-        rwd = self.reward(counter, incrmnt_his)
+        rwd = self.reward(self.counter, incrmnt_his)
         done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(
             self.maze == self.config['color']['free']) > 0.95
         info = 'Robot %d has moved to the target point' % (self.id)

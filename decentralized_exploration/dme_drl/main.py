@@ -65,7 +65,6 @@ FloatTensor = th.cuda.FloatTensor if maddpg.use_cuda else th.FloatTensor
 for i_episode in range(n_episode):
     try:
         obs,pose = world.reset()
-        exit()
         pose = th.tensor(pose)
     except Exception as e:
         continue
@@ -166,7 +165,6 @@ for i_episode in range(n_episode):
             c_loss, a_loss = maddpg.update_policy()
         if done:
             break
-
     exit()
 
     if not empty_frontier:
