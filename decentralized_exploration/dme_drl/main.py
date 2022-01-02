@@ -14,7 +14,7 @@ import time
 import os
 import yaml
 
-from decentralized_exploration.dme_drl.constants import render_world, PROJECT_PATH, CONFIG_PATH, MODEL_DIR, logging
+from decentralized_exploration.dme_drl.constants import render_world, PROJECT_PATH, CONFIG_PATH, MODEL_DIR, manual_check
 from decentralized_exploration.dme_drl.world import World
 from decentralized_exploration.dme_drl.maddpg.MADDPG import MADDPG
 from decentralized_exploration.dme_drl.sim_utils import onehot_from_action
@@ -65,6 +65,7 @@ FloatTensor = th.cuda.FloatTensor if maddpg.use_cuda else th.FloatTensor
 for i_episode in range(n_episode):
     try:
         obs,pose = world.reset()
+        exit()
         pose = th.tensor(pose)
     except Exception as e:
         continue
@@ -87,8 +88,8 @@ for i_episode in range(n_episode):
     rr = np.zeros((n_agents,))
     empty_frontier = False
     for t in range(max_steps):
-        if render_world:
-            world.render()
+        # if render_world:
+        #     world.render()
         obs_history = obs_history.type(FloatTensor)
         # if logging:
         #     print('time step: {}'.format(t))
@@ -165,6 +166,8 @@ for i_episode in range(n_episode):
             c_loss, a_loss = maddpg.update_policy()
         if done:
             break
+
+    exit()
 
     if not empty_frontier:
         maddpg.episode_done += 1

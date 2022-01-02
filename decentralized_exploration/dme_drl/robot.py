@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 import decentralized_exploration.dme_drl.sim_utils as sim_utils
 from decentralized_exploration.core.robots.utils.field_of_view import bresenham
 from decentralized_exploration.dme_drl.frontier_utils import update_frontier_and_remove_pose
-from decentralized_exploration.dme_drl.constants import CONFIG_PATH, render_robot_map
+from decentralized_exploration.dme_drl.constants import CONFIG_PATH, render_robot_map, RESET_ROBOT_PATH, manual_check, \
+    ID_TO_COLOR
 from decentralized_exploration.dme_drl.navigate import AStar
 
 ID = 0
@@ -29,7 +30,7 @@ class Robot():
         self.path = None
         self.frontier = set()
         self.frontier_by_direction = []
-        if render_robot_map and self.id == ID:
+        if render_robot_map or manual_check:# and self.id == ID:
             self.fig = plt.figure('robot ' + str(self.id))
             self.fig.clf()
             self.ax = self.fig.add_subplot(111)
@@ -52,14 +53,18 @@ class Robot():
         self.maze = maze
         self.pose = self._init_pose()
         self.slam_map = np.ones_like(self.maze) * self.config['color']['uncertain']
+        if manual_check:
+            self.render(RESET_ROBOT_PATH + 'reset_robot_{}_before_scan'.format(self.id))
         occupied_points, free_points = self._scan()
         self._update_map(occupied_points, free_points)
         self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
+        if manual_check:
+            self.render(RESET_ROBOT_PATH + 'reset_robot_{}_after_scan'.format(self.id))
         self.last_map = self.slam_map.copy()
         obs = self.get_obs()
         return obs
 
-    def render(self):
+    def render(self, fname):
         self.ax.cla()
         self.ax.set_aspect('equal')
 
@@ -77,7 +82,7 @@ class Robot():
                 self.ax.scatter(x, y, color=c, alpha=0.75, marker='s', s=140)
 
         # plot the robot
-        self.ax.scatter(self.pose[1], self.pose[0], color='y', marker='s', alpha=1, s=140)
+        self.ax.scatter(self.pose[1], self.pose[0], color=ID_TO_COLOR[self.id], marker='s', alpha=1, s=140)
         self.ax.text(self.pose[1], self.pose[0], s=self.id, ha='center', va='center', size=8)
 
         for node in self.frontier:
@@ -88,7 +93,10 @@ class Robot():
 
         self.ax.invert_yaxis()
 
-        plt.pause(0.5)
+        if manual_check:
+            self.fig.savefig(fname)
+        else:
+            plt.pause(0.5)
 
     def _scan(self):
         world_size = self.maze.shape
@@ -147,8 +155,8 @@ class Robot():
             self._update_map(occupied_points, free_points)
             self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
             map_incrmnt = np.count_nonzero(map_temp - self.slam_map)  # map increment
-            if render_robot_map and self.id == ID:
-	            self.render()
+            # if render_robot_map and self.id == ID:
+	        #     self.render()
             return map_incrmnt
         else:
             return -1
