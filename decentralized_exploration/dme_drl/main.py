@@ -14,7 +14,7 @@ import time
 import os
 import yaml
 
-from decentralized_exploration.dme_drl.constants import render_world, PROJECT_PATH, CONFIG_PATH, MODEL_DIR, manual_check
+from decentralized_exploration.dme_drl.constants import PROJECT_PATH, CONFIG_PATH, MODEL_DIR, manual_check
 from decentralized_exploration.dme_drl.world import World
 from decentralized_exploration.dme_drl.maddpg.MADDPG import MADDPG
 from decentralized_exploration.dme_drl.sim_utils import onehot_from_action
@@ -110,6 +110,7 @@ for i_episode in range(n_episode):
         action_probs = maddpg.select_action(obs_history, pose).data.cpu()
         action_probs_valid = np.copy(action_probs)
         action = []
+        print('action_probs_valid.shape', action_probs_valid.shape)
         for i,probs in enumerate(action_probs):
             rbt = world.robots[i]
             for j,frt in enumerate(rbt.get_and_update_frontier_by_direction()):
@@ -120,7 +121,11 @@ for i_episode in range(n_episode):
                 empty_frontier = True
                 break
             else:
-                action.append(categorical.Categorical(probs=th.tensor(action_probs_valid[i])).sample())
+                act = categorical.Categorical(probs=th.tensor(action_probs_valid[i]))
+                print('act', act.probs)
+                sample_act = act.sample()
+                print('sample_act', sample_act)
+                action.append(sample_act)
 
         if empty_frontier:
             break
@@ -165,7 +170,8 @@ for i_episode in range(n_episode):
             c_loss, a_loss = maddpg.update_policy()
         if done:
             break
-    exit()
+    if manual_check:
+	    exit()
 
     if not empty_frontier:
         maddpg.episode_done += 1

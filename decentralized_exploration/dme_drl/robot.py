@@ -98,8 +98,6 @@ class Robot():
         self.ax.set_xlim(-0.5, 19.5)
         self.ax.set_ylim(-0.5, 19.5)
 
-        self.ax.invert_yaxis()
-
         if manual_check:
             self.fig.savefig(fname)
         else:
@@ -154,23 +152,23 @@ class Robot():
         # update the map
         return np.copy(self.slam_map)
 
-    def _move_one_step(self, next_point, new_path=None):
+    def _move_one_step(self, next_point, step_path=None):
         if not self._is_crashed(next_point):
             self.pose = next_point
             map_temp = np.copy(self.slam_map)  # 临时地图，存储原有的slam地图
             if manual_check:
-                self.render(new_path + 'substep_{}_before_scan'.format(self.counter))
+                self.render(step_path + 'substep_{}_before_scan'.format(self.counter))
             occupied_points, free_points = self._scan()
             self._update_map(occupied_points, free_points)
             self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
             map_incrmnt = np.count_nonzero(map_temp - self.slam_map)  # map increment
             if manual_check:
-                self.render(new_path + 'substep_{}_after_scan'.format(self.counter))
+                self.render(step_path + 'substep_{}_after_scan'.format(self.counter))
             return map_incrmnt
         else:
             return -1
 
-    def step(self, action):
+    def step(self, action, step_robot_path=None):
         y, x = self.pose
         y_dsti, x_dsti = self.frontier_by_direction[action][0]
         distance_min = np.sqrt((y - y_dsti) ** 2 + (x - x_dsti) ** 2)
@@ -188,14 +186,16 @@ class Robot():
             incrmnt_his = []  # map increament list, record the history of it
             for i, point in enumerate(self.path):
                 if manual_check:
-                    new_path = STEP_ROBOT_PATH + 'step_robot_{}_e{}_t{}_{}/'.format(self.id, self.world.episode,
-                                                                            self.world.time_step,
-                                                                            ACTION_TO_NAME[action])
+                    new_path = step_robot_path + 'robot_{}_{}/'.format(self.id, ACTION_TO_NAME[action])
                     os.makedirs(new_path, exist_ok=True)
                     self.render(new_path + 'substep_{}'.format(self.counter))
 
                 self.counter += 1
-                map_incrmnt = self._move_one_step(point, new_path)
+                if manual_check:
+                    map_incrmnt = self._move_one_step(point, new_path)
+                else:
+                    map_incrmnt = self._move_one_step(point)
+
                 incrmnt_his.append(map_incrmnt)
         self.destination = None
         self.last_map = self.slam_map.copy()
@@ -250,7 +250,7 @@ class Robot():
             if x - rx != 0:
                 tan = (y - ry) / (x - rx)
             else:
-                tan = np.sign(y-ry)
+                tan = ry - y # since else clause is invoked
 
             if x > rx:
                 if 1 <= tan:
