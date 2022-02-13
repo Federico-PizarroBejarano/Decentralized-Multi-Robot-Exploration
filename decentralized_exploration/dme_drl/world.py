@@ -10,7 +10,7 @@ from decentralized_exploration.dme_drl.frontier_utils import merge_frontiers_and
 from decentralized_exploration.dme_drl.robot import Robot
 from decentralized_exploration.core.robots.utils.field_of_view import bresenham
 from decentralized_exploration.dme_drl.constants import render_world, PROJECT_PATH, CONFIG_PATH, manual_check, \
-    RESET_WORLD_PATH, ID_TO_COLOR, STEP_WORLD_PATH, STEP_ROBOT_PATH
+    RESET_WORLD_DIR, ID_TO_COLOR, STEP_WORLD_DIR, STEP_ROBOT_DIR
 
 
 class World(gym.Env):
@@ -38,10 +38,11 @@ class World(gym.Env):
         self.frontier = set()
         self.episode = -1
         self.time_step = -1
+        self.step_world_path = ""
+        self.step_robot_path = ""
         if render_world or manual_check:
             self.fig = plt.figure('global')
             self.ax = self.fig.add_subplot(111)
-        self.reset()
 
     def reset(self,random=True):
         self.episode += 1
@@ -58,19 +59,21 @@ class World(gym.Env):
         self.track_map = np.copy(self.maze)
         self.data_transmitted = 0
         self.robots = [Robot(i, np.copy(self.maze)) for i in range(self.number)]
-        if manual_check:
-            self.render(RESET_WORLD_PATH + 'reset_world_before_merge_and_comm')
+
         for rbt in self.robots:
             rbt.robot_list=self.robots
             rbt.world = self
             rbt.reset(np.copy(self.maze))
+
+        self.render(RESET_WORLD_DIR + 'reset_world_before_merge_and_comm')
+
         self.slam_map = self._merge_map(self.slam_map)
-        if manual_check:
-            self.render(RESET_WORLD_PATH + 'reset_world_after_merge')
+
+        self.render(RESET_WORLD_DIR + 'reset_world_after_merge')
+
         obs_n = []
         pose_n = []
         for i,rbt in enumerate(self.robots):
-            obs_n.append(rbt.get_obs())
             pose = np.ones((1, self.number * 2)) * (-1)
             pose[:,2*i] = rbt.pose[0]
             pose[:,2*i+1] = rbt.pose[1]
@@ -86,12 +89,14 @@ class World(gym.Env):
                         pose_n[i][:,2*j] = robot2.pose[0]
                         pose_n[i][:,2*j+1] = robot2.pose[1]
                         if self._can_communicate():
-                            if manual_check:
-                                robot1.render(RESET_WORLD_PATH + 'reset_robot_{}_before_comm'.format(robot1.id))
+
+                            robot1.render(RESET_WORLD_DIR + 'reset_robot_{}_before_comm'.format(robot1.id))
+
                             self._communicate(robot1, robot2)
                             self._merge_frontiers_after_communicate(robot1, robot2)
-                            if manual_check:
-                                robot1.render(RESET_WORLD_PATH + 'reset_robot_{}_after_comm'.format(robot1.id))
+
+                            robot1.render(RESET_WORLD_DIR + 'reset_robot_{}_after_comm'.format(robot1.id))
+            obs_n.append(robot1.get_obs())
 
         return obs_n,pose_n
 
@@ -109,51 +114,65 @@ class World(gym.Env):
                     color[2] = 255
                     cv2.rectangle(self.track_map, (p[1], p[0]), (p[1]+1, p[0]+1), color, -1)
 
+    def get_world_frontier(self):
+        world_frontier = set()
+
+        for robot in self.robots:
+            world_frontier |= robot.frontier
+
+        for robot in self.robots:
+            world_frontier = remove_pose_from_frontier(world_frontier, robot.pose)
+
+        world_frontier = cleanup_frontier(self.slam_map, world_frontier, self.config)
+        return world_frontier
+
+
     def render(self, fname=None):
-        # update the global frontier
-        global_frontier = set()
-
-        for robot in self.robots:
-            global_frontier |= robot.frontier
-
-        for robot in self.robots:
-            global_frontier = remove_pose_from_frontier(global_frontier, robot.pose)
-
-        global_frontier = cleanup_frontier(self.slam_map, global_frontier, self.config)
-
-        self.ax.cla()
-        self.ax.set_aspect('equal')
-
-        # plot the terrain
-        for y in range(self.slam_map.shape[0]):
-            for x in range(self.slam_map.shape[1]):
-                val = self.slam_map[y,x]
-                if val == self.config['color']['uncertain']:
-                    c = 'gray'
-                if val == self.config['color']['obstacle']:
-                    c = 'black'
-                if val == self.config['color']['free']:
-                    c = 'white'
-
-                self.ax.scatter(x, y, color=c, alpha=0.75, marker='s', s=140)
-
-        # plot the robots
-        for robot in self.robots:
-            self.ax.scatter(robot.pose[1], robot.pose[0], color=ID_TO_COLOR[robot.id], marker='s', alpha=1, s=140)
-            self.ax.text(robot.pose[1], robot.pose[0], s=robot.id, ha='center', va='center', size=8)
-
-        for node in global_frontier:
-            self.ax.text(node[1], node[0], 'F', ha='center', va='center', size=8)
-
-        self.ax.set_xlim(-0.5, 19.5)
-        self.ax.set_ylim(-0.5, 19.5)
-
         if manual_check:
-            self.fig.savefig(fname)
-        else:
-            plt.pause(0.5)
+            # update the world frontier
+            world_frontier = self.get_world_frontier()
 
-    def step(self, action_n):
+            self.ax.cla()
+            self.ax.set_aspect('equal')
+
+            # plot the terrain
+            for y in range(self.slam_map.shape[0]):
+                for x in range(self.slam_map.shape[1]):
+                    val = self.slam_map[y,x]
+                    if val == self.config['color']['uncertain']:
+                        c = 'gray'
+                    if val == self.config['color']['obstacle']:
+                        c = 'black'
+                    if val == self.config['color']['free']:
+                        c = 'white'
+
+                    self.ax.scatter(x, y, color=c, alpha=0.75, marker='s', s=140)
+
+            # plot the robots
+            for robot in self.robots:
+                self.ax.scatter(robot.pose[1], robot.pose[0], color=ID_TO_COLOR[robot.id], marker='s', alpha=1, s=140)
+                self.ax.text(robot.pose[1], robot.pose[0], s=robot.id, ha='center', va='center', size=8)
+
+            for node in world_frontier:
+                self.ax.text(node[1], node[0], 'F', ha='center', va='center', size=8)
+
+            self.ax.set_xlim(-0.5, 19.5)
+            self.ax.set_ylim(-0.5, 19.5)
+
+            if render_world:
+                plt.pause(0.5)
+            else:
+                self.fig.savefig(fname)
+
+    def setup_paths(self):
+        if manual_check:
+            self.step_world_path = STEP_WORLD_DIR + 'e{}_t{}/'.format(self.episode, self.time_step)
+            self.step_robot_path = STEP_ROBOT_DIR + 'e{}_t{}/'.format(self.episode, self.time_step)
+            os.makedirs(self.step_world_path, exist_ok=True)
+            os.makedirs(self.step_robot_path, exist_ok=True)
+            self.render(self.step_world_path + 'before_merge_and_comm')
+
+    def step(self, action_n, t):
         # action_n: 0~7
         self.time_step += 1
         obs_n = []
@@ -161,12 +180,7 @@ class World(gym.Env):
         info_n = []
         pose_n = []
 
-        if manual_check:
-            step_world_path = STEP_WORLD_PATH + 'e{}_t{}/'.format(self.episode, self.time_step)
-            step_robot_path = STEP_ROBOT_PATH + 'e{}_t{}/'.format(self.episode, self.time_step)
-            os.makedirs(step_world_path, exist_ok=True)
-            os.makedirs(step_robot_path, exist_ok=True)
-            self.render(step_world_path + 'before_merge_and_comm')
+        self.setup_paths()
 
         for i, rbt in enumerate(self.robots):
             if action_n[i] == -1:
@@ -175,10 +189,8 @@ class World(gym.Env):
                 rwd = -2
                 info = 'NOOP'
             else:
-                if manual_check:
-                    obs, rwd, done, info = rbt.step(action_n[i], step_robot_path)
-                else:
-                    obs, rwd, done, info = rbt.step(action_n[i])
+                obs, rwd, done, info = rbt.step(action_n[i], t, self.step_robot_path)
+
             obs_n.append(obs)
             rwd_n.append(rwd)
             info_n.append(info)
@@ -186,9 +198,11 @@ class World(gym.Env):
             pose[:, 2 * i] = rbt.pose[0]
             pose[:, 2 * i + 1] = rbt.pose[1]
             pose_n.append(pose)
+
         self.slam_map = self._merge_map(self.slam_map)
-        if manual_check:
-            self.render(step_world_path + 'after_merge')
+
+        self.render(self.step_world_path + 'after_merge')
+
         for i, robot1 in enumerate(self.robots):
             for j, robot2 in enumerate(self.robots):
                 if not i == j:
@@ -200,17 +214,16 @@ class World(gym.Env):
                         pose_n[i][:, 2 * j] = robot2.pose[0]
                         pose_n[i][:, 2 * j + 1] = robot2.pose[1]
                         if self._can_communicate():
-                            if manual_check:
-                                robot1.render(step_world_path + 'robot_{}_before_comm'.format(robot1.id))
+                            robot1.render(self.step_world_path + 'robot_{}_before_comm'.format(robot1.id))
+
                             self._communicate(robot1, robot2)
                             self._merge_frontiers_after_communicate(robot1, robot2)
-                            if manual_check:
-                                robot1.render(step_world_path + 'robot_{}_after_comm'.format(robot1.id))
-        # self.render()
-        self._track()
-        done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) > 0.95
-        #if done:
-            #self.track()
+
+                            robot1.render(self.step_world_path + 'robot_{}_after_comm'.format(robot1.id))
+        # self._track()
+        progress = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free'])
+        print(progress, t)
+        done = progress > 0.95
         return obs_n,rwd_n,done,info_n,pose_n
 
     def _can_communicate(self):

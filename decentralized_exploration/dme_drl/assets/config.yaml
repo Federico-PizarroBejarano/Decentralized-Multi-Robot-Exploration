@@ -17,6 +17,7 @@ robots:
     y: 0
   resetRandomPose: 1
   probabilityOfFailedScan: -1
+  probabilityOfFailedAction: -1
   probabilityOfFailedCommunication: -1
   w1: 0.00002
   w2: 0.001
