@@ -40,11 +40,13 @@ class World(gym.Env):
         self.time_step = -1
         self.step_world_path = ""
         self.step_robot_path = ""
+        self.local_interactions = 0
         if render_world or manual_check:
             self.fig = plt.figure('global')
             self.ax = self.fig.add_subplot(111)
 
     def reset(self,random=True):
+        self.local_interactions = 0
         self.episode += 1
         self.time_step = -1
         if random:
@@ -84,6 +86,7 @@ class World(gym.Env):
                         # exchange position information
                         pose_n[i][:,2*j] = robot2.pose[0]
                         pose_n[i][:,2*j+1] = robot2.pose[1]
+                        self.local_interactions += 1
                         if self._can_communicate():
 
                             robot1.render(RESET_WORLD_DIR + 'reset_robot_{}_before_comm'.format(robot1.id))
@@ -209,6 +212,7 @@ class World(gym.Env):
                         # exchange position information
                         pose_n[i][:, 2 * j] = robot2.pose[0]
                         pose_n[i][:, 2 * j + 1] = robot2.pose[1]
+                        self.local_interactions += 1
                         if self._can_communicate():
                             robot1.render(self.step_world_path + 'robot_{}_before_comm'.format(robot1.id))
 
