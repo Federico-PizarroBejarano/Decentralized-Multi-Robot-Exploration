@@ -65,11 +65,7 @@ class World(gym.Env):
             rbt.world = self
             rbt.reset(np.copy(self.maze))
 
-        self.render(RESET_WORLD_DIR + 'reset_world_before_merge_and_comm')
-
         self.slam_map = self._merge_map(self.slam_map)
-
-        self.render(RESET_WORLD_DIR + 'reset_world_after_merge')
 
         obs_n = []
         pose_n = []
@@ -222,7 +218,6 @@ class World(gym.Env):
                             robot1.render(self.step_world_path + 'robot_{}_after_comm'.format(robot1.id))
         # self._track()
         progress = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free'])
-        print(progress, t)
         done = progress > 0.95
         return obs_n,rwd_n,done,info_n,pose_n
 
