@@ -33,7 +33,7 @@ capacity = 5000
 batch_size = 100
 
 n_episode = 200000
-max_steps = 200
+max_steps = 1000
 episodes_before_train = 100
 skipped_episodes = 0
 
@@ -85,6 +85,9 @@ for i_episode in range(n_episode):
         obs_history = th.from_numpy(obs_history).float()
     total_reward = 0.0
     rr = np.zeros((n_agents,))
+
+    empty_frontier = False
+
     for t in range(max_steps):
         obs_history = obs_history.type(FloatTensor)
 
@@ -102,8 +105,13 @@ for i_episode in range(n_episode):
 
         obs_, reward, done, _, next_pose = world.step(acts, t)
 
-        if len(world.get_world_frontier()) == 0:
-            done = True
+        for robot in world.robots:
+            if len(robot.frontier) == 0:
+                print('skipped')
+                skipped_episodes += 1
+                done = True
+                empty_frontier = True
+                break
 
         next_pose = th.tensor(next_pose)
         reward = th.FloatTensor(reward).type(FloatTensor)
@@ -138,34 +146,34 @@ for i_episode in range(n_episode):
         if done:
             break
 
-    # if manual_check:
-	#     exit()
+    if not empty_frontier:
+        maddpg.episode_done += 1
+        if maddpg.episode_done % 100 == 0:
+            print('Save Models......')
+            if not os.path.exists(MODEL_DIR):
+                os.makedirs(MODEL_DIR)
+            dicts = {}
+            for i in range(maddpg.n_agents):
+                dicts['actor_%d' % (i)] = maddpg.actors_target[i].state_dict()
+                dicts['critic_%d' % (i)] = maddpg.critics_target[i].state_dict()
+                dicts['actor_optim_%d' % (i)] = maddpg.actor_optimizer[i].state_dict()
+                dicts['critic_optim_%d' % (i)] = maddpg.critic_optimizer[i].state_dict()
+            th.save(dicts, MODEL_DIR + '/model-%d.pth' % (config['robots']['number']))
+        print('Episode: %d, reward = %f' % (i_episode, total_reward))
+        reward_record.append(total_reward)
+        # visual
+        writer.add_scalars('scalar/reward',{'total_rwd':total_reward,'r0_rwd':rr[0],'r1_rwd':rr[1], 'r2_rwd':rr[2]},i_episode)
+        writer.add_scalars('scalar/skipped_episodes', {'skipped_episodes':skipped_episodes}, i_episode)
+        writer.add_scalars('scalar/steps', {'steps':t}, i_episode)
+        writer.add_scalars('scalar/local_interactions', {'local_interactions':world.local_interactions // 2}, i_episode)
+        if i_episode > episodes_before_train and i_episode % 10 == 0:
+            writer.add_scalars('scalar/mean_rwd',{'mean_reward':np.mean(reward_record[-100:])}, i_episode)
+        if not c_loss is None:
+            writer.add_scalars('loss/c_loss',{'r0':c_loss[0],'r1':c_loss[1], 'r2': c_loss[2]},i_episode)
+        if not a_loss is None:
+            writer.add_scalars('loss/a_loss',{'r0':a_loss[0],'r1':a_loss[1], 'r2': a_loss[2]},i_episode)
 
-    maddpg.episode_done += 1
-    if maddpg.episode_done % 100 == 0:
-        print('Save Models......')
-        if not os.path.exists(MODEL_DIR):
-            os.makedirs(MODEL_DIR)
-        dicts = {}
-        for i in range(maddpg.n_agents):
-            dicts['actor_%d' % (i)] = maddpg.actors_target[i].state_dict()
-            dicts['critic_%d' % (i)] = maddpg.critics_target[i].state_dict()
-            dicts['actor_optim_%d' % (i)] = maddpg.actor_optimizer[i].state_dict()
-            dicts['critic_optim_%d' % (i)] = maddpg.critic_optimizer[i].state_dict()
-        th.save(dicts, MODEL_DIR + '/model-%d.pth' % (config['robots']['number']))
-    print('Episode: %d, reward = %f' % (i_episode, total_reward))
-    reward_record.append(total_reward)
-    # visual
-    writer.add_scalars('scalar/reward',{'total_rwd':total_reward,'r0_rwd':rr[0],'r1_rwd':rr[1], 'r2_rwd':rr[2]},i_episode)
-    writer.add_scalars('scalar/skipped_episodes', {'skipped_episodes':skipped_episodes}, i_episode)
-    if i_episode > episodes_before_train and i_episode % 10 == 0:
-        writer.add_scalars('scalar/mean_rwd',{'mean_reward':np.mean(reward_record[-100:])}, i_episode)
-    if not c_loss is None:
-        writer.add_scalars('loss/c_loss',{'r0':c_loss[0],'r1':c_loss[1], 'r2': c_loss[2]},i_episode)
-    if not a_loss is None:
-        writer.add_scalars('loss/a_loss',{'r0':a_loss[0],'r1':a_loss[1], 'r2': a_loss[2]},i_episode)
-
-    if maddpg.episode_done == maddpg.episodes_before_train:
-        print('training now begins...')
+        if maddpg.episode_done == maddpg.episodes_before_train:
+            print('training now begins...')
 
 world.close()
