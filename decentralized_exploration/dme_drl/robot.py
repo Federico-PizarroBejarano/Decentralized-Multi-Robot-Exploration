@@ -204,17 +204,9 @@ class Robot():
 	def step(self, action, t, step_robot_path=None):
 		step_robot_path += 'robot_{}_{}'.format(self.id, ACTION_TO_NAME[action])
 
-
 		incrmnt_his = []
 
 		self.last_map = self.slam_map.copy()
-		self.render(step_robot_path + '-before_scan')
-
-		occupied_points, free_points = self._scan()
-		self._update_map(occupied_points, free_points)
-		self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
-
-		self.render(step_robot_path + '-after_scan')
 
 		if self._can_move():
 			next_point = self.next_point(action)
@@ -226,14 +218,20 @@ class Robot():
 					legal_actions.append(possible_next_point)
 			next_point = legal_actions[np.random.randint(len(legal_actions))]
 
+		self.render(step_robot_path + '-before_move')
 		map_incrmnt = self._move_one_step(next_point, step_robot_path)
-
 		self.render(step_robot_path + '-after_move')
+
+		self.render(step_robot_path + '-before_scan')
+		occupied_points, free_points = self._scan()
+		self._update_map(occupied_points, free_points)
+		self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
+		self.render(step_robot_path + '-after_scan')
 
 		incrmnt_his.append(map_incrmnt)
 
 		obs = self.get_obs()
-		rwd = self.reward(t, incrmnt_his)
+		rwd = self.reward(1, incrmnt_his)
 		done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(
 			self.maze == self.config['color']['free']) > 0.95
 		info = 'Robot %d has moved to the target point' % (self.id)
