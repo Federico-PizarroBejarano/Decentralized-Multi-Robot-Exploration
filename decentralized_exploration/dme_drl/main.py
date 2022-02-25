@@ -29,7 +29,7 @@ reward_record = []
 n_agents = world.number
 n_actions = 8
 n_pose = 2
-capacity = 5000
+capacity = 100000
 batch_size = 100
 
 n_episode = 200000
@@ -83,18 +83,19 @@ for i_episode in range(n_episode):
 
     if isinstance(obs, np.ndarray):
         obs_history = th.from_numpy(obs_history).float()
-    total_reward = 0.0
-    rr = np.zeros((n_agents,))
 
+    total_reward = 0.0
+    robot_rewards = np.zeros((n_agents,))
     empty_frontier = False
 
     for t in range(max_steps):
         obs_history = obs_history.type(FloatTensor)
 
         action_probs = maddpg.select_action(obs_history, pose).data.cpu()
+        action_probs_valid = np.copy(action_probs)
         action = []
 
-        for i,probs in enumerate(action_probs):
+        for i,probs in enumerate(action_probs_valid):
             rbt = world.robots[i]
             act = categorical.Categorical(probs=th.tensor(probs))
             sample_act = act.sample()
@@ -125,6 +126,7 @@ for i_episode in range(n_episode):
         obs_t_minus_1 = copy(obs_t_minus_0)
         obs_t_minus_0 = copy(obs_)
         obs_history_ = np.zeros((n_agents, obs.shape[1] * 6, obs.shape[2]))
+
         for i in range(n_agents):
             obs_history_[i] = np.vstack((obs_t_minus_0[i], obs_t_minus_1[i], obs_t_minus_2[i],
                                              obs_t_minus_3[i], obs_t_minus_4[i], obs_t_minus_5[i]))
@@ -135,8 +137,9 @@ for i_episode in range(n_episode):
             next_obs_history = None
         else:
             next_obs_history = None
+
         total_reward += reward.sum()
-        rr += reward.cpu().numpy()
+        robot_rewards += reward.cpu().numpy()
 
         maddpg.memory.push(obs_history, action, next_obs_history, reward, pose, next_pose)
         obs_history = next_obs_history
@@ -162,7 +165,7 @@ for i_episode in range(n_episode):
         print('Episode: %d, reward = %f' % (i_episode, total_reward))
         reward_record.append(total_reward)
         # visual
-        writer.add_scalars('scalar/reward',{'total_rwd':total_reward,'r0_rwd':rr[0],'r1_rwd':rr[1], 'r2_rwd':rr[2]},i_episode)
+        writer.add_scalars('scalar/reward', {'total_rwd':total_reward,'r0_rwd':robot_rewards[0], 'r1_rwd':robot_rewards[1], 'r2_rwd':robot_rewards[2]}, i_episode)
         writer.add_scalars('scalar/skipped_episodes', {'skipped_episodes':skipped_episodes}, i_episode)
         writer.add_scalars('scalar/steps', {'steps':t}, i_episode)
         writer.add_scalars('scalar/local_interactions', {'local_interactions':world.local_interactions // 2}, i_episode)
