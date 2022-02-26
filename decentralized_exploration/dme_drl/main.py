@@ -94,7 +94,9 @@ for i_episode in range(start_episode, n_episode):
     robot_rewards = np.zeros((n_agents,))
     empty_frontier = False
 
+    start_time = None
     for time_step in range(max_steps):
+        start_time = time.time()
         obs_history = obs_history.type(FloatTensor)
 
         action_probs = maddpg.select_action(obs_history, pose).data.cpu()
@@ -155,6 +157,8 @@ for i_episode in range(start_episode, n_episode):
         if done:
             break
 
+    elapsed = time.time() - start_time
+
     if not empty_frontier:
         maddpg.episode_done += 1
         if maddpg.episode_done % 20 == 0:
@@ -187,6 +191,7 @@ for i_episode in range(start_episode, n_episode):
         writer.add_scalars('scalar/steps', {'steps':time_step}, maddpg.episode_done)
         writer.add_scalars('scalar/local_interactions', {'local_interactions':world.local_interactions // 2}, maddpg.episode_done)
         writer.add_scalars('scalar/progress', {'progress':np.sum(world.slam_map == world.config['color']['free']) / np.sum(world.maze == world.config['color']['free'])}, maddpg.episode_done)
+        writer.add_scalars('scalar/elapsed', {'elapsed': elapsed}, maddpg.episode_done)
 
         if maddpg.episode_done > episodes_before_train:
             writer.add_scalars('scalar/mean_rwd',{'mean_reward':np.mean(reward_record[-100:])}, maddpg.episode_done)
