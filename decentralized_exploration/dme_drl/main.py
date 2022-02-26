@@ -186,6 +186,8 @@ for i_episode in range(start_episode, n_episode):
         writer.add_scalars('scalar/skipped_episodes', {'skipped_episodes':skipped_episodes}, maddpg.episode_done)
         writer.add_scalars('scalar/steps', {'steps':time_step}, maddpg.episode_done)
         writer.add_scalars('scalar/local_interactions', {'local_interactions':world.local_interactions // 2}, maddpg.episode_done)
+        writer.add_scalars('scalar/progress', {'progress':np.sum(world.slam_map == world.config['color']['free']) / np.sum(world.maze == world.config['color']['free'])}, maddpg.episode_done)
+
         if maddpg.episode_done > episodes_before_train:
             writer.add_scalars('scalar/mean_rwd',{'mean_reward':np.mean(reward_record[-100:])}, maddpg.episode_done)
         if not c_loss is None:
