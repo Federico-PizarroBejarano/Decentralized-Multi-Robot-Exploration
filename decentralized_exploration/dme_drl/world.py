@@ -171,7 +171,7 @@ class World(gym.Env):
             os.makedirs(self.step_robot_path, exist_ok=True)
             self.render(self.step_world_path + 'before_merge_and_comm')
 
-    def step(self, action_n, t):
+    def step(self, action_n):
         # action_n: 0~7
         self.time_step += 1
         obs_n = []
@@ -188,7 +188,7 @@ class World(gym.Env):
                 rwd = -2
                 info = 'NOOP'
             else:
-                obs, rwd, done, info = rbt.step(action_n[i], t, self.step_robot_path)
+                obs, rwd, done, info = rbt.step(action_n[i], self.step_robot_path)
 
             obs_n.append(obs)
             rwd_n.append(rwd)

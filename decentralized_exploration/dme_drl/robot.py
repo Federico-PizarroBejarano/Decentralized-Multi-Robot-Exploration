@@ -207,7 +207,7 @@ class Robot():
 			return self.pose[0] + 1, self.pose[1] - 1
 
 
-	def step(self, action, t, step_robot_path=None):
+	def step(self, action, step_robot_path=None):
 		step_robot_path += 'robot_{}_{}'.format(self.id, ACTION_TO_NAME[action])
 
 		increment_his = []
