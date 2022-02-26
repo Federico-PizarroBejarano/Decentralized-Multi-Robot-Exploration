@@ -30,8 +30,7 @@ class MADDPG:
         self.n_actions = dim_act
         self.memory = ReplayMemory(capacity)
         self.batch_size = batch_size
-        # self.use_cuda = t.cuda.is_available()
-        self.use_cuda = False
+        self.use_cuda = t.cuda.is_available()
         self.episodes_before_train = episodes_before_train
 
         self.GAMMA = 0.95
