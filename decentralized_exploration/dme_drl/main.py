@@ -65,6 +65,7 @@ if load_model:
 
         start_episode = checkpoints['start_episode']
         maddpg.episode_done = checkpoints['episode_done']
+        maddpg.memory = checkpoints['memory']
 
 
 
@@ -172,6 +173,8 @@ for i_episode in range(start_episode, n_episode):
                 dicts['critic_optim_%d' % (i)] = maddpg.critic_optimizer[i].state_dict()
                 dicts['start_episode'] = i_episode + 1
                 dicts['episode_done'] = maddpg.episode_done
+                dicts['memory'] = maddpg.memory
+
             th.save(dicts, MODEL_DIR + '/model-%d.pth' % (config['robots']['number']))
         print('Episode: %d, reward = %f' % (maddpg.episode_done, total_reward))
         reward_record.append(total_reward)
