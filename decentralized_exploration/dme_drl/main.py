@@ -33,7 +33,7 @@ capacity = 100000
 batch_size = 100
 
 n_episode = 200000
-max_steps = 1000
+max_steps = 5000
 episodes_before_train = 100
 skipped_episodes = 0
 
@@ -88,7 +88,7 @@ for i_episode in range(n_episode):
     robot_rewards = np.zeros((n_agents,))
     empty_frontier = False
 
-    for t in range(max_steps):
+    for time_step in range(max_steps):
         obs_history = obs_history.type(FloatTensor)
 
         action_probs = maddpg.select_action(obs_history, pose).data.cpu()
@@ -104,7 +104,7 @@ for i_episode in range(n_episode):
         action = th.tensor(onehot_from_action(action))
         acts = np.argmax(action,axis=1)
 
-        obs_, reward, done, _, next_pose = world.step(acts, t)
+        obs_, reward, done, _, next_pose = world.step(acts, time_step)
 
         for robot in world.robots:
             if len(robot.frontier) == 0:
@@ -131,7 +131,7 @@ for i_episode in range(n_episode):
             obs_history_[i] = np.vstack((obs_t_minus_0[i], obs_t_minus_1[i], obs_t_minus_2[i],
                                              obs_t_minus_3[i], obs_t_minus_4[i], obs_t_minus_5[i]))
 
-        if t != max_steps - 1:
+        if time_step != max_steps - 1:
             next_obs_history = th.tensor(obs_history_)
         elif done:
             next_obs_history = None
@@ -144,7 +144,7 @@ for i_episode in range(n_episode):
         maddpg.memory.push(obs_history, action, next_obs_history, reward, pose, next_pose)
         obs_history = next_obs_history
         pose = next_pose
-        if t % 10 == 0:
+        if time_step % 10 == 0:
             c_loss, a_loss = maddpg.update_policy()
         if done:
             break
@@ -162,19 +162,19 @@ for i_episode in range(n_episode):
                 dicts['actor_optim_%d' % (i)] = maddpg.actor_optimizer[i].state_dict()
                 dicts['critic_optim_%d' % (i)] = maddpg.critic_optimizer[i].state_dict()
             th.save(dicts, MODEL_DIR + '/model-%d.pth' % (config['robots']['number']))
-        print('Episode: %d, reward = %f' % (i_episode, total_reward))
+        print('Episode: %d, reward = %f' % (maddpg.episode_done, total_reward))
         reward_record.append(total_reward)
         # visual
-        writer.add_scalars('scalar/reward', {'total_rwd':total_reward,'r0_rwd':robot_rewards[0], 'r1_rwd':robot_rewards[1], 'r2_rwd':robot_rewards[2]}, i_episode)
-        writer.add_scalars('scalar/skipped_episodes', {'skipped_episodes':skipped_episodes}, i_episode)
-        writer.add_scalars('scalar/steps', {'steps':t}, i_episode)
-        writer.add_scalars('scalar/local_interactions', {'local_interactions':world.local_interactions // 2}, i_episode)
-        if i_episode > episodes_before_train and i_episode % 10 == 0:
-            writer.add_scalars('scalar/mean_rwd',{'mean_reward':np.mean(reward_record[-100:])}, i_episode)
+        writer.add_scalars('scalar/reward', {'total_rwd':total_reward,'r0_rwd':robot_rewards[0], 'r1_rwd':robot_rewards[1], 'r2_rwd':robot_rewards[2]}, maddpg.episode_done)
+        writer.add_scalars('scalar/skipped_episodes', {'skipped_episodes':skipped_episodes}, maddpg.episode_done)
+        writer.add_scalars('scalar/steps', {'steps':time_step}, maddpg.episode_done)
+        writer.add_scalars('scalar/local_interactions', {'local_interactions':world.local_interactions // 2}, maddpg.episode_done)
+        if maddpg.episode_done > episodes_before_train:
+            writer.add_scalars('scalar/mean_rwd',{'mean_reward':np.mean(reward_record[-100:])}, maddpg.episode_done)
         if not c_loss is None:
-            writer.add_scalars('loss/c_loss',{'r0':c_loss[0],'r1':c_loss[1], 'r2': c_loss[2]},i_episode)
+            writer.add_scalars('loss/c_loss',{'r0':c_loss[0],'r1':c_loss[1], 'r2': c_loss[2]},maddpg.episode_done)
         if not a_loss is None:
-            writer.add_scalars('loss/a_loss',{'r0':a_loss[0],'r1':a_loss[1], 'r2': a_loss[2]},i_episode)
+            writer.add_scalars('loss/a_loss',{'r0':a_loss[0],'r1':a_loss[1], 'r2': a_loss[2]},maddpg.episode_done)
 
         if maddpg.episode_done == maddpg.episodes_before_train:
             print('training now begins...')
