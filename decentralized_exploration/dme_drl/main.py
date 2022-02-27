@@ -33,7 +33,7 @@ capacity = 100000
 batch_size = 100
 
 n_episode = 200000
-max_steps = 10
+max_steps = 5000
 episodes_before_train = 100
 
 start_episode = 0
@@ -74,6 +74,12 @@ for i_episode in range(start_episode, n_episode):
         pose = th.tensor(pose)
     except Exception as e:
         continue
+
+    if i_episode >= 120:
+        world.setup_plot()
+        for robot in world.robots:
+            robot.setup_plot()
+
     obs = np.stack(obs)
     # history initialization
     obs_t_minus_0 = copy(obs)
