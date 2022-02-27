@@ -34,10 +34,16 @@ class Robot():
 		self.destination = None
 		self.frontier = set()
 		self.frontier_by_direction = []
-		if manual_check:# and self.id == ID:
-			self.fig = plt.figure('robot ' + str(self.id))
-			self.fig.clf()
-			self.ax = self.fig.add_subplot(111)
+		self.render_robot_map = render_robot_map
+		self.manual_check = manual_check
+		if self.render_robot_map or self.manual_check:
+			self.setup_plot()
+
+	def setup_plot(self):
+		self.render_robot_map = True
+		self.fig = plt.figure('robot ' + str(self.id))
+		self.fig.clf()
+		self.ax = self.fig.add_subplot(111)
 
 	def _init_pose(self):
 		if self.config['robots']['resetRandomPose'] == 1:
@@ -70,7 +76,7 @@ class Robot():
 		return obs
 
 	def render(self, fname):
-		if manual_check:
+		if self.manual_check or self.render_robot_map:
 			self.ax.cla()
 			self.ax.set_aspect('equal')
 
@@ -102,7 +108,7 @@ class Robot():
 			self.ax.set_xlim(-0.5, 19.5)
 			self.ax.set_ylim(-0.5, 19.5)
 
-			if render_robot_map:
+			if self.render_robot_map:
 				plt.pause(0.5)
 			else:
 				self.fig.savefig(fname)

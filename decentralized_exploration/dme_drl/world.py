@@ -41,9 +41,15 @@ class World(gym.Env):
         self.step_world_path = ""
         self.step_robot_path = ""
         self.local_interactions = 0
-        if render_world or manual_check:
-            self.fig = plt.figure('global')
-            self.ax = self.fig.add_subplot(111)
+        self.render_world = render_world
+        self.manual_check = manual_check
+        if self.render_world or self.manual_check:
+            self.set_plot()
+
+    def setup_plot(self):
+        self.render_world = True
+        self.fig = plt.figure('global')
+        self.ax = self.fig.add_subplot(111)
 
     def reset(self,random=True):
         self.local_interactions = 0
@@ -127,7 +133,7 @@ class World(gym.Env):
 
 
     def render(self, fname=None):
-        if manual_check:
+        if self.manual_check or self.render_world:
             # update the world frontier
             world_frontier = self.get_world_frontier()
 
@@ -158,13 +164,13 @@ class World(gym.Env):
             self.ax.set_xlim(-0.5, 19.5)
             self.ax.set_ylim(-0.5, 19.5)
 
-            if render_world:
+            if self.render_world:
                 plt.pause(0.5)
             else:
                 self.fig.savefig(fname)
 
     def setup_paths(self):
-        if manual_check:
+        if self.manual_check:
             self.step_world_path = STEP_WORLD_DIR + 'e{}_t{}/'.format(self.episode, self.time_step)
             self.step_robot_path = STEP_ROBOT_DIR + 'e{}_t{}/'.format(self.episode, self.time_step)
             os.makedirs(self.step_world_path, exist_ok=True)

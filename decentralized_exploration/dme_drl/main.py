@@ -14,7 +14,7 @@ import time
 import os
 import yaml
 
-from decentralized_exploration.dme_drl.constants import PROJECT_PATH, CONFIG_PATH, MODEL_DIR, manual_check
+from decentralized_exploration.dme_drl.constants import PROJECT_PATH, CONFIG_PATH, MODEL_DIR
 from decentralized_exploration.dme_drl.world import World
 from decentralized_exploration.dme_drl.maddpg.MADDPG import MADDPG
 from decentralized_exploration.dme_drl.sim_utils import onehot_from_action
