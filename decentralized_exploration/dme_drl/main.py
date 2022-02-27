@@ -33,7 +33,7 @@ capacity = 100000
 batch_size = 100
 
 n_episode = 200000
-max_steps = 5000
+max_steps = 10
 episodes_before_train = 100
 
 start_episode = 0
@@ -112,7 +112,7 @@ for i_episode in range(start_episode, n_episode):
         action = th.tensor(onehot_from_action(action))
         acts = np.argmax(action,axis=1)
 
-        obs_, reward, done, _, next_pose = world.step(acts, time_step)
+        obs_, reward, done, _, next_pose = world.step(acts)
 
         for robot in world.robots:
             if len(robot.frontier) == 0:
@@ -175,11 +175,11 @@ for i_episode in range(start_episode, n_episode):
                 dicts['episode_done'] = maddpg.episode_done
                 dicts['memory'] = maddpg.memory
 
-            if maddpg.episodes_done % 60 == 0:
+            if maddpg.episode_done % 60 == 0:
                 th.save(dicts, MODEL_DIR + '/model-%d-1.pth' % (config['robots']['number']))
-            elif maddpg.episodes_done % 40 == 0:
+            elif maddpg.episode_done % 40 == 0:
                 th.save(dicts, MODEL_DIR + '/model-%d-2.pth' % (config['robots']['number']))
-            elif maddpg.episodes_done % 20 == 0:
+            elif maddpg.episode_done % 20 == 0:
                 th.save(dicts, MODEL_DIR + '/model-%d-3.pth' % (config['robots']['number']))
 
 
