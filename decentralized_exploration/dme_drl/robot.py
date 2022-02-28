@@ -71,7 +71,7 @@ class Robot():
 		obs = self.get_obs()
 		return obs
 
-	def render(self, fname, title):
+	def render(self, title, fname):
 		if self.manual_check or self.render_robot_map:
 			self.ax.cla()
 			self.ax.set_aspect('equal')

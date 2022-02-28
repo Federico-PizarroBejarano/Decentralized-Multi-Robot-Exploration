@@ -1,16 +1,17 @@
 import os
+
 import cv2
 import gym
 import matplotlib.pyplot as plt
 import numpy as np
 import yaml
 
+from decentralized_exploration.core.robots.utils.field_of_view import bresenham
+from decentralized_exploration.dme_drl.constants import render_world, PROJECT_PATH, CONFIG_PATH, manual_check, \
+    ID_TO_COLOR, STEP_WORLD_DIR, STEP_ROBOT_DIR, ACTION_TO_NAME
 from decentralized_exploration.dme_drl.frontier_utils import merge_frontiers_and_remove_pose, remove_pose_from_frontier, \
     cleanup_frontier
 from decentralized_exploration.dme_drl.robot import Robot
-from decentralized_exploration.core.robots.utils.field_of_view import bresenham
-from decentralized_exploration.dme_drl.constants import render_world, PROJECT_PATH, CONFIG_PATH, manual_check, \
-    RESET_WORLD_DIR, ID_TO_COLOR, STEP_WORLD_DIR, STEP_ROBOT_DIR
 
 
 class World(gym.Env):
@@ -128,12 +129,12 @@ class World(gym.Env):
         return world_frontier
 
 
-    def render(self, fname=None):
+    def render(self, title, fname):
         if self.manual_check or self.render_world:
             # update the world frontier
             world_frontier = self.get_world_frontier()
 
-            self.fig.canvas.set_window_title('global_t{}'.format(self.time_step))
+            self.fig.canvas.set_window_title(title)
 
             self.ax.cla()
             self.ax.set_aspect('equal')
@@ -206,6 +207,29 @@ class World(gym.Env):
         # self._track()
         progress = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free'])
         done = progress > 0.95
+
+        for i, robot1 in enumerate(self.robots):
+            for j, robot2 in enumerate(self.robots):
+                if not i == j:
+                    distance = max(abs(robot1.pose[1] - robot1.pose[1]),
+                                   abs(robot1.pose[0] - robot1.pose[0]))
+                    # layers communication
+                    if self._is_in_range(distance, robot1, robot2):
+                        # exchange position information
+                        pose_n[i][:, 2 * j] = robot2.pose[0]
+                        pose_n[i][:, 2 * j + 1] = robot2.pose[1]
+                        self.local_interactions += 1
+                        if self._can_communicate():
+                            self._communicate(robot1, robot2)
+                            self._merge_frontiers_after_communicate(robot1, robot2)
+
+        for i, robot in enumerate(self.robots):
+            title = 'robot_{}_e{}_t{}_{}'.format(robot.id, self.episode, self.time_step, ACTION_TO_NAME[action_n[i]])
+            robot.render(title, '')
+
+        title = 'world_e{}_t{}'.format(self.episode, self.time_step)
+        self.render(title, '')
+
         return obs_n,rwd_n,done,info_n,pose_n
 
     def _can_communicate(self):
