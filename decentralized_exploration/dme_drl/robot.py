@@ -64,21 +64,18 @@ class Robot():
 		self.pose = self._init_pose()
 		self.slam_map = np.ones_like(self.maze) * self.config['color']['uncertain']
 
-		self.render(RESET_ROBOT_DIR + 'reset_robot_{}_before_scan'.format(self.id))
-
 		occupied_points, free_points = self._scan()
 		self._update_map(occupied_points, free_points)
 		self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
 
-		self.render(RESET_ROBOT_DIR + 'reset_robot_{}_after_scan'.format(self.id))
-
 		obs = self.get_obs()
 		return obs
 
-	def render(self, fname):
+	def render(self, fname, title):
 		if self.manual_check or self.render_robot_map:
 			self.ax.cla()
 			self.ax.set_aspect('equal')
+			self.fig.canvas.set_window_title(title)
 
 			# plot the terrain
 			for y in range(self.slam_map.shape[0]):
@@ -228,9 +225,7 @@ class Robot():
 					legal_actions.append(possible_next_point)
 			next_point = legal_actions[np.random.randint(len(legal_actions))]
 
-		self.render(step_robot_path + '-before_step')
 		map_increment = self._move_one_step_and_scan(next_point, step_robot_path)
-		self.render(step_robot_path + '-after_step')
 
 		increment_his.append(map_increment)
 

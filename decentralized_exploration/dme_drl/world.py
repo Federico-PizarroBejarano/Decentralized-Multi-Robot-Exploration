@@ -94,13 +94,9 @@ class World(gym.Env):
                         pose_n[i][:,2*j+1] = robot2.pose[1]
                         self.local_interactions += 1
                         if self._can_communicate():
-
-                            robot1.render(RESET_WORLD_DIR + 'reset_robot_{}_before_comm'.format(robot1.id))
-
                             self._communicate(robot1, robot2)
                             self._merge_frontiers_after_communicate(robot1, robot2)
 
-                            robot1.render(RESET_WORLD_DIR + 'reset_robot_{}_after_comm'.format(robot1.id))
             obs_n.append(robot1.get_obs())
 
         return obs_n,pose_n
@@ -136,6 +132,8 @@ class World(gym.Env):
         if self.manual_check or self.render_world:
             # update the world frontier
             world_frontier = self.get_world_frontier()
+
+            self.fig.canvas.set_window_title('global_t{}'.format(self.time_step))
 
             self.ax.cla()
             self.ax.set_aspect('equal')
@@ -175,7 +173,6 @@ class World(gym.Env):
             self.step_robot_path = STEP_ROBOT_DIR + 'e{}_t{}/'.format(self.episode, self.time_step)
             os.makedirs(self.step_world_path, exist_ok=True)
             os.makedirs(self.step_robot_path, exist_ok=True)
-            self.render(self.step_world_path + 'before_merge_and_comm')
 
     def step(self, action_n):
         # action_n: 0~7
@@ -206,26 +203,6 @@ class World(gym.Env):
 
         self.slam_map = self._merge_map(self.slam_map)
 
-        self.render(self.step_world_path + 'after_merge')
-
-        for i, robot1 in enumerate(self.robots):
-            for j, robot2 in enumerate(self.robots):
-                if not i == j:
-                    distance = max(abs(robot1.pose[1] - robot1.pose[1]),
-                                   abs(robot1.pose[0] - robot1.pose[0]))
-                    # layers communication
-                    if self._is_in_range(distance, robot1, robot2):
-                        # exchange position information
-                        pose_n[i][:, 2 * j] = robot2.pose[0]
-                        pose_n[i][:, 2 * j + 1] = robot2.pose[1]
-                        self.local_interactions += 1
-                        if self._can_communicate():
-                            robot1.render(self.step_world_path + 'robot_{}_before_comm'.format(robot1.id))
-
-                            self._communicate(robot1, robot2)
-                            self._merge_frontiers_after_communicate(robot1, robot2)
-
-                            robot1.render(self.step_world_path + 'robot_{}_after_comm'.format(robot1.id))
         # self._track()
         progress = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free'])
         done = progress > 0.95
