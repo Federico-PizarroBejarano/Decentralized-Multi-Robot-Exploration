@@ -39,6 +39,9 @@ episodes_before_train = 100
 start_episode = 0
 skipped_episodes = 0
 
+timestep_decay = 1.01
+episode_decay = 1.01
+
 load_model = False
 
 maddpg = MADDPG(n_agents, n_agents, n_actions, n_pose, batch_size, capacity,
@@ -75,10 +78,10 @@ for i_episode in range(start_episode, n_episode):
     except Exception as e:
         continue
 
-    if i_episode >= 120:
-        world.setup_plot()
-        for robot in world.robots:
-            robot.setup_plot()
+    # if i_episode >= 120:
+    #     world.setup_plot()
+    #     for robot in world.robots:
+    #         robot.setup_plot()
 
     obs = np.stack(obs)
     # history initialization
@@ -106,12 +109,13 @@ for i_episode in range(start_episode, n_episode):
         obs_history = obs_history.type(FloatTensor)
 
         action_probs = maddpg.select_action(obs_history, pose).data.cpu()
-        action_probs_valid = np.copy(action_probs)
+        scale = (1/episode_decay**time_step) * (1/timestep_decay**(max(0,maddpg.episode_done-episodes_before_train)))
+        action_logits = np.copy(action_probs) + np.random.normal(size=(3,8), scale=scale)
         action = []
 
-        for i,probs in enumerate(action_probs_valid):
+        for i, logits in enumerate(action_logits):
             rbt = world.robots[i]
-            act = categorical.Categorical(probs=th.tensor(probs))
+            act = categorical.Categorical(logits=th.tensor(logits))
             sample_act = act.sample()
             action.append(sample_act)
 
