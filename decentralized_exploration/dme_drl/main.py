@@ -19,6 +19,10 @@ from decentralized_exploration.dme_drl.world import World
 from decentralized_exploration.dme_drl.maddpg.MADDPG import MADDPG
 from decentralized_exploration.dme_drl.sim_utils import onehot_from_action
 
+
+with open(CONFIG_PATH, 'r') as stream:
+    config = yaml.safe_load(stream)
+
 # tensorboard writer
 time_now = time.strftime("%m%d_%H%M%S")
 writer = SummaryWriter(PROJECT_PATH + '/runs/' + time_now)
@@ -33,21 +37,23 @@ capacity = 100000
 batch_size = 100
 
 n_episode = 200000
-max_steps = 5000
+max_steps = config['hyperparams']['max_steps']
+training_frequency = config['hyperparams']['training_frequency']
+checkpoint_frequency = config['hyperparams']['checkpoint_frequency']
+
 episodes_before_train = 100
 
 start_episode = 0
 skipped_episodes = 0
 
-timestep_decay = 1.01
-episode_decay = 1.01
+timestep_decay = config['hyperparams']['timestep_decay']
+noise_mag = config['hyperparams']['noise_mag']
 
 load_model = False
 
 maddpg = MADDPG(n_agents, n_agents, n_actions, n_pose, batch_size, capacity,
                 episodes_before_train)
-with open(CONFIG_PATH, 'r') as stream:
-    config = yaml.safe_load(stream)
+
 
 if load_model:
     if not os.path.exists(MODEL_DIR):
@@ -71,6 +77,9 @@ if load_model:
         maddpg.memory = checkpoints['memory']
 
 FloatTensor = th.cuda.FloatTensor if maddpg.use_cuda else th.FloatTensor
+
+global_time_steps = 0
+
 for i_episode in range(start_episode, n_episode):
     try:
         obs,pose = world.reset()
@@ -105,12 +114,18 @@ for i_episode in range(start_episode, n_episode):
 
     start_time = None
     for time_step in range(max_steps):
+
+        global_time_steps += 1
+
         start_time = time.time()
         obs_history = obs_history.type(FloatTensor)
 
         action_probs = maddpg.select_action(obs_history, pose).data.cpu()
-        scale = (1/episode_decay**time_step) * (1/timestep_decay**(max(0,maddpg.episode_done-episodes_before_train)))
-        action_logits = np.copy(action_probs) + np.random.normal(size=(3,8), scale=scale)
+
+        scale = (1/timestep_decay**global_time_steps)
+        noise = np.random.normal(size=(3,8), scale=scale) * noise_mag
+        action_logits = np.copy(action_probs) + noise
+
         action = []
 
         for i, logits in enumerate(action_logits):
@@ -162,7 +177,7 @@ for i_episode in range(start_episode, n_episode):
         maddpg.memory.push(obs_history, action, next_obs_history, reward, pose, next_pose)
         obs_history = next_obs_history
         pose = next_pose
-        if time_step % 10 == 0:
+        if time_step % training_frequency == 0:
             c_loss, a_loss = maddpg.update_policy()
         if done:
             break
@@ -171,7 +186,7 @@ for i_episode in range(start_episode, n_episode):
 
     if not empty_frontier:
         maddpg.episode_done += 1
-        if maddpg.episode_done % 20 == 0:
+        if maddpg.episode_done % checkpoint_frequency == 0:
             print('Save Models......')
             if not os.path.exists(MODEL_DIR):
                 os.makedirs(MODEL_DIR)
@@ -202,6 +217,10 @@ for i_episode in range(start_episode, n_episode):
         writer.add_scalars('scalar/local_interactions', {'local_interactions':world.local_interactions // 2}, maddpg.episode_done)
         writer.add_scalars('scalar/progress', {'progress':np.sum(world.slam_map == world.config['color']['free']) / np.sum(world.maze == world.config['color']['free'])}, maddpg.episode_done)
         writer.add_scalars('scalar/elapsed', {'elapsed': elapsed}, maddpg.episode_done)
+
+        writer.add_histogram('hist/action_probs', values=action_probs[0], global_step=maddpg.episode_done)
+        writer.add_histogram('hist/noise', values=noise[0], global_step=maddpg.episode_done)
+        writer.add_histogram('hist/action_logits', values=action_logits[0], global_step=maddpg.episode_done)
 
         if maddpg.episode_done > episodes_before_train:
             writer.add_scalars('scalar/mean_rwd',{'mean_reward':np.mean(reward_record[-100:])}, maddpg.episode_done)

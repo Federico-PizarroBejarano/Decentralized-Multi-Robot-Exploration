@@ -1,12 +1,18 @@
 import torch as t
 from copy import deepcopy
+
+import yaml
 from torch.optim import Adam
 import torch.nn as nn
 
+from decentralized_exploration.dme_drl.constants import CONFIG_PATH
 from decentralized_exploration.dme_drl.maddpg.memory import ReplayMemory, Experience
 from decentralized_exploration.dme_drl.maddpg.model import Actor, Critic
 
 LOAD_MODEL = False
+
+with open(CONFIG_PATH, 'r') as stream:
+    config = yaml.safe_load(stream)
 
 def soft_update(target, source, t):
     for target_param, source_param in zip(target.parameters(),
@@ -44,9 +50,9 @@ class MADDPG:
         self.critics = [Critic(n_agents, dim_obs,
                                dim_act, dim_pose) for i in range(n_agents)]
         self.critic_optimizer = [Adam(x.parameters(),
-                                      lr=0.001) for x in self.critics]
+                                      lr=config['hyperparams']['lr']) for x in self.critics]
         self.actor_optimizer = [Adam(x.parameters(),
-                                     lr=0.001) for x in self.actors]    # lr = 0.0001
+                                     lr=config['hyperparams']['lr']) for x in self.actors]    # lr = 0.0001
 
         self.actors_target = deepcopy(self.actors)
         self.critics_target = deepcopy(self.critics)
