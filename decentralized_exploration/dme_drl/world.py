@@ -87,7 +87,7 @@ class World(gym.Env):
 
         for id1, robot1 in enumerate(self.robots):
             for id2, robot2 in enumerate(self.robots):
-                if not id1 == id2:
+                if id1 < id2:
                     distance = max(abs(robot1.pose[1] - robot2.pose[1]),
                                    abs(robot1.pose[0] - robot2.pose[0]))
                     if self._is_in_range(distance, robot1, robot2):
@@ -196,7 +196,7 @@ class World(gym.Env):
             self.render(step_world_path + 'after_merge')
         for id1, robot1 in enumerate(self.robots):
             for id2, robot2 in enumerate(self.robots):
-                if not id1 == id2:
+                if id1 < id2:
                     distance = max(abs(robot1.pose[1] - robot1.pose[1]),
                                    abs(robot1.pose[0] - robot1.pose[0]))
                     # layers communication
@@ -227,19 +227,20 @@ class World(gym.Env):
         else:
             return True
 
-    def _merge_maps(self, rbt1, rbt2):
+    def _merge_maps(self, robot1, robot2):
         bit_map = np.zeros_like(self.slam_map)
         merge_map = np.ones_like(self.slam_map) * self.config['color']['uncertain']
-        for rbt in [rbt1, rbt2]:
+        for rbt in [robot1, robot2]:
             bit_map = np.bitwise_or(bit_map, rbt.slam_map != self.config['color']['uncertain'])
         idx = np.where(bit_map == 1)
         merge_map[idx] = self.maze[idx]
-        rbt1.slam_map = merge_map
-        return
+        robot1.slam_map = merge_map
+        robot2.slam_map = merge_map
 
-    def _merge_frontiers_after_communicate(self, rbt1, rbt2):
-        merged_frontiers = merge_frontiers_and_remove_pose(rbt1.slam_map, rbt1.frontier, rbt2.frontier, rbt1.pose, rbt1.config)
-        rbt1.frontier = merged_frontiers
+    def _merge_frontiers_after_communicate(self, robot1, robot2):
+        merged_frontiers = merge_frontiers_and_remove_pose(robot1.slam_map, robot1.frontier, robot2.frontier, robot1.pose, robot1.config)
+        robot1.frontier = merged_frontiers
+        robot2.frontier = merged_frontiers
 
     def close(self):
         pass
