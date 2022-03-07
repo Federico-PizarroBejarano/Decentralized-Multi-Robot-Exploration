@@ -101,6 +101,7 @@ class Robot():
 
             if manual_check:
                 self.fig.savefig(fname)
+                np.save(fname, self.slam_map)
             else:
                 plt.pause(0.5)
 
