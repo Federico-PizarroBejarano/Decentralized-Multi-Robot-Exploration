@@ -67,41 +67,42 @@ class Robot():
         return obs
 
     def render(self, fname):
-        self.ax.cla()
-        self.ax.set_aspect('equal')
+        if manual_check or render_robot_map:
+            self.ax.cla()
+            self.ax.set_aspect('equal')
 
-        # plot the terrain
-        for y in range(self.slam_map.shape[0]):
-            for x in range(self.slam_map.shape[1]):
-                val = self.slam_map[y, x]
-                if val == self.config['color']['uncertain']:
-                    c = 'gray'
-                if val == self.config['color']['obstacle']:
-                    c = 'black'
-                if val == self.config['color']['free']:
-                    c = 'white'
+            # plot the terrain
+            for y in range(self.slam_map.shape[0]):
+                for x in range(self.slam_map.shape[1]):
+                    val = self.slam_map[y, x]
+                    if val == self.config['color']['uncertain']:
+                        c = 'gray'
+                    if val == self.config['color']['obstacle']:
+                        c = 'black'
+                    if val == self.config['color']['free']:
+                        c = 'white'
 
-                self.ax.scatter(x, y, color=c, alpha=0.75, marker='s', s=140)
+                    self.ax.scatter(x, y, color=c, alpha=0.75, marker='s', s=140)
 
-        # plot the destination
-        if self.destination:
-            self.ax.scatter(self.destination[1], self.destination[0], color='y', marker='s', alpha=1, s=140)
+            # plot the destination
+            if self.destination:
+                self.ax.scatter(self.destination[1], self.destination[0], color='y', marker='s', alpha=1, s=140)
 
-        # plot the robot
-        self.ax.scatter(self.pose[1], self.pose[0], color=ID_TO_COLOR[self.id], marker='s', alpha=1, s=140)
-        self.ax.text(self.pose[1], self.pose[0], s=self.id, ha='center', va='center', size=8)
+            # plot the robot
+            self.ax.scatter(self.pose[1], self.pose[0], color=ID_TO_COLOR[self.id], marker='s', alpha=1, s=140)
+            self.ax.text(self.pose[1], self.pose[0], s=self.id, ha='center', va='center', size=8)
 
 
-        for node in self.frontier:
-            self.ax.text(node[1], node[0], 'F', ha='center', va='center', size=8)
+            for node in self.frontier:
+                self.ax.text(node[1], node[0], 'F', ha='center', va='center', size=8)
 
-        self.ax.set_xlim(-0.5, 19.5)
-        self.ax.set_ylim(-0.5, 19.5)
+            self.ax.set_xlim(-0.5, 19.5)
+            self.ax.set_ylim(-0.5, 19.5)
 
-        if manual_check:
-            self.fig.savefig(fname)
-        else:
-            plt.pause(0.5)
+            if manual_check:
+                self.fig.savefig(fname)
+            else:
+                plt.pause(0.5)
 
     def _scan(self):
         world_size = self.maze.shape

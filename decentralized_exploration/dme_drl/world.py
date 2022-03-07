@@ -43,6 +43,15 @@ class World(gym.Env):
             self.ax = self.fig.add_subplot(111)
         self.reset()
 
+    def _communicate(self, robot1, robot2):
+        if self._can_communicate():
+            robot1.render(RESET_WORLD_PATH + 'reset_robot_{}_before_comm'.format(robot1.id))
+
+            self._merge_maps(robot1, robot2)
+            self._merge_frontiers_after_communicate(robot1, robot2)
+
+            robot1.render(RESET_WORLD_PATH + 'reset_robot_{}_after_comm'.format(robot1.id))
+
     def reset(self,random=True):
         self.episode += 1
         self.time_step = -1
@@ -69,29 +78,24 @@ class World(gym.Env):
             self.render(RESET_WORLD_PATH + 'reset_world_after_merge')
         obs_n = []
         pose_n = []
-        for i,rbt in enumerate(self.robots):
+        for id1,rbt in enumerate(self.robots):
             obs_n.append(rbt.get_obs())
             pose = np.ones((1, self.number * 2)) * (-1)
-            pose[:,2*i] = rbt.pose[0]
-            pose[:,2*i+1] = rbt.pose[1]
+            pose[:,2*id1] = rbt.pose[0]
+            pose[:,2*id1+1] = rbt.pose[1]
             pose_n.append(pose)
 
-        for i, robot1 in enumerate(self.robots):
-            for j, robot2 in enumerate(self.robots):
-                if not i==j:
+        for id1, robot1 in enumerate(self.robots):
+            for id2, robot2 in enumerate(self.robots):
+                if not id1 == id2:
                     distance = max(abs(robot1.pose[1] - robot2.pose[1]),
                                    abs(robot1.pose[0] - robot2.pose[0]))
                     if self._is_in_range(distance, robot1, robot2):
                         # exchange position information
-                        pose_n[i][:,2*j] = robot2.pose[0]
-                        pose_n[i][:,2*j+1] = robot2.pose[1]
-                        if self._can_communicate():
-                            if manual_check:
-                                robot1.render(RESET_WORLD_PATH + 'reset_robot_{}_before_comm'.format(robot1.id))
-                            self._communicate(robot1, robot2)
-                            self._merge_frontiers_after_communicate(robot1, robot2)
-                            if manual_check:
-                                robot1.render(RESET_WORLD_PATH + 'reset_robot_{}_after_comm'.format(robot1.id))
+                        pose_n[id1][:,2*id2] = robot2.pose[0]
+                        pose_n[id1][:,2*id2+1] = robot2.pose[1]
+
+                        self._communicate(robot1, robot2)
 
         return obs_n,pose_n
 
@@ -202,7 +206,7 @@ class World(gym.Env):
                         if self._can_communicate():
                             if manual_check:
                                 robot1.render(step_world_path + 'robot_{}_before_comm'.format(robot1.id))
-                            self._communicate(robot1, robot2)
+                            self._merge_maps(robot1, robot2)
                             self._merge_frontiers_after_communicate(robot1, robot2)
                             if manual_check:
                                 robot1.render(step_world_path + 'robot_{}_after_comm'.format(robot1.id))
@@ -230,7 +234,7 @@ class World(gym.Env):
         else:
             return True
 
-    def _communicate(self, rbt1, rbt2):
+    def _merge_maps(self, rbt1, rbt2):
         bit_map = np.zeros_like(self.slam_map)
         merge_map = np.ones_like(self.slam_map) * self.config['color']['uncertain']
         for rbt in [rbt1, rbt2]:
