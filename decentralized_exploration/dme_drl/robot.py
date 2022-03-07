@@ -157,8 +157,23 @@ class Robot():
         # update the map
         return np.copy(self.slam_map)
 
+    def _is_in_bounds(self, point):
+        return 0 <= point[0] < self.slam_map.shape[0] and \
+               0 <= point[1] < self.slam_map.shape[1]
+
+    def _is_free_space(self, point):
+        for robot in self.robot_list:
+            if robot.pose == point:
+                return False
+
+        return self.slam_map[point] == self.config['color']['free']
+
+    def _is_legal(self, point):
+        return self._is_in_bounds(point) and self._is_free_space(point)
+
+
     def _move_one_step(self, next_point, step_path=None):
-        if not self._is_crashed(next_point):
+        if self.is_legal(next_point):
             self.pose = next_point
             map_temp = np.copy(self.slam_map)  # 临时地图，存储原有的slam地图
             if manual_check:
@@ -233,12 +248,6 @@ class Robot():
                               color=self.config['color']['others'], thickness=-1)
         return state.copy()
 
-    def _is_crashed(self, target_point):
-        if not sim_utils.within_bound(target_point, self.maze.shape, 0):
-            return True
-        # 将机器人视为一个质点
-        y, x = target_point
-        return self.maze[y, x] == self.config['color']['obstacle']
 
     def get_obs(self):
         """每一个机器人都获取自己观察视野内的本地地图"""
