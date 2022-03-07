@@ -88,9 +88,7 @@ class World(gym.Env):
         for id1, robot1 in enumerate(self.robots):
             for id2, robot2 in enumerate(self.robots):
                 if id1 < id2:
-                    distance = max(abs(robot1.pose[1] - robot2.pose[1]),
-                                   abs(robot1.pose[0] - robot2.pose[0]))
-                    if self._is_in_range(distance, robot1, robot2):
+                    if self._is_in_range(robot1, robot2):
                         # exchange position information
                         pose_n[id1][:,2*id2] = robot2.pose[0]
                         pose_n[id1][:,2*id2+1] = robot2.pose[1]
@@ -197,10 +195,8 @@ class World(gym.Env):
         for id1, robot1 in enumerate(self.robots):
             for id2, robot2 in enumerate(self.robots):
                 if id1 < id2:
-                    distance = max(abs(robot1.pose[1] - robot1.pose[1]),
-                                   abs(robot1.pose[0] - robot1.pose[0]))
                     # layers communication
-                    if self._is_in_range(distance, robot1, robot2):
+                    if self._is_in_range(robot1, robot2):
                         # exchange position information
                         pose_n[id1][:, 2 * id2] = robot2.pose[0]
                         pose_n[id1][:, 2 * id2 + 1] = robot2.pose[1]
@@ -213,7 +209,9 @@ class World(gym.Env):
     def _can_communicate(self):
         return np.random.randint(100) > self.probability_of_failed_communication
 
-    def _is_in_range(self, distance, robot1, robot2):
+    def _is_in_range(self, robot1, robot2):
+        distance = max(abs(robot1.pose[1] - robot2.pose[1]),
+                       abs(robot1.pose[0] - robot2.pose[0]))
         return distance <= self.robot_sensor_range and self._clear_path_between_robots(robot1, robot2)
 
     def _clear_path_between_robots(self, robot1, robot2):
