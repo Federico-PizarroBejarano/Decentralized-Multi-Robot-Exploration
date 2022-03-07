@@ -45,12 +45,14 @@ class World(gym.Env):
 
     def _communicate(self, robot1, robot2):
         if self._can_communicate():
-            robot1.render(RESET_WORLD_PATH + 'reset_robot_{}_before_comm'.format(robot1.id))
+            robot1.render(STEP_WORLD_PATH + 'step_robot_{}_{}_before_comm_t{}'.format(robot1.id, robot2.id, self.time_step))
+            robot2.render(STEP_WORLD_PATH + 'step_robot_{}_{}_before_comm_t{}'.format(robot2.id, robot1.id, self.time_step))
 
             self._merge_maps(robot1, robot2)
             self._merge_frontiers_after_communicate(robot1, robot2)
 
-            robot1.render(RESET_WORLD_PATH + 'reset_robot_{}_after_comm'.format(robot1.id))
+            robot1.render(STEP_ROBOT_PATH + 'step_robot_{}_{}_after_comm_t{}'.format(robot1.id, robot2.id, self.time_step))
+            robot2.render(STEP_ROBOT_PATH + 'step_robot_{}_{}_after_comm_t{}'.format(robot1.id, robot2.id, self.time_step))
 
     def reset(self,random=True):
         self.episode += 1
