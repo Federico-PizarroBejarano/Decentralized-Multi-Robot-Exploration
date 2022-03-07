@@ -173,37 +173,37 @@ class World(gym.Env):
             os.makedirs(step_robot_path, exist_ok=True)
             self.render(step_world_path + 'before_merge_and_comm')
 
-        for i, rbt in enumerate(self.robots):
-            if action_n[i] == -1:
+        for id1, rbt in enumerate(self.robots):
+            if action_n[id1] == -1:
                 # NOOP
                 obs = rbt.get_obs()
                 rwd = -2
                 info = 'NOOP'
             else:
                 if manual_check:
-                    obs, rwd, done, info = rbt.step(action_n[i], step_robot_path)
+                    obs, rwd, done, info = rbt.step(action_n[id1], step_robot_path)
                 else:
-                    obs, rwd, done, info = rbt.step(action_n[i])
+                    obs, rwd, done, info = rbt.step(action_n[id1])
             obs_n.append(obs)
             rwd_n.append(rwd)
             info_n.append(info)
             pose = np.ones((1, self.number * 2)) * (-1)
-            pose[:, 2 * i] = rbt.pose[0]
-            pose[:, 2 * i + 1] = rbt.pose[1]
+            pose[:, 2 * id1] = rbt.pose[0]
+            pose[:, 2 * id1 + 1] = rbt.pose[1]
             pose_n.append(pose)
         self.slam_map = self._merge_map(self.slam_map)
         if manual_check:
             self.render(step_world_path + 'after_merge')
-        for i, robot1 in enumerate(self.robots):
-            for j, robot2 in enumerate(self.robots):
-                if not i == j:
+        for id1, robot1 in enumerate(self.robots):
+            for id2, robot2 in enumerate(self.robots):
+                if not id1 == id2:
                     distance = max(abs(robot1.pose[1] - robot1.pose[1]),
                                    abs(robot1.pose[0] - robot1.pose[0]))
                     # layers communication
                     if self._is_in_range(distance, robot1, robot2):
                         # exchange position information
-                        pose_n[i][:, 2 * j] = robot2.pose[0]
-                        pose_n[i][:, 2 * j + 1] = robot2.pose[1]
+                        pose_n[id1][:, 2 * id2] = robot2.pose[0]
+                        pose_n[id1][:, 2 * id2 + 1] = robot2.pose[1]
 
                         self._communicate(robot1, robot2)
 
