@@ -204,18 +204,10 @@ class World(gym.Env):
                         # exchange position information
                         pose_n[i][:, 2 * j] = robot2.pose[0]
                         pose_n[i][:, 2 * j + 1] = robot2.pose[1]
-                        if self._can_communicate():
-                            if manual_check:
-                                robot1.render(step_world_path + 'robot_{}_before_comm'.format(robot1.id))
-                            self._merge_maps(robot1, robot2)
-                            self._merge_frontiers_after_communicate(robot1, robot2)
-                            if manual_check:
-                                robot1.render(step_world_path + 'robot_{}_after_comm'.format(robot1.id))
-        # self.render()
-        self._track()
+
+                        self._communicate(robot1, robot2)
+
         done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) > 0.95
-        #if done:
-            #self.track()
         return obs_n,rwd_n,done,info_n,pose_n
 
     def _can_communicate(self):
