@@ -32,6 +32,7 @@ class Robot():
         self.destination = None
         self.frontier = set()
         self.frontier_by_direction = []
+        self.seen_robots = set()
         if render_robot_map or manual_check:# and self.id == ID:
             self.fig = plt.figure('robot ' + str(self.id))
             self.fig.clf()
