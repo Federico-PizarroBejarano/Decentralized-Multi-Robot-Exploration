@@ -54,6 +54,10 @@ class World(gym.Env):
             robot1.render(STEP_ROBOT_PATH + 'step_robot_{}_{}_after_comm_t{}'.format(robot1.id, robot2.id, self.time_step))
             robot2.render(STEP_ROBOT_PATH + 'step_robot_{}_{}_after_comm_t{}'.format(robot1.id, robot2.id, self.time_step))
 
+            robot1.seen_robots.add(robot2.id)
+            robot2.seen_robots.add(robot1.id)
+
+
     def reset(self,random=True):
         self.episode += 1
         self.time_step = -1
