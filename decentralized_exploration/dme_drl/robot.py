@@ -56,13 +56,15 @@ class Robot():
         self.maze = maze
         self.pose = self._init_pose()
         self.slam_map = np.ones_like(self.maze) * self.config['color']['uncertain']
-        if manual_check:
-            self.render(RESET_ROBOT_PATH + 'reset_robot_{}_before_scan'.format(self.id))
+
+        self.render(RESET_ROBOT_PATH + 'reset_robot_{}_before_scan'.format(self.id))
+
         occupied_points, free_points = self._scan()
         self._update_map(occupied_points, free_points)
         self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
-        if manual_check:
-            self.render(RESET_ROBOT_PATH + 'reset_robot_{}_after_scan'.format(self.id))
+
+        self.render(RESET_ROBOT_PATH + 'reset_robot_{}_after_scan'.format(self.id))
+
         self.last_map = self.slam_map.copy()
         obs = self.get_obs()
         return obs
