@@ -172,18 +172,14 @@ class Robot():
         return self._is_in_bounds(point) and self._is_free_space(point)
 
 
-    def _move_one_step(self, next_point, step_path=None):
+    def _move_one_step(self, next_point):
         if self.is_legal(next_point):
             self.pose = next_point
             map_temp = np.copy(self.slam_map)  # 临时地图，存储原有的slam地图
-            if manual_check:
-                self.render(step_path + 'substep_{}_before_scan'.format(self.counter))
             occupied_points, free_points = self._scan()
             self._update_map(occupied_points, free_points)
             self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
             map_incrmnt = np.count_nonzero(map_temp - self.slam_map)  # map increment
-            if manual_check:
-                self.render(step_path + 'substep_{}_after_scan'.format(self.counter))
             return map_incrmnt
         else:
             return -1
@@ -203,20 +199,18 @@ class Robot():
         if self.path is None:
             raise Exception('The target point is not accessible')
         else:
-            incrmnt_his = []  # map increament list, record the history of it
+            incrmnt_his = []  # map increment list, record the history of it
             for i, point in enumerate(self.path):
+
                 if manual_check:
                     new_path = step_robot_path + 'robot_{}_{}/'.format(self.id, ACTION_TO_NAME[action])
-                    os.makedirs(new_path, exist_ok=True)
-                    self.render(new_path + 'substep_{}'.format(self.counter))
 
                 self.counter += 1
-                if manual_check:
-                    map_incrmnt = self._move_one_step(point, new_path)
-                else:
-                    map_incrmnt = self._move_one_step(point)
 
+                map_incrmnt = self._move_one_step(point)
                 incrmnt_his.append(map_incrmnt)
+
+
         self.destination = None
         self.last_map = self.slam_map.copy()
         obs = self.get_obs()
