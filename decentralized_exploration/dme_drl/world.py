@@ -43,7 +43,7 @@ class World(gym.Env):
             self.ax = self.fig.add_subplot(111)
         self.reset()
 
-    def _communicate(self, robot1, robot2):
+    def communicate(self, robot1, robot2):
         if self._can_communicate():
             robot1.render(STEP_WORLD_PATH + 'step_robot_{}_{}_before_comm_t{}'.format(robot1.id, robot2.id, self.time_step))
             robot2.render(STEP_WORLD_PATH + 'step_robot_{}_{}_before_comm_t{}'.format(robot2.id, robot1.id, self.time_step))
@@ -76,7 +76,7 @@ class World(gym.Env):
         if manual_check:
             self.render(RESET_WORLD_PATH + 'reset_world_before_merge_and_comm')
         for rbt in self.robots:
-            rbt.robot_list=self.robots
+            rbt.robots=self.robots
             rbt.world = self
             rbt.reset(np.copy(self.maze))
         self.slam_map = self._merge_map(self.slam_map)
@@ -94,12 +94,12 @@ class World(gym.Env):
         for id1, robot1 in enumerate(self.robots):
             for id2, robot2 in enumerate(self.robots):
                 if id1 < id2:
-                    if self._is_in_range(robot1, robot2):
+                    if self.in_range(robot1, robot2):
                         # exchange position information
                         pose_n[id1][:,2*id2] = robot2.pose[0]
                         pose_n[id1][:,2*id2+1] = robot2.pose[1]
 
-                        self._communicate(robot1, robot2)
+                        self.communicate(robot1, robot2)
 
         return obs_n,pose_n
 
@@ -202,12 +202,13 @@ class World(gym.Env):
             for id2, robot2 in enumerate(self.robots):
                 if id1 < id2:
                     # layers communication
-                    if self._is_in_range(robot1, robot2):
+                    if self.in_range(robot1, robot2):
                         # exchange position information
                         pose_n[id1][:, 2 * id2] = robot2.pose[0]
                         pose_n[id1][:, 2 * id2 + 1] = robot2.pose[1]
 
-                        self._communicate(robot1, robot2)
+                        self.communicate(robot1, robot2)
+			robot1.seen_robots = set() # clear seen robots
 
         done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) > 0.95
         return obs_n,rwd_n,done,info_n,pose_n
@@ -215,7 +216,7 @@ class World(gym.Env):
     def _can_communicate(self):
         return np.random.randint(100) > self.probability_of_failed_communication
 
-    def _is_in_range(self, robot1, robot2):
+    def in_range(self, robot1, robot2):
         distance = max(abs(robot1.pose[1] - robot2.pose[1]),
                        abs(robot1.pose[0] - robot2.pose[0]))
         return distance <= self.robot_sensor_range and self._clear_path_between_robots(robot1, robot2)

@@ -26,7 +26,7 @@ class Robot():
         self.pose = self._init_pose()
         self.last_map = self.slam_map.copy()
         self.navigator = AStar()
-        self.robot_list = None
+        self.robots = None
         self.world = None
         self.path = None
         self.destination = None
@@ -162,7 +162,7 @@ class Robot():
                0 <= point[1] < self.slam_map.shape[1]
 
     def _is_free_space(self, point):
-        for robot in self.robot_list:
+        for robot in self.robots:
             if robot.pose == point:
                 return False
 
@@ -177,16 +177,27 @@ class Robot():
         return self._is_in_bounds(point) and self._is_free_space(point) and self._is_one_step(point)
 
     def _move_one_step(self, next_point):
-        if self.is_legal(next_point):
+        if self._is_legal(next_point):
             self.pose = next_point
             map_temp = np.copy(self.slam_map)  # 临时地图，存储原有的slam地图
             occupied_points, free_points = self._scan()
             self._update_map(occupied_points, free_points)
             self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
-            map_incrmnt = np.count_nonzero(map_temp - self.slam_map)  # map increment
-            return map_incrmnt
+            map_increment = np.count_nonzero(map_temp - self.slam_map)  # map increment
+            return map_increment
         else:
             return -1
+
+    def in_vicinity_and_not_yet_seen(self):
+        flag = False
+        for robot in self.robots:
+            if self.id != robot.id:
+                if self.world.in_range(self, robot):
+                    if robot not in self.seen_robots:
+                        self.world.communicate(self, robot)
+                        flag = True
+        return flag
+
 
     def step(self, action, step_robot_path=None):
         y, x = self.pose
@@ -203,22 +214,21 @@ class Robot():
         if self.path is None:
             raise Exception('The target point is not accessible')
         else:
-            incrmnt_his = []  # map increment list, record the history of it
+            increment_his = []  # map increment list, record the history of it
             for i, point in enumerate(self.path):
-
-                if manual_check:
-                    new_path = step_robot_path + 'robot_{}_{}/'.format(self.id, ACTION_TO_NAME[action])
+                if self.in_vicinity_and_not_yet_seen():
+                    break
 
                 self.counter += 1
 
-                map_incrmnt = self._move_one_step(point)
-                incrmnt_his.append(map_incrmnt)
+                map_increment = self._move_one_step(point)
+                increment_his.append(map_increment)
 
 
         self.destination = None
         self.last_map = self.slam_map.copy()
         obs = self.get_obs()
-        rwd = self.reward(self.counter, incrmnt_his)
+        rwd = self.reward(self.counter, increment_his)
         done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(
             self.maze == self.config['color']['free']) > 0.95
         info = 'Robot %d has moved to the target point' % (self.id)
@@ -235,7 +245,7 @@ class Robot():
 
     def get_state(self):
         state = self.slam_map.copy()
-        for rbt in self.robot_list:
+        for rbt in self.robots:
             if rbt.id == self.id:
                 cv2.rectangle(state, (rbt.pose[1] - rbt.robot_radius, rbt.pose[0] - rbt.robot_radius),
                               (rbt.pose[1] + rbt.robot_radius, rbt.pose[0] + rbt.robot_radius),
@@ -296,7 +306,7 @@ if __name__ == "__main__":
     maze = np.load('/Users/richardren/VisualStudioCodeProjects/Decentralized-Multi-Robot-Exploration/decentralized_exploration/dme_drl/assets/maps/train/map-57.npy')
     robot = Robot(2, maze)
     robot.pose = 6,4
-    robot.robot_list = [robot]
+    robot.robots = [robot]
     occ_points, free_points = robot._scan()
     robot._update_map(occ_points, free_points)
     plt.imshow(robot.get_state())
