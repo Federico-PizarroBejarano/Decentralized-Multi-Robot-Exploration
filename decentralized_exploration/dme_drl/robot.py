@@ -168,9 +168,13 @@ class Robot():
 
         return self.slam_map[point] == self.config['color']['free']
 
-    def _is_legal(self, point):
-        return self._is_in_bounds(point) and self._is_free_space(point)
+    def _is_one_step(self, point):
+        distance = max(abs(self.pose[1] - point[1]),
+                       abs(self.pose[0] - point[0]))
+        return 0 <= distance <= 1
 
+    def _is_legal(self, point):
+        return self._is_in_bounds(point) and self._is_free_space(point) and self._is_one_step(point)
 
     def _move_one_step(self, next_point):
         if self.is_legal(next_point):
