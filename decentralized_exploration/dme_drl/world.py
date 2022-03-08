@@ -52,7 +52,7 @@ class World(gym.Env):
             self._merge_frontiers_after_communicate(robot1, robot2)
 
             robot1.render(STEP_WORLD_PATH + 'step_robot_{}_{}_after_comm_t{}'.format(robot1.id, robot2.id, self.time_step))
-            robot2.render(STEP_WORLD_PATH + 'step_robot_{}_{}_after_comm_t{}'.format(robot1.id, robot2.id, self.time_step))
+            robot2.render(STEP_WORLD_PATH + 'step_robot_{}_{}_after_comm_t{}'.format(robot2.id, robot1.id, self.time_step))
 
             robot1.seen_robots.add(robot2.id)
             robot2.seen_robots.add(robot1.id)
