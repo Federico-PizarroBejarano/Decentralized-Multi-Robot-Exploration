@@ -105,16 +105,6 @@ class World(gym.Env):
     def seed(self, seed=None):
         pass
 
-    def _track(self):
-        for i,rbt in enumerate(self.robots):
-            for p in rbt.path:
-                color = np.zeros(3)
-                if i%2 == 0 :
-                    color[0] = 255
-                    cv2.circle(self.track_map, (p[1], p[0]), 2, color, -1)
-                else:
-                    color[2] = 255
-                    cv2.rectangle(self.track_map, (p[1], p[0]), (p[1]+1, p[0]+1), color, -1)
 
     def render(self, fname=None):
         # update the global frontier
