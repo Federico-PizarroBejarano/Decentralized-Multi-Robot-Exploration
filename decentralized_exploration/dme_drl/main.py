@@ -87,26 +87,7 @@ for i_episode in range(n_episode):
     rr = np.zeros((n_agents,))
     empty_frontier = False
     for t in range(max_steps):
-        # if render_world:
-        #     world.render()
         obs_history = obs_history.type(FloatTensor)
-        # if logging:
-        #     print('time step: {}'.format(t))
-        #     for id in range(n_agents):
-        #         print('\t', 'robot {}'.format(id), pose[id])
-        #         for tau in range(6):
-        #             print('\t\t', 'obs @ t-{}'.format(tau))
-        #             ob = obs_history[id][tau * 20:(tau + 1) * 20].numpy().astype('uint8')
-        #             print('\t\t', 150 in ob and 200 in ob)
-                    # if tau == 0:
-                    #     assert(np.array_equal(ob, world.robots[id].last_map)
-                    # last map is precomm and so is the obs
-                    # last_map = world.robots[id].last_map
-                    # slam_map = world.robots[id].slam_map
-                    # print('\t\t', 'last map @ t-0'.format(tau))
-                    # print('\t\t', 150 in last_map or 200 in last_map)
-                    # print('\t\t', 'slam map @ t-0'.format(tau))
-                    # print('\t\t', 150 in slam_map or 200 in last_map)
         action_probs = maddpg.select_action(obs_history, pose).data.cpu()
         action_probs_valid = np.copy(action_probs)
         action = []

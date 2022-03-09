@@ -243,25 +243,10 @@ class Robot():
         rwd = rwd1 + rwd2
         return rwd
 
-    def get_state(self):
-        state = self.slam_map.copy()
-        for rbt in self.robots:
-            if rbt.id == self.id:
-                cv2.rectangle(state, (rbt.pose[1] - rbt.robot_radius, rbt.pose[0] - rbt.robot_radius),
-                              (rbt.pose[1] + rbt.robot_radius, rbt.pose[0] + rbt.robot_radius),
-                              color=self.config['color']['self'], thickness=-1)
-            else:
-                cv2.rectangle(state, (rbt.pose[1] - rbt.robot_radius, rbt.pose[0] - rbt.robot_radius),
-                              (rbt.pose[1] + rbt.robot_radius, rbt.pose[0] + rbt.robot_radius),
-                              color=self.config['color']['others'], thickness=-1)
-        return state.copy()
-
-
     def get_obs(self):
         """每一个机器人都获取自己观察视野内的本地地图"""
-        observation = self.get_state()
         self.get_and_update_frontier_by_direction()
-        return observation
+        return self.slam_map.copy()
 
     def get_and_update_frontier_by_direction(self):
         """获取前沿，采用地图相减的算法"""
