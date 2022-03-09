@@ -23,9 +23,9 @@ class Robot():
         self.sensor_range = self.config['robots']['sensorRange']
         self.probability_of_failed_scan = self.config['robots']['probabilityOfFailedScan']
         self.slam_map = np.ones_like(self.maze) * self.config['color']['uncertain']
-        self.pose = self._init_pose()
+        self.pose = None
+        self.poses = None
         self.number = self.config['robots']['number']
-        self.poses = np.ones((1, self.number * 2)) * (-1)
         self.last_map = self.slam_map.copy()
         self.navigator = AStar()
         self.robots = None
@@ -57,6 +57,7 @@ class Robot():
     def reset(self, maze):
         self.maze = maze
         self.pose = self._init_pose()
+        self.poses = np.ones((1, self.number * 2)) * (-1)
         self.slam_map = np.ones_like(self.maze) * self.config['color']['uncertain']
 
         self.render(RESET_ROBOT_PATH + 'reset_robot_{}_before_scan'.format(self.id))
@@ -249,6 +250,9 @@ class Robot():
         """每一个机器人都获取自己观察视野内的本地地图"""
         self.get_and_update_frontier_by_direction()
         return self.slam_map.copy()
+
+    def get_poses(self):
+        return self.poses.copy()
 
     def get_and_update_frontier_by_direction(self):
         """获取前沿，采用地图相减的算法"""

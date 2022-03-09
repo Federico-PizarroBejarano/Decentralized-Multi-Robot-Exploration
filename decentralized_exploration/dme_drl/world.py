@@ -90,22 +90,15 @@ class World(gym.Env):
             self.render(RESET_WORLD_PATH + 'reset_world_after_merge')
         obs_n = []
         pose_n = []
-        for id1,rbt in enumerate(self.robots):
-            obs_n.append(rbt.get_obs())
-            pose = np.ones((1, self.number * 2)) * (-1)
-            pose[:,2*id1] = rbt.pose[0]
-            pose[:,2*id1+1] = rbt.pose[1]
-            pose_n.append(pose)
 
         for id1, robot1 in enumerate(self.robots):
             for id2, robot2 in enumerate(self.robots):
                 if id1 < id2:
                     if self.in_range(robot1, robot2):
-                        # exchange position information
-                        pose_n[id1][:,2*id2] = robot2.pose[0]
-                        pose_n[id1][:,2*id2+1] = robot2.pose[1]
-
+                        self.record_poses(robot1, robot2)
                         self.communicate(robot1, robot2)
+            obs_n.append(robot1.get_obs())
+            pose_n.append(robot1.get_poses())
 
         return obs_n,pose_n
 
