@@ -41,7 +41,16 @@ class World(gym.Env):
         if render_world or manual_check:
             self.fig = plt.figure('global')
             self.ax = self.fig.add_subplot(111)
-        self.reset()
+
+    def record_poses(self, robot1, robot2):
+        robot1.poses[:, 2 * robot2.id] = robot2.pose[0]
+        robot1.poses[:, 2 * robot2.id + 1] = robot2.pose[1]
+
+        robot2.poses[:, 2 * robot1.id] = robot1.pose[0]
+        robot2.poses[:, 2 * robot1.id + 1] = robot1.pose[1]
+
+        robot1.seen_robots.add(robot2.id)
+        robot2.seen_robots.add(robot1.id)
 
     def communicate(self, robot1, robot2):
         if self._can_communicate():
@@ -53,9 +62,6 @@ class World(gym.Env):
 
             robot1.render(STEP_WORLD_PATH + 'step_robot_{}_{}_after_comm_t{}'.format(robot1.id, robot2.id, self.time_step))
             robot2.render(STEP_WORLD_PATH + 'step_robot_{}_{}_after_comm_t{}'.format(robot2.id, robot1.id, self.time_step))
-
-            robot1.seen_robots.add(robot2.id)
-            robot2.seen_robots.add(robot1.id)
 
 
     def reset(self,random=True):
@@ -208,7 +214,7 @@ class World(gym.Env):
                         pose_n[id1][:, 2 * id2 + 1] = robot2.pose[1]
 
                         self.communicate(robot1, robot2)
-			robot1.seen_robots = set() # clear seen robots
+            robot1.seen_robots = set() # clear seen robots
 
         done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) > 0.95
         return obs_n,rwd_n,done,info_n,pose_n

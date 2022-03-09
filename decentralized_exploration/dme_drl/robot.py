@@ -24,6 +24,8 @@ class Robot():
         self.probability_of_failed_scan = self.config['robots']['probabilityOfFailedScan']
         self.slam_map = np.ones_like(self.maze) * self.config['color']['uncertain']
         self.pose = self._init_pose()
+        self.number = self.config['robots']['number']
+        self.poses = np.ones((1, self.number * 2)) * (-1)
         self.last_map = self.slam_map.copy()
         self.navigator = AStar()
         self.robots = None
