@@ -69,8 +69,6 @@ class Robot():
         self.render(RESET_ROBOT_PATH + 'reset_robot_{}_after_scan'.format(self.id))
 
         self.last_map = self.slam_map.copy()
-        obs = self.get_obs()
-        return obs
 
     def render(self, fname):
         if manual_check or render_robot_map:
@@ -230,12 +228,11 @@ class Robot():
 
         self.destination = None
         self.last_map = self.slam_map.copy()
-        obs = self.get_obs()
         rwd = self.reward(self.counter, increment_his)
         done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(
             self.maze == self.config['color']['free']) > 0.95
         info = 'Robot %d has moved to the target point' % (self.id)
-        return obs, rwd, done, info
+        return rwd, done, info
 
 
 
