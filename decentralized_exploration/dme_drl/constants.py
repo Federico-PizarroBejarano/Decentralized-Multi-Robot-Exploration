@@ -12,7 +12,7 @@ else:
 CONFIG_PATH = PROJECT_PATH + '/assets/config.yaml'
 MODEL_DIR = PROJECT_PATH + '/model/'
 
-manual_check = False
+manual_check = True
 
 MANUAL_CHECK_PATH = PROJECT_PATH + '/manual_check/'
 shutil.rmtree(MANUAL_CHECK_PATH)
