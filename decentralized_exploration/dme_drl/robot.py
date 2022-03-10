@@ -62,7 +62,7 @@ class Robot():
         self.pose = self._init_pose()
         self.poses = np.ones((1, self.number * 2)) * (-1)
         self.episode += 1
-        self.time_step -= 1
+        self.time_step = -1
         self.sub_time_step = -1
 
         self.render(RESET_ROBOT_PATH + 'r{}_e{}_t{}_before_reset'.format(self.id, self.episode, self.time_step))
