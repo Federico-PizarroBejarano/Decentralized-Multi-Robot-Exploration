@@ -199,7 +199,7 @@ class Robot():
         return flag
 
 
-    def step(self, action, step_robot_path=None):
+    def step(self, action):
         y, x = self.pose
         y_dsti, x_dsti = self.frontier_by_direction[action][0]
         distance_min = np.sqrt((y - y_dsti) ** 2 + (x - x_dsti) ** 2)
