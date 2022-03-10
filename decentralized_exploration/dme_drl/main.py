@@ -173,6 +173,9 @@ for i_episode in range(n_episode):
         writer.add_scalars('scalar/reward',{'total_rwd':total_reward,'r0_rwd':rr[0],'r1_rwd':rr[1], 'r2_rwd':rr[2]},maddpg.episode_done)
         writer.add_scalars('scalar/skipped_episodes', {'skipped_episodes':skipped_episodes}, maddpg.episode_done)
         writer.add_scalars('scalar/local_interactions', {'local_interactions': world.local_interactions}, maddpg.episode_done)
+        writer.add_scalars('scalar/progress', {
+            'progress': np.sum(world.slam_map == world.config['color']['free']) / np.sum(
+                world.maze == world.config['color']['free'])}, maddpg.episode_done)
 
         writer.add_histogram('hist/action_probs_valid', values=action_probs_valid[0], global_step=maddpg.episode_done)
 
