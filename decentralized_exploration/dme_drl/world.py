@@ -142,12 +142,11 @@ class World(gym.Env):
 
             self.ax.set_xlim(-0.5, 19.5)
             self.ax.set_ylim(-0.5, 19.5)
-            plt.pause(0.5)
-            # if manual_check:
-            #     self.fig.savefig(fname)
-            #     np.save(fname, self.slam_map)
-            # elif render_world:
-            #     plt.pause(0.5)
+            if manual_check:
+                self.fig.savefig(fname)
+                np.save(fname, self.slam_map)
+            elif render_world:
+                plt.pause(0.5)
 
     def step(self, action_n):
         # action_n: 0~7
