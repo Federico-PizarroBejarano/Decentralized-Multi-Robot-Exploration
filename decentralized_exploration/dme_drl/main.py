@@ -195,6 +195,7 @@ for i_episode in range(start_episode, n_episode):
         writer.add_scalars('scalar/progress', {
             'progress': np.sum(world.slam_map == world.config['color']['free']) / np.sum(
                 world.maze == world.config['color']['free'])}, maddpg.episode_done)
+        writer.add_scalars('scalar/sub_time_step', {'sub_time_step': max([robot.sub_time_step + 1 for robot in world.robots])}, maddpg.episode_done)
 
         writer.add_histogram('hist/action_probs_valid', values=action_probs_valid[0], global_step=maddpg.episode_done)
 

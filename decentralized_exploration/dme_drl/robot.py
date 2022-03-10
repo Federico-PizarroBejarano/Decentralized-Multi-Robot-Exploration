@@ -34,6 +34,7 @@ class Robot():
         self.frontier = set()
         self.frontier_by_direction = []
         self.seen_robots = set()
+        self.sub_time_step = -1
         if render_robot_map or manual_check:# and self.id == ID:
             self.fig = plt.figure('robot ' + str(self.id))
             self.fig.clf()
@@ -55,9 +56,10 @@ class Robot():
 
     def reset(self, maze):
         self.maze = maze
+        self.slam_map = np.ones_like(self.maze) * self.config['color']['uncertain']
         self.pose = self._init_pose()
         self.poses = np.ones((1, self.number * 2)) * (-1)
-        self.slam_map = np.ones_like(self.maze) * self.config['color']['uncertain']
+        self.sub_time_step = -1
 
         self.render(RESET_ROBOT_PATH + 'reset_robot_{}_before_scan'.format(self.id))
 
@@ -211,6 +213,7 @@ class Robot():
         self.destination = (y_dsti, x_dsti)
         self.path = self.navigator.navigate(self.maze, self.pose, self.destination)
         self.counter = 0
+
         if self.path is None:
             raise Exception('The target point is not accessible')
         else:
@@ -224,6 +227,7 @@ class Robot():
                 map_increment = self._move_one_step(point)
                 increment_his.append(map_increment)
 
+        self.sub_time_step += self.counter
 
         self.destination = None
         self.last_map = self.slam_map.copy()
