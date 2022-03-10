@@ -192,8 +192,8 @@ class Robot():
         flag = False
         for robot in self.robots:
             if self.id != robot.id:
-                if self.world.in_range(self, robot):
-                    if robot not in self.seen_robots:
+                if self.world.in_range(self, robot) and robot.id not in self.seen_robots:
+                        self.world.record_poses(self, robot)
                         self.world.communicate(self, robot)
                         flag = True
         return flag
