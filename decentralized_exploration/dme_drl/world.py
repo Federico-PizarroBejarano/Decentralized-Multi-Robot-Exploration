@@ -38,6 +38,7 @@ class World(gym.Env):
         self.frontier = set()
         self.episode = -1
         self.time_step = -1
+        self.local_interactions = 0
         if render_world or manual_check:
             self.fig = plt.figure('global')
             self.fig.clf()
@@ -52,6 +53,8 @@ class World(gym.Env):
 
         robot1.seen_robots.add(robot2.id)
         robot2.seen_robots.add(robot1.id)
+
+        self.local_interactions += 1
 
     def communicate(self, robot1, robot2):
         if self._can_communicate():
@@ -95,6 +98,7 @@ class World(gym.Env):
                 if id1 < id2:
                     if self.in_range(robot1, robot2):
                         self.record_poses(robot1, robot2)
+                        self.local_interactions -= 1 # don't double count local interactions in step 0
             obs_n.append(robot1.get_obs())
             pose_n.append(robot1.get_poses())
 
