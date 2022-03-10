@@ -35,6 +35,7 @@ batch_size = 100
 n_episode = 200000
 max_steps = 50
 episodes_before_train = 100
+checkpoint_frequency = 100
 
 start_episode = 0
 skipped_episodes = 0
@@ -164,7 +165,7 @@ for i_episode in range(start_episode, n_episode):
 
     if not empty_frontier:
         maddpg.episode_done += 1
-        if maddpg.episode_done % 100 == 0:
+        if maddpg.episode_done % checkpoint_frequency == 0:
             print('Save Models......')
             if not os.path.exists(MODEL_DIR):
                 os.makedirs(MODEL_DIR)
@@ -178,7 +179,13 @@ for i_episode in range(start_episode, n_episode):
                 dicts['episode_done'] = maddpg.episode_done
                 dicts['memory'] = maddpg.memory
 
-        th.save(dicts, MODEL_DIR + '/model-%d.pth' % (config['robots']['number']))
+            if maddpg.episode_done % checkpoint_frequency * 3 == 0:
+                th.save(dicts, MODEL_DIR + '/model-%d-1.pth' % (config['robots']['number']))
+            elif maddpg.episode_done % checkpoint_frequency * 2 == 0:
+                th.save(dicts, MODEL_DIR + '/model-%d-2.pth' % (config['robots']['number']))
+            elif maddpg.episode_done % checkpoint_frequency == 0:
+                th.save(dicts, MODEL_DIR + '/model-%d-3.pth' % (config['robots']['number']))
+
         print('Episode: %d, reward = %f' % (maddpg.episode_done, total_reward))
         reward_record.append(total_reward)
         # visual
