@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import yaml
 
-from decentralized_exploration.dme_drl.frontier_utils import merge_frontiers_and_remove_pose, remove_pose_from_frontier, \
-    cleanup_frontier
+from decentralized_exploration.dme_drl.frontier_utils import merge_frontiers_and_remove_pose,\
+    remove_pose_from_frontier, cleanup_frontier
 from decentralized_exploration.dme_drl.robot import Robot
 from decentralized_exploration.core.robots.utils.field_of_view import bresenham
 from decentralized_exploration.dme_drl.constants import render_world, PROJECT_PATH, CONFIG_PATH, manual_check, \

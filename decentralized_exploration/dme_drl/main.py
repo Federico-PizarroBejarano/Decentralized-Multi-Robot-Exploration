@@ -151,7 +151,7 @@ for i_episode in range(n_episode):
             c_loss, a_loss = maddpg.update_policy()
         if done:
             break
-    if manual_check:
+    if True:
 	    exit()
 
     if not empty_frontier:

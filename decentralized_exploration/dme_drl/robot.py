@@ -1,9 +1,8 @@
-import os
+import numpy as np
+import matplotlib.pyplot as plt
 import numpy as np
 import yaml
-import cv2
-import matplotlib.pyplot as plt
-import decentralized_exploration.dme_drl.sim_utils as sim_utils
+
 from decentralized_exploration.core.robots.utils.field_of_view import bresenham
 from decentralized_exploration.dme_drl.frontier_utils import update_frontier_and_remove_pose
 from decentralized_exploration.dme_drl.constants import CONFIG_PATH, render_robot_map, RESET_ROBOT_PATH, manual_check, \

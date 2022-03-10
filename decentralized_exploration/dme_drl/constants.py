@@ -12,22 +12,21 @@ else:
 CONFIG_PATH = PROJECT_PATH + '/assets/config.yaml'
 MODEL_DIR = PROJECT_PATH + '/model/'
 
-manual_check = True
+manual_check = False
 
-if manual_check:
-    MANUAL_CHECK_PATH = PROJECT_PATH + '/manual_check/'
-    shutil.rmtree(MANUAL_CHECK_PATH)
-    os.makedirs(MANUAL_CHECK_PATH, exist_ok=True)
+MANUAL_CHECK_PATH = PROJECT_PATH + '/manual_check/'
+shutil.rmtree(MANUAL_CHECK_PATH)
+os.makedirs(MANUAL_CHECK_PATH, exist_ok=True)
 
-    RESET_WORLD_PATH = MANUAL_CHECK_PATH + '/reset_world/'
-    os.makedirs(RESET_WORLD_PATH, exist_ok=True)
-    RESET_ROBOT_PATH = MANUAL_CHECK_PATH + '/reset_robot/'
-    os.makedirs(RESET_ROBOT_PATH, exist_ok=True)
+RESET_WORLD_PATH = MANUAL_CHECK_PATH + '/reset_world/'
+os.makedirs(RESET_WORLD_PATH, exist_ok=True)
+RESET_ROBOT_PATH = MANUAL_CHECK_PATH + '/reset_robot/'
+os.makedirs(RESET_ROBOT_PATH, exist_ok=True)
 
-    STEP_WORLD_PATH = MANUAL_CHECK_PATH + '/step_world/'
-    os.makedirs(STEP_WORLD_PATH, exist_ok=True)
-    STEP_ROBOT_PATH = MANUAL_CHECK_PATH + '/step_robot/'
-    os.makedirs(STEP_ROBOT_PATH, exist_ok=True)
+STEP_WORLD_PATH = MANUAL_CHECK_PATH + '/step_world/'
+os.makedirs(STEP_WORLD_PATH, exist_ok=True)
+STEP_ROBOT_PATH = MANUAL_CHECK_PATH + '/step_robot/'
+os.makedirs(STEP_ROBOT_PATH, exist_ok=True)
 
 
 # Setup the render
