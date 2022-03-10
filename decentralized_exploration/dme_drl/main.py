@@ -35,12 +35,15 @@ batch_size = 100
 n_episode = 200000
 max_steps = 50
 episodes_before_train = 100
+
+start_episode = 0
 skipped_episodes = 0
 
 load_model = False
 
 maddpg = MADDPG(n_agents, n_agents, n_actions, n_pose, batch_size, capacity,
                 episodes_before_train)
+
 with open(CONFIG_PATH, 'r') as stream:
     config = yaml.safe_load(stream)
 
@@ -60,9 +63,14 @@ if load_model:
         for i, critic_optim in enumerate(maddpg.critic_optimizer):
             critic_optim.load_state_dict(checkpoints['critic_optim_%d' % (i)])
 
+        start_episode = checkpoints['start_episode']
+        maddpg.episode_done = checkpoints['episode_done']
+        maddpg.memory = checkpoints['memory']
+
 
 FloatTensor = th.cuda.FloatTensor if maddpg.use_cuda else th.FloatTensor
-for i_episode in range(n_episode):
+for i_episode in range(start_episode, n_episode):
+
     try:
         obs,pose = world.reset()
         pose = th.tensor(pose)
@@ -166,7 +174,11 @@ for i_episode in range(n_episode):
                 dicts['critic_%d' % (i)] = maddpg.critics_target[i].state_dict()
                 dicts['actor_optim_%d' % (i)] = maddpg.actor_optimizer[i].state_dict()
                 dicts['critic_optim_%d' % (i)] = maddpg.critic_optimizer[i].state_dict()
-            th.save(dicts, MODEL_DIR + '/model-%d.pth' % (config['robots']['number']))
+                dicts['start_episode'] = i_episode + 1
+                dicts['episode_done'] = maddpg.episode_done
+                dicts['memory'] = maddpg.memory
+
+        th.save(dicts, MODEL_DIR + '/model-%d.pth' % (config['robots']['number']))
         print('Episode: %d, reward = %f' % (maddpg.episode_done, total_reward))
         reward_record.append(total_reward)
         # visual
