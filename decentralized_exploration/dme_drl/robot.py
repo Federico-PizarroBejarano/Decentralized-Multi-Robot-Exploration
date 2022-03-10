@@ -34,8 +34,10 @@ class Robot():
         self.frontier = set()
         self.frontier_by_direction = []
         self.seen_robots = set()
+        self.episode = -1
+        self.time_step = -1
         self.sub_time_step = -1
-        if render_robot_map or manual_check:# and self.id == ID:
+        if render_robot_map or manual_check:
             self.fig = plt.figure('robot ' + str(self.id))
             self.fig.clf()
             self.ax = self.fig.add_subplot(111)
@@ -59,15 +61,17 @@ class Robot():
         self.slam_map = np.ones_like(self.maze) * self.config['color']['uncertain']
         self.pose = self._init_pose()
         self.poses = np.ones((1, self.number * 2)) * (-1)
+        self.episode += 1
+        self.time_step -= 1
         self.sub_time_step = -1
 
-        self.render(RESET_ROBOT_PATH + 'reset_robot_{}_before_scan'.format(self.id))
+        self.render(RESET_ROBOT_PATH + 'r{}_e{}_t{}_before_reset'.format(self.id, self.episode, self.time_step))
 
         occupied_points, free_points = self._scan()
         self._update_map(occupied_points, free_points)
         self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
 
-        self.render(RESET_ROBOT_PATH + 'reset_robot_{}_after_scan'.format(self.id))
+        self.render(RESET_ROBOT_PATH + 'r{}_e{}_t{}_after_reset'.format(self.id, self.episode, self.time_step))
 
         self.last_map = self.slam_map.copy()
 
@@ -180,12 +184,17 @@ class Robot():
 
     def _move_one_step(self, next_point):
         if self._is_legal(next_point):
+            self.render(STEP_ROBOT_PATH + 'r{}_e{}_t{}_s{}_before_step'.format(self.id, self.episode, self.time_step, self.counter))
             self.pose = next_point
+
             map_temp = np.copy(self.slam_map)  # 临时地图，存储原有的slam地图
+
             occupied_points, free_points = self._scan()
             self._update_map(occupied_points, free_points)
             self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
+
             map_increment = np.count_nonzero(map_temp - self.slam_map)  # map increment
+            self.render(STEP_ROBOT_PATH + 'r{}_e{}_t{}_s{}_after_step'.format(self.id, self.episode, self.time_step, self.counter))
             return map_increment
         else:
             return -1
@@ -202,6 +211,7 @@ class Robot():
 
 
     def step(self, action):
+        self.time_step += 1
         y, x = self.pose
         y_dsti, x_dsti = self.frontier_by_direction[action][0]
         distance_min = np.sqrt((y - y_dsti) ** 2 + (x - x_dsti) ** 2)

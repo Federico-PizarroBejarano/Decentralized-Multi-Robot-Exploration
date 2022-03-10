@@ -89,7 +89,7 @@ class World(gym.Env):
             rbt.world = self
             rbt.reset(np.copy(self.maze))
 
-        self.render(RESET_WORLD_PATH + 'after_reset')
+        self.render(RESET_WORLD_PATH + 'e{}_t{}_after_reset'.format(self.episode, self.time_step))
         obs_n = []
         pose_n = []
 
