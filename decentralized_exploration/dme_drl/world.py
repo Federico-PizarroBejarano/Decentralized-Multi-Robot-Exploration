@@ -96,7 +96,6 @@ class World(gym.Env):
                 if id1 < id2:
                     if self.in_range(robot1, robot2):
                         self.record_poses(robot1, robot2)
-                        self.communicate(robot1, robot2)
             obs_n.append(robot1.get_obs())
             pose_n.append(robot1.get_poses())
 
