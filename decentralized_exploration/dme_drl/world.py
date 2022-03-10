@@ -157,37 +157,19 @@ class World(gym.Env):
         info_n = []
         pose_n = []
 
-        if manual_check:
-            step_world_path = STEP_WORLD_PATH + 'e{}_t{}/'.format(self.episode, self.time_step)
-            step_robot_path = STEP_ROBOT_PATH + 'e{}_t{}/'.format(self.episode, self.time_step)
-            os.makedirs(step_world_path, exist_ok=True)
-            os.makedirs(step_robot_path, exist_ok=True)
-            self.render(step_world_path + 'before_merge_and_comm')
-
-        for id1, robot in enumerate(self.robots):
-            if action_n[id1] == -1:
+        for id, robot in enumerate(self.robots):
+            if action_n[id] == -1:
                 # NOOP
                 rwd = -2
                 info = 'NOOP'
             else:
-                if manual_check:
-                    rwd, done, info = robot.step(action_n[id1], step_robot_path)
-                else:
-                    rwd, done, info = robot.step(action_n[id1])
+                rwd, done, info = robot.step(action_n[id])
+
             rwd_n.append(rwd)
             info_n.append(info)
-        self.slam_map = self._merge_map(self.slam_map)
-        if manual_check:
-            self.render(step_world_path + 'after_merge')
-        for id1, robot1 in enumerate(self.robots):
-            for id2, robot2 in enumerate(self.robots):
-                if id1 < id2:
-                    if self.in_range(robot1, robot2):
-                        self.record_poses(robot1, robot2)
-                        self.communicate(robot1, robot2)
-            obs_n.append(robot1.get_obs())
-            pose_n.append(robot1.get_poses())
-            robot1.seen_robots = set() # clear seen robots
+            obs_n.append(robot.get_obs())
+            pose_n.append(robot.get_poses())
+            robot.seen_robots = set() # clear seen robots
 
         done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) > 0.95
         return obs_n,rwd_n,done,info_n,pose_n
