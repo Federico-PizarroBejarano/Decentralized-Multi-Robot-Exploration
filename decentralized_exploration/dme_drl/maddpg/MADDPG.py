@@ -40,7 +40,7 @@ class MADDPG:
         # self.var = [1.0 for i in range(n_agents)]
         self.var = [0.01 for i in range(n_agents)]
 
-        self.lr = 0.0001
+        self.lr = 0.001
 
         self.actors = [Actor(n_agents, dim_pose) for i in range(n_agents)]
         self.critics = [Critic(n_agents, dim_obs,
@@ -164,5 +164,4 @@ class MADDPG:
             act = self.actors[i](sb.unsqueeze(0),pose_batch_i.unsqueeze(0)).squeeze()
             act = t.clamp(act, 1e-6, 1-1e-6)
             actions[i, :] = act
-        self.steps_done += 1
         return t.squeeze(actions)

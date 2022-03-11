@@ -9,7 +9,6 @@ random.seed(1234)
 
 from tensorboardX import SummaryWriter
 from copy import copy,deepcopy
-from torch.distributions import categorical
 import time
 import os
 import yaml
@@ -17,7 +16,6 @@ import yaml
 from decentralized_exploration.dme_drl.constants import PROJECT_PATH, CONFIG_PATH, MODEL_DIR, manual_check
 from decentralized_exploration.dme_drl.world import World
 from decentralized_exploration.dme_drl.maddpg.MADDPG import MADDPG
-from decentralized_exploration.dme_drl.sim_utils import onehot_from_action
 
 # tensorboard writer
 time_now = time.strftime("%m%d_%H%M%S")
@@ -97,34 +95,14 @@ for i_episode in range(start_episode, n_episode):
     empty_frontier = False
     for t in range(max_steps):
         obs_history = obs_history.type(FloatTensor)
-        action_probs = maddpg.select_action(obs_history, pose).data.cpu()
-        action_probs_valid = np.copy(action_probs)
-        action = []
-        for i,probs in enumerate(action_probs):
-            rbt = world.robots[i]
-            for j,frt in enumerate(rbt.get_and_update_frontier_by_direction()):
-                if len(frt) == 0:
-                    action_probs_valid[i][j] = 0
-            if np.array_equal(action_probs_valid[i], np.zeros_like(action_probs_valid[i])):
-                skipped_episodes += 1
-                empty_frontier = True
-                break
-            else:
-                act = categorical.Categorical(probs=th.tensor(action_probs_valid[i]))
-                sample_act = act.sample()
-                action.append(sample_act)
 
-        if empty_frontier:
+        obs_, reward, done, _, next_pose, action = world.step(maddpg, obs_history.clone().detach(), pose.clone().detach())
+
+        if done is None: # empty frontier
+            skipped_episodes += 1
+            empty_frontier = True
             break
 
-        action = th.tensor(onehot_from_action(action))
-        acts = np.argmax(action,axis=1)
-        for i in range(len(acts)):
-            if len(world.robots[i].frontier_by_direction[acts[i]]) == 0:
-                # NOOP 指令
-                acts[i] = -1
-
-        obs_, reward, done, _, next_pose = world.step(acts)
         next_pose = th.tensor(next_pose)
         reward = th.FloatTensor(reward).type(FloatTensor)
         obs_ = np.stack(obs_)
@@ -193,7 +171,7 @@ for i_episode in range(start_episode, n_episode):
         writer.add_scalars('scalar/sub_time_step', {'sub_time_step': max([robot.sub_time_step + 1 for robot in world.robots])}, maddpg.episode_done)
         writer.add_scalars('scalar/distance', {'distance': sum([robot.distance for robot in world.robots])}, maddpg.episode_done)
 
-        writer.add_histogram('hist/action_probs_valid', values=action_probs_valid[0], global_step=maddpg.episode_done)
+        writer.add_histogram('hist/action_probs_valid', values=world.robots[0].action, global_step=maddpg.episode_done)
 
         if maddpg.episode_done > episodes_before_train:
             writer.add_scalars('scalar/mean_rwd',{'mean_reward':np.mean(reward_record[-100:])}, maddpg.episode_done)
@@ -204,5 +182,6 @@ for i_episode in range(start_episode, n_episode):
 
         if maddpg.episode_done == maddpg.episodes_before_train:
             print('training now begins...')
+
 
 world.close()

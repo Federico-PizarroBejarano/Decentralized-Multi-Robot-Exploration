@@ -4,6 +4,7 @@ import gym
 import matplotlib.pyplot as plt
 import numpy as np
 import yaml
+import torch as th
 
 from decentralized_exploration.dme_drl.frontier_utils import merge_frontiers_and_remove_pose,\
     remove_pose_from_frontier, cleanup_frontier
@@ -153,37 +154,49 @@ class World(gym.Env):
             elif render_world:
                 plt.pause(0.5)
 
-    def step(self, action_n):
-        # action_n: 0~7
+    def step(self, maddpg, obs_history, pose):
         self.time_step += 1
         obs_n = []
         rwd_n = []
         info_n = []
         pose_n = []
+        action_n = None
 
         self.render(STEP_WORLD_PATH + 'e{}_t{}_pre_step'.format(self.episode, self.time_step))
 
-        for id, robot in enumerate(self.robots):
-            if action_n[id] == -1:
-                # NOOP
-                rwd = -2
-                info = 'NOOP'
-            else:
-                rwd, done, info = robot.step(action_n[id])
+        for robot in self.robots:
+
+            rwd, info = robot.step(maddpg, obs_history, pose)
+
+            if rwd is None:
+                return None, None, None, None, None, None
 
             rwd_n.append(rwd)
             info_n.append(info)
             obs_n.append(robot.get_obs())
-            pose_n.append(robot.get_poses())
+            if robot.id == 0:
+                action_n = robot.get_action()
+            else:
+                action_n = th.cat((action_n,robot.get_action()))
 
-        for robot in self.robots:
-            robot.seen_robots.clear() # clear seen robots
+        # get accurate poses
+        for id1, robot1 in enumerate(self.robots):
+            for id2, robot2 in enumerate(self.robots):
+                if id1 < id2:
+                    if self.in_range(robot1, robot2):
+                        self.record_poses(robot1, robot2)
+                        self.local_interactions -= 1 # don't double count local interactions in step 0
+            robot1.seen_robots.clear()
+            pose_n.append(robot1.get_poses())
+
+
+        maddpg.steps_done += 1
 
         self.slam_map = self._merge_map(self.slam_map)
         self.render(STEP_WORLD_PATH + 'e{}_t{}_pro_step'.format(self.episode, self.time_step))
 
         done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) > 0.95
-        return obs_n,rwd_n,done,info_n,pose_n
+        return obs_n,rwd_n,done,info_n,pose_n, action_n
 
     def _can_communicate(self):
         return np.random.randint(100) > self.probability_of_failed_communication

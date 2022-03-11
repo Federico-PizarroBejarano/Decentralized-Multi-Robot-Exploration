@@ -4,6 +4,10 @@ import numpy as np
 import yaml
 import os
 
+import torch as th
+from torch.distributions import categorical
+from decentralized_exploration.dme_drl.sim_utils import onehot_from_action
+
 from decentralized_exploration.core.robots.utils.field_of_view import bresenham
 from decentralized_exploration.dme_drl.frontier_utils import update_frontier_and_remove_pose
 from decentralized_exploration.dme_drl.constants import CONFIG_PATH, render_robot_map, RESET_ROBOT_PATH, manual_check, \
@@ -213,16 +217,50 @@ class Robot():
                 flag = True
         return flag
 
+    def select_action(self, maddpg, obs_history, pose):
+        obs_history[self.id, 0:20, :] = th.from_numpy(self.get_obs())
+        pose[self.id] = th.from_numpy(self.get_poses())
 
-    def step(self, action):
+        action_probs = maddpg.select_action(obs_history, pose).data.cpu()
+        action_probs_valid = np.copy(action_probs)
+        action = []
+
+        for direction, frontier in enumerate(self.get_and_update_frontier_by_direction()):
+            if len(frontier) == 0:
+                action_probs_valid[self.id][direction] = 0
+
+        if np.array_equal(action_probs_valid[self.id], np.zeros_like(action_probs_valid[self.id])):
+            return None
+
+        else:
+            act = categorical.Categorical(probs=th.tensor(action_probs_valid[self.id]))
+            sample_act = act.sample()
+            action.append(sample_act)
+
+        self.action = th.tensor(onehot_from_action(action))
+        acts = np.argmax(self.action, axis=1)[0]
+
+        if len(self.frontier_by_direction[acts]) == 0:
+            return -1
+        else:
+            return acts
+
+
+    def step(self, maddpg, obs_history, pose):
         self.time_step += 1
+
         self.render_path = STEP_ROBOT_PATH + 'e{}_t{}/'.format(self.episode, self.time_step)
         if manual_check:
             os.makedirs(self.render_path, exist_ok=True)
+
         y, x = self.pose
-        self.poses = np.ones((1, self.number * 2)) * (-1)
-        self.poses[:, 2 * self.id] = self.pose[0]
-        self.poses[:, 2 * self.id + 1] = self.pose[1]
+
+        action = self.select_action(maddpg, obs_history, pose)
+
+        if action is None: # empty frontier
+            return None, None
+        elif action == -1:
+            return -2, None
 
         y_dsti, x_dsti = self.frontier_by_direction[action][0]
         distance_min = np.sqrt((y - y_dsti) ** 2 + (x - x_dsti) ** 2)
@@ -254,10 +292,15 @@ class Robot():
         self.destination = None
         self.last_map = self.slam_map.copy()
         rwd = self.reward(self.counter, increment_his)
-        done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(
-            self.maze == self.config['color']['free']) > 0.95
         info = 'Robot %d has moved to the target point' % (self.id)
-        return rwd, done, info
+
+        # cleanup
+        self.seen_robots.clear() # clear seen self
+        self.poses = np.ones((1, self.number * 2)) * (-1)
+        self.poses[:, 2 * self.id] = self.pose[0]
+        self.poses[:, 2 * self.id + 1] = self.pose[1]
+
+        return rwd, info
 
 
 
@@ -274,6 +317,10 @@ class Robot():
 
     def get_poses(self):
         return self.poses.copy()
+
+    def get_action(self):
+        return self.action.clone().detach()
+
 
     def get_and_update_frontier_by_direction(self):
         """获取前沿，采用地图相减的算法"""
