@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import numpy as np
 import yaml
+import os
 
 from decentralized_exploration.core.robots.utils.field_of_view import bresenham
 from decentralized_exploration.dme_drl.frontier_utils import update_frontier_and_remove_pose
@@ -37,6 +38,7 @@ class Robot():
         self.episode = -1
         self.time_step = -1
         self.sub_time_step = -1
+        self.distance = 0
         if render_robot_map or manual_check:
             self.fig = plt.figure('robot ' + str(self.id))
             self.fig.clf()
@@ -64,14 +66,15 @@ class Robot():
         self.episode += 1
         self.time_step = -1
         self.sub_time_step = -1
+        self.distance = 0
 
-        self.render(RESET_ROBOT_PATH + 'r{}_e{}_t{}_before_reset'.format(self.id, self.episode, self.time_step))
+        self.render(RESET_ROBOT_PATH + 'r{}_e{}_t{}_pre_reset'.format(self.id, self.episode, self.time_step))
 
         occupied_points, free_points = self._scan()
         self._update_map(occupied_points, free_points)
         self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
 
-        self.render(RESET_ROBOT_PATH + 'r{}_e{}_t{}_after_reset'.format(self.id, self.episode, self.time_step))
+        self.render(RESET_ROBOT_PATH + 'r{}_e{}_t{}_pro_reset'.format(self.id, self.episode, self.time_step))
 
         self.last_map = self.slam_map.copy()
 
@@ -110,7 +113,7 @@ class Robot():
 
             if manual_check:
                 self.fig.savefig(fname)
-                np.save(fname, self.slam_map)
+                # np.save(fname, self.slam_map)
             else:
                 plt.pause(0.5)
 
@@ -184,7 +187,7 @@ class Robot():
 
     def _move_one_step(self, next_point):
         if self._is_legal(next_point):
-            self.render(STEP_ROBOT_PATH + 'r{}_e{}_t{}_s{}_before_step'.format(self.id, self.episode, self.time_step, self.counter))
+            self.render(self.render_path + 'r{}_s{}_pre_step'.format(self.id, self.counter))
             self.pose = next_point
 
             map_temp = np.copy(self.slam_map)  # 临时地图，存储原有的slam地图
@@ -194,7 +197,7 @@ class Robot():
             self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
 
             map_increment = np.count_nonzero(map_temp - self.slam_map)  # map increment
-            self.render(STEP_ROBOT_PATH + 'r{}_e{}_t{}_s{}_after_step'.format(self.id, self.episode, self.time_step, self.counter))
+            self.render(self.render_path + 'r{}_s{}_pro_step'.format(self.id, self.counter))
             return map_increment
         else:
             return -1
@@ -202,17 +205,30 @@ class Robot():
     def in_vicinity_and_not_yet_seen(self):
         flag = False
         for robot in self.robots:
-            if self.id != robot.id:
-                if self.world.in_range(self, robot) and robot.id not in self.seen_robots:
-                        self.world.record_poses(self, robot)
-                        self.world.communicate(self, robot)
-                        flag = True
+            if self.id != robot.id and self.world.in_range(self, robot) and robot.id not in self.seen_robots:
+                self.world.record_poses(self, robot)
+                self.world.communicate(self, robot)
+                flag = True
         return flag
 
 
     def step(self, action):
         self.time_step += 1
+        self.render_path = STEP_ROBOT_PATH + 'e{}_t{}/'.format(self.episode, self.time_step)
+        os.makedirs(self.render_path, exist_ok=True)
         y, x = self.pose
+
+        self.get_and_update_frontier_by_direction()
+
+        self.counter = 0
+
+        if len(self.frontier_by_direction[action]) == 0:
+            rwd = self.reward(self.counter, -1)
+            done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(
+                self.maze == self.config['color']['free']) > 0.95
+            info = 'Robot %d bad action' % (self.id)
+            return rwd, done, info
+
         y_dsti, x_dsti = self.frontier_by_direction[action][0]
         distance_min = np.sqrt((y - y_dsti) ** 2 + (x - x_dsti) ** 2)
         for (y_, x_) in self.frontier_by_direction[action]:
@@ -222,7 +238,6 @@ class Robot():
                 distance_min = distance
         self.destination = (y_dsti, x_dsti)
         self.path = self.navigator.navigate(self.maze, self.pose, self.destination)
-        self.counter = 0
 
         if self.path is None:
             raise Exception('The target point is not accessible')
@@ -233,6 +248,7 @@ class Robot():
                     break
 
                 self.counter += 1
+                self.distance += ((point[0] - self.pose[0])**2 + (point[1] - self.pose[1])**2)**0.5
 
                 map_increment = self._move_one_step(point)
                 increment_his.append(map_increment)
@@ -258,7 +274,6 @@ class Robot():
 
     def get_obs(self):
         """每一个机器人都获取自己观察视野内的本地地图"""
-        self.get_and_update_frontier_by_direction()
         return self.slam_map.copy()
 
     def get_poses(self):

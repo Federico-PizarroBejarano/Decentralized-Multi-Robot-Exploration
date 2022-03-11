@@ -100,7 +100,6 @@ for i_episode in range(start_episode, n_episode):
         action_probs = maddpg.select_action(obs_history, pose).data.cpu()
         action_probs_valid = np.copy(action_probs)
         action = []
-        print('action_probs_valid.shape', action_probs_valid.shape)
         for i,probs in enumerate(action_probs):
             rbt = world.robots[i]
             for j,frt in enumerate(rbt.get_and_update_frontier_by_direction()):
@@ -112,9 +111,7 @@ for i_episode in range(start_episode, n_episode):
                 break
             else:
                 act = categorical.Categorical(probs=th.tensor(action_probs_valid[i]))
-                print('act', act.probs)
                 sample_act = act.sample()
-                print('sample_act', sample_act)
                 action.append(sample_act)
 
         if empty_frontier:
@@ -160,8 +157,6 @@ for i_episode in range(start_episode, n_episode):
             c_loss, a_loss = maddpg.update_policy()
         if done:
             break
-    if True:
-	    exit()
 
     if not empty_frontier:
         maddpg.episode_done += 1
@@ -196,6 +191,7 @@ for i_episode in range(start_episode, n_episode):
             'progress': np.sum(world.slam_map == world.config['color']['free']) / np.sum(
                 world.maze == world.config['color']['free'])}, maddpg.episode_done)
         writer.add_scalars('scalar/sub_time_step', {'sub_time_step': max([robot.sub_time_step + 1 for robot in world.robots])}, maddpg.episode_done)
+        writer.add_scalars('scalar/distance', {'distance': sum([robot.distance for robot in world.robots])}, maddpg.episode_done)
 
         writer.add_histogram('hist/action_probs_valid', values=action_probs_valid[0], global_step=maddpg.episode_done)
 

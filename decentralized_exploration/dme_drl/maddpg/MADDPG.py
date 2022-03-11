@@ -40,13 +40,15 @@ class MADDPG:
         # self.var = [1.0 for i in range(n_agents)]
         self.var = [0.01 for i in range(n_agents)]
 
+        self.lr = 0.0001
+
         self.actors = [Actor(n_agents, dim_pose) for i in range(n_agents)]
         self.critics = [Critic(n_agents, dim_obs,
                                dim_act, dim_pose) for i in range(n_agents)]
         self.critic_optimizer = [Adam(x.parameters(),
-                                      lr=0.001) for x in self.critics]
+                                      lr=self.lr) for x in self.critics]
         self.actor_optimizer = [Adam(x.parameters(),
-                                     lr=0.001) for x in self.actors]    # lr = 0.0001
+                                     lr=self.lr) for x in self.actors]    # lr = 0.0001
 
         self.actors_target = deepcopy(self.actors)
         self.critics_target = deepcopy(self.critics)

@@ -58,14 +58,14 @@ class World(gym.Env):
 
     def communicate(self, robot1, robot2):
         if self._can_communicate():
-            robot1.render(STEP_ROBOT_PATH + 'r{}_e{}_t{}_s{}_before_comm'.format(robot1.id, robot1.episode, robot1.time_step, robot1.counter))
-            robot2.render(STEP_ROBOT_PATH + 'r{}_e{}_t{}_s{}_before_comm'.format(robot2.id, robot2.episode, 0, 0))
+            robot1.render(robot1.render_path + 'r{}_s{}_pre_merge_with_r{}_former'.format(robot1.id, robot1.counter, robot2.id))
+            robot2.render(robot1.render_path + 'r{}_s{}_pre_merge_with_r{}_latter'.format(robot1.id, robot1.counter, robot2.id))
 
             self._merge_maps(robot1, robot2)
             self._merge_frontiers_after_communicate(robot1, robot2)
 
-            robot1.render(STEP_ROBOT_PATH + 'r{}_e{}_t{}_s{}_after_comm'.format(robot1.id, robot1.episode, robot1.time_step, robot1.counter))
-            robot2.render(STEP_ROBOT_PATH + 'r{}_e{}_t{}_s{}_after_comm'.format(robot2.id, robot2.episode, 0, 0))
+            robot1.render(robot1.render_path + 'r{}_s{}_pro_merge_with_r{}_former'.format(robot1.id, robot1.counter, robot2.id))
+            robot2.render(robot1.render_path + 'r{}_s{}_pro_merge_with_r{}_latter'.format(robot1.id, robot1.counter, robot2.id))
 
 
     def reset(self,random=True):
@@ -89,7 +89,7 @@ class World(gym.Env):
             rbt.world = self
             rbt.reset(np.copy(self.maze))
 
-        self.render(RESET_WORLD_PATH + 'e{}_t{}_after_reset'.format(self.episode, self.time_step))
+        self.render(RESET_WORLD_PATH + 'e{}_t{}_pro_reset'.format(self.episode, self.time_step))
         obs_n = []
         pose_n = []
 
@@ -99,6 +99,7 @@ class World(gym.Env):
                     if self.in_range(robot1, robot2):
                         self.record_poses(robot1, robot2)
                         self.local_interactions -= 1 # don't double count local interactions in step 0
+            robot1.seen_robots.clear()
             obs_n.append(robot1.get_obs())
             pose_n.append(robot1.get_poses())
 
@@ -148,7 +149,7 @@ class World(gym.Env):
             self.ax.set_ylim(-0.5, 19.5)
             if manual_check:
                 self.fig.savefig(fname)
-                np.save(fname, self.slam_map)
+                # np.save(fname, self.slam_map)
             elif render_world:
                 plt.pause(0.5)
 
@@ -160,7 +161,7 @@ class World(gym.Env):
         info_n = []
         pose_n = []
 
-        self.render(STEP_WORLD_PATH + 'e{}_t{}_before_step'.format(self.episode, self.time_step))
+        self.render(STEP_WORLD_PATH + 'e{}_t{}_pre_step'.format(self.episode, self.time_step))
 
         for id, robot in enumerate(self.robots):
             if action_n[id] == -1:
@@ -174,9 +175,11 @@ class World(gym.Env):
             info_n.append(info)
             obs_n.append(robot.get_obs())
             pose_n.append(robot.get_poses())
-            robot.seen_robots = set() # clear seen robots
 
-        self.render(STEP_WORLD_PATH + 'e{}_t{}_after_step'.format(self.episode, self.time_step))
+        for robot in self.robots:
+            robot.seen_robots.clear() # clear seen robots
+
+        self.render(STEP_WORLD_PATH + 'e{}_t{}_pro_step'.format(self.episode, self.time_step))
 
         done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) > 0.95
         return obs_n,rwd_n,done,info_n,pose_n

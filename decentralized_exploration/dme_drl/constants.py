@@ -12,7 +12,7 @@ else:
 CONFIG_PATH = PROJECT_PATH + '/assets/config.yaml'
 MODEL_DIR = PROJECT_PATH + '/model/'
 
-manual_check = True
+manual_check = False
 
 MANUAL_CHECK_PATH = PROJECT_PATH + '/manual_check/'
 shutil.rmtree(MANUAL_CHECK_PATH)
@@ -30,7 +30,7 @@ os.makedirs(STEP_ROBOT_PATH, exist_ok=True)
 
 
 # Setup the render
-render_world = True
+render_world = False
 render_robot_map = False
 
 
