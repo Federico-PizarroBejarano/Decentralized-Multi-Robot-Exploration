@@ -63,6 +63,8 @@ class Robot():
         self.slam_map = np.ones_like(self.maze) * self.config['color']['uncertain']
         self.pose = self._init_pose()
         self.poses = np.ones((1, self.number * 2)) * (-1)
+        self.poses[:, 2 * self.id] = self.pose[0]
+        self.poses[:, 2 * self.id + 1] = self.pose[1]
         self.episode += 1
         self.time_step = -1
         self.sub_time_step = -1
@@ -215,19 +217,12 @@ class Robot():
     def step(self, action):
         self.time_step += 1
         self.render_path = STEP_ROBOT_PATH + 'e{}_t{}/'.format(self.episode, self.time_step)
-        os.makedirs(self.render_path, exist_ok=True)
+        if manual_check:
+            os.makedirs(self.render_path, exist_ok=True)
         y, x = self.pose
-
-        self.get_and_update_frontier_by_direction()
-
-        self.counter = 0
-
-        if len(self.frontier_by_direction[action]) == 0:
-            rwd = self.reward(self.counter, -1)
-            done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(
-                self.maze == self.config['color']['free']) > 0.95
-            info = 'Robot %d bad action' % (self.id)
-            return rwd, done, info
+        self.poses = np.ones((1, self.number * 2)) * (-1)
+        self.poses[:, 2 * self.id] = self.pose[0]
+        self.poses[:, 2 * self.id + 1] = self.pose[1]
 
         y_dsti, x_dsti = self.frontier_by_direction[action][0]
         distance_min = np.sqrt((y - y_dsti) ** 2 + (x - x_dsti) ** 2)
@@ -238,6 +233,7 @@ class Robot():
                 distance_min = distance
         self.destination = (y_dsti, x_dsti)
         self.path = self.navigator.navigate(self.maze, self.pose, self.destination)
+        self.counter = 0
 
         if self.path is None:
             raise Exception('The target point is not accessible')

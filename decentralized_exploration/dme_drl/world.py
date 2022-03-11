@@ -38,7 +38,6 @@ class World(gym.Env):
         self.frontier = set()
         self.episode = -1
         self.time_step = -1
-        self.local_interactions = 0
         if render_world or manual_check:
             self.fig = plt.figure('global')
             self.fig.clf()
@@ -71,6 +70,7 @@ class World(gym.Env):
     def reset(self,random=True):
         self.episode += 1
         self.time_step = -1
+        self.local_interactions = 0
         if random:
             self.map_id = PROJECT_PATH + np.random.choice(self.map_id_set_train)
         else:
@@ -89,6 +89,7 @@ class World(gym.Env):
             rbt.world = self
             rbt.reset(np.copy(self.maze))
 
+        self.slam_map = self._merge_map(self.slam_map)
         self.render(RESET_WORLD_PATH + 'e{}_t{}_pro_reset'.format(self.episode, self.time_step))
         obs_n = []
         pose_n = []
@@ -110,7 +111,6 @@ class World(gym.Env):
 
     def render(self, fname=None):
         if manual_check or render_world:
-            self.slam_map = self._merge_map(self.slam_map)
             global_frontier = set()
 
             for robot in self.robots:
@@ -179,6 +179,7 @@ class World(gym.Env):
         for robot in self.robots:
             robot.seen_robots.clear() # clear seen robots
 
+        self.slam_map = self._merge_map(self.slam_map)
         self.render(STEP_WORLD_PATH + 'e{}_t{}_pro_step'.format(self.episode, self.time_step))
 
         done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) > 0.95
