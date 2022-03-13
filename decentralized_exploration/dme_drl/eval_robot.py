@@ -67,16 +67,15 @@ class EvalRobot(Robot):
         else:
             increment_his = []  # map increment list, record the history of it
             for i, point in enumerate(self.path):
-                if self.in_vicinity_and_not_yet_seen():
+                if self.in_vicinity_and_not_yet_seen() or self.sub_time_step == 300: # enforce sub_time_step limit
                     break
 
+                self.sub_time_step += 1
                 self.counter += 1
                 self.distance += ((point[0] - self.pose[0])**2 + (point[1] - self.pose[1])**2)**0.5
 
                 map_increment = self._move_one_step(point, action)
                 increment_his.append(map_increment)
-
-        self.sub_time_step += self.counter
 
         self.destination = None
         self.last_map = self.slam_map.copy()
