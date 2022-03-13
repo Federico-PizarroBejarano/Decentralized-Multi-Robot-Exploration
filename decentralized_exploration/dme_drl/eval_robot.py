@@ -22,6 +22,8 @@ class EvalRobot(Robot):
         self.time_step = -1
         self.sub_time_step = -1
         self.distance = 0
+        self.area_explored_history = []
+        self.distance_travelled_history = []
         self.probability_of_failed_scan = probability_of_failed_scan
 
         self.render(RESET_ROBOT_PATH + 'r{}_e{}_t{}_pre_reset'.format(self.id, self.episode, self.time_step))
@@ -72,9 +74,12 @@ class EvalRobot(Robot):
 
                 self.sub_time_step += 1
                 self.counter += 1
-                self.distance += ((point[0] - self.pose[0])**2 + (point[1] - self.pose[1])**2)**0.5
+                distance_travelled = ((point[0] - self.pose[0])**2 + (point[1] - self.pose[1])**2)**0.5
+                self.distance += distance_travelled
+                self.distance_travelled_history.append(distance_travelled)
 
                 map_increment = self._move_one_step(point, action)
+                self.area_explored_history.append(map_increment if map_increment != -1 else 0)
                 increment_his.append(map_increment)
 
         self.destination = None
