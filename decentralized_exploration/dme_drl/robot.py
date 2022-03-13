@@ -191,9 +191,9 @@ class Robot():
     def _is_legal(self, point):
         return self._is_in_bounds(point) and self._is_free_space(point) and self._is_one_step(point)
 
-    def _move_one_step(self, next_point):
+    def _move_one_step(self, next_point, action):
         if self._is_legal(next_point):
-            self.render(self.render_path + 'r{}_s{}_pre_step'.format(self.id, self.counter))
+            self.render(self.render_path + 'r{}_s{}_pre_step_{}'.format(self.id, self.counter, ACTION_TO_NAME[action]))
             self.pose = next_point
 
             map_temp = np.copy(self.slam_map)  # 临时地图，存储原有的slam地图
@@ -203,7 +203,7 @@ class Robot():
             self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
 
             map_increment = np.count_nonzero(map_temp - self.slam_map)  # map increment
-            self.render(self.render_path + 'r{}_s{}_pro_step'.format(self.id, self.counter))
+            self.render(self.render_path + 'r{}_s{}_pro_step_{}'.format(self.id, self.counter, ACTION_TO_NAME[action]))
             return map_increment
         else:
             return -1
@@ -284,7 +284,7 @@ class Robot():
                 self.counter += 1
                 self.distance += ((point[0] - self.pose[0])**2 + (point[1] - self.pose[1])**2)**0.5
 
-                map_increment = self._move_one_step(point)
+                map_increment = self._move_one_step(point, action)
                 increment_his.append(map_increment)
 
         self.sub_time_step += self.counter
