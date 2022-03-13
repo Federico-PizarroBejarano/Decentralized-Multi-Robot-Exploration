@@ -166,10 +166,16 @@ class World(gym.Env):
 
         for robot in self.robots:
 
+            self.slam_map = self._merge_map(self.slam_map)
+            done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) > 0.95
+
+            if done:
+                return None, None, None, 'done midstep', None, None
+
             rwd, info = robot.step(maddpg, obs_history, pose)
 
-            if rwd is None:
-                return None, None, None, None, None, None
+            if info == 'empty frontier':
+                return None, None, None, info, None, None
 
             rwd_n.append(rwd)
             info_n.append(info)
@@ -192,7 +198,6 @@ class World(gym.Env):
 
         maddpg.steps_done += 1
 
-        self.slam_map = self._merge_map(self.slam_map)
         self.render(STEP_WORLD_PATH + 'e{}_t{}_pro_step'.format(self.episode, self.time_step))
 
         done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) > 0.95

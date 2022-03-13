@@ -258,7 +258,7 @@ class Robot():
         action = self.select_action(maddpg, obs_history, pose)
 
         if action is None: # empty frontier
-            return None, None
+            return None, 'empty frontier'
         elif action == -1:
             return -2, None
 

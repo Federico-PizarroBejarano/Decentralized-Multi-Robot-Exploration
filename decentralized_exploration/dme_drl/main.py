@@ -96,9 +96,12 @@ for i_episode in range(start_episode, n_episode):
     for t in range(max_steps):
         obs_history = obs_history.type(FloatTensor)
 
-        obs_, reward, done, _, next_pose, action = world.step(maddpg, obs_history.clone().detach(), pose.clone().detach())
+        obs_, reward, done, info, next_pose, action = world.step(maddpg, obs_history.clone().detach(), pose.clone().detach())
 
-        if done is None: # empty frontier
+        if info == 'done midstep':
+            break
+
+        if info == None: # empty frontier
             skipped_episodes += 1
             empty_frontier = True
             break
