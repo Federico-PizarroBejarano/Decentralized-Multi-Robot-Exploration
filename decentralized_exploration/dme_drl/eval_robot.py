@@ -11,6 +11,9 @@ ID = 0
 
 class EvalRobot(Robot):
 
+    def get_pose(self):
+        return self.pose.copy()
+
     def reset(self, maze, pose, probability_of_failed_scan):
         self.maze = maze
         self.slam_map = np.ones_like(self.maze) * self.config['color']['uncertain']
@@ -24,6 +27,7 @@ class EvalRobot(Robot):
         self.distance = 0
         self.area_explored_history = []
         self.distance_travelled_history = []
+        self.pose_history = [self.get_pose()]
         self.probability_of_failed_scan = probability_of_failed_scan
 
         self.render(RESET_ROBOT_PATH + 'r{}_e{}_t{}_pre_reset'.format(self.id, self.episode, self.time_step))
@@ -31,6 +35,8 @@ class EvalRobot(Robot):
         occupied_points, free_points = self._scan()
         self._update_map(occupied_points, free_points)
         self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
+
+        self.map_history = [self.get_obs()]
 
         self.render(RESET_ROBOT_PATH + 'r{}_e{}_t{}_pro_reset'.format(self.id, self.episode, self.time_step))
 
@@ -79,6 +85,8 @@ class EvalRobot(Robot):
                 self.distance_travelled_history.append(distance_travelled)
 
                 map_increment = self._move_one_step(point, action)
+                self.pose_history.append(self.get_pose())
+                self.map_history.append(self.get_obs())
                 self.area_explored_history.append(map_increment if map_increment != -1 else 0)
                 increment_his.append(map_increment)
 
