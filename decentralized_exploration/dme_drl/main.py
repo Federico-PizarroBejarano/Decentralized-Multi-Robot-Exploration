@@ -152,9 +152,9 @@ for i_episode in range(start_episode, n_episode):
                 dicts['episode_done'] = maddpg.episode_done
                 dicts['memory'] = maddpg.memory
 
-            if maddpg.episode_done % checkpoint_frequency * 3 == 0:
+            if maddpg.episode_done % (checkpoint_frequency * 3) == 0:
                 th.save(dicts, MODEL_DIR + '/model-%d-1.pth' % (config['robots']['number']))
-            elif maddpg.episode_done % checkpoint_frequency * 2 == 0:
+            elif maddpg.episode_done % (checkpoint_frequency * 2) == 0:
                 th.save(dicts, MODEL_DIR + '/model-%d-2.pth' % (config['robots']['number']))
             elif maddpg.episode_done % checkpoint_frequency == 0:
                 th.save(dicts, MODEL_DIR + '/model-%d-3.pth' % (config['robots']['number']))
