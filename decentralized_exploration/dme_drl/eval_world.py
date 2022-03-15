@@ -1,6 +1,8 @@
 import numpy as np
 import torch as th
 
+from decentralized_exploration.core.robots.utils.field_of_view import bresenham
+
 from decentralized_exploration.dme_drl.constants import RESET_WORLD_PATH, STEP_WORLD_PATH, TEST_PATH
 from decentralized_exploration.dme_drl.eval_robot import EvalRobot
 from decentralized_exploration.dme_drl.world import World
@@ -111,3 +113,20 @@ class EvalWorld(World):
         else:
             robot1.comm_dropout_steps = self.failed_communication_interval
             robot2.comm_dropout_steps = self.failed_communication_interval
+
+
+    def is_local(self, pose1, pose2):
+        distance = max(abs(pose1[1] - pose2[1]),
+                       abs(pose1[0] - pose2[0]))
+        return distance <= self.robot_sensor_range and self.is_clear(pose1, pose2)
+
+    def is_clear(self, pose1, pose2):
+        coords_of_line = bresenham(start=pose1, end=pose2, world_map=self.maze, occupied_val=self.config['color']['obstacle'])
+        Y = [c[0] for c in coords_of_line]
+        X = [c[1] for c in coords_of_line]
+        points_in_line = self.maze[Y, X]
+
+        if np.any(points_in_line == self.config['color']['obstacle']):
+            return False
+        else:
+            return True

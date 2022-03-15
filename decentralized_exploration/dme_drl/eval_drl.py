@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 
 import numpy as np
 np.random.seed(1234)
@@ -140,6 +141,18 @@ for map_id in range(2, 3):
 
                         np.save(run_result_path+'robot_poses', pose_history)
                         np.save(run_result_path+'pixel_maps', map_history)
-                        print(np.unique(map_history))
+
+                        total_interactions = 0
+                        for step in range(1, most_steps):
+                            interactions = 0
+                            for robot1 in eval_world.robots:
+                                for robot2 in eval_world.robots:
+                                    if robot1.id < robot2.id:
+                                        if eval_world.is_local(robot1.pose_history[step], robot2.pose_history[step]):
+                                            interactions += 1
+                            if interactions == 3:
+                                interactions = 1
+                            total_interactions += interactions
+
 
                         exit()
