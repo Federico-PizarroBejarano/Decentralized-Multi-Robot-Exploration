@@ -107,7 +107,26 @@ for map_id in range(map_ids):
                             obs_history=next_obs_history
                             pose = next_pose
 
+                        most_steps = 0
+
                         for robot in eval_world.robots:
-                            print(np.array(robot.pose_history).shape)
-                            print(np.array(robot.map_history).shape)
+                            robot.pose_history = np.array(robot.pose_history)
+                            robot.map_history = np.array(robot.map_history)
+                            most_steps = max(most_steps, len(robot.pose_history))
+
+                        bitmap_history = np.zeros((most_steps, 20, 20)).astype('uint8')
+                        map_history = (np.ones((most_steps, 20, 20))*eval_world.config['color']['uncertain']).astype('uint8')
+
+                        for robot in eval_world.robots:
+                            steps = len(robot.pose_history)
+                            robot.pose_history = np.pad(robot.pose_history, [(0,most_steps-steps),(0,0)], 'edge')
+                            robot.map_history = np.pad(robot.map_history, [(0, most_steps-steps), (0,0), (0,0)], 'edge')
+                            bitmap_history = np.bitwise_or(bitmap_history, robot.map_history!=eval_world.config['color']['uncertain'])
+                        idx = np.where(bitmap_history == 1)
+                        maze_history = np.repeat(eval_world.maze[np.newaxis, :, :], most_steps, axis=0)
+                        map_history[idx] = maze_history[idx]
+                        idx = np.where(map_history == eval_world.config['color']['uncertain'])
+                        map_history[idx] = -1
+                        idx = np.where(map_history == eval_world.config['color']['obstacle'])
+                        map_history[idx] = 1
                         exit()
