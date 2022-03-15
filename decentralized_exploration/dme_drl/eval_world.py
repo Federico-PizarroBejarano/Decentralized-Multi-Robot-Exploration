@@ -54,7 +54,7 @@ class EvalWorld(World):
         pose_n = []
         action_n = None
 
-        self.render(STEP_WORLD_PATH + 'e{}_t{}_pre_step'.format(self.episode, self.time_step))
+        # self.render(STEP_WORLD_PATH + 'e{}_t{}_pre_step'.format(self.episode, self.time_step))
 
         for robot in self.robots:
 
@@ -90,6 +90,7 @@ class EvalWorld(World):
 
         maddpg.steps_done += 1
 
+        self.slam_map = self._merge_map(self.slam_map)
         self.render(STEP_WORLD_PATH + 'e{}_t{}_pro_step'.format(self.episode, self.time_step))
 
         done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) > 0.95

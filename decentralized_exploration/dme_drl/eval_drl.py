@@ -107,3 +107,7 @@ for map_id in range(map_ids):
                             obs_history=next_obs_history
                             pose = next_pose
 
+                        for robot in eval_world.robots:
+                            print(np.array(robot.pose_history).shape)
+                            print(np.array(robot.map_history).shape)
+                        exit()
