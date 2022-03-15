@@ -101,7 +101,7 @@ for i_episode in range(start_episode, n_episode):
         if info == 'done midstep':
             break
 
-        if info == None: # empty frontier
+        if info == 'empty frontier': # empty frontier
             skipped_episodes += 1
             empty_frontier = True
             break
