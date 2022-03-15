@@ -12,7 +12,7 @@ ID = 0
 class EvalRobot(Robot):
 
     def get_pose(self):
-        return self.pose.copy()
+        return np.array(self.pose)
 
     def reset(self, maze, pose, probability_of_failed_scan):
         self.maze = maze
@@ -29,6 +29,7 @@ class EvalRobot(Robot):
         self.distance_travelled_history = []
         self.pose_history = [self.get_pose()]
         self.probability_of_failed_scan = probability_of_failed_scan
+        self.comm_dropout_steps = 0
 
         self.render(RESET_ROBOT_PATH + 'r{}_e{}_t{}_pre_reset'.format(self.id, self.episode, self.time_step))
 
@@ -80,6 +81,8 @@ class EvalRobot(Robot):
 
                 self.sub_time_step += 1
                 self.counter += 1
+                self.comm_dropout_steps = max(0, self.comm_dropout_steps - 1)
+
                 distance_travelled = ((point[0] - self.pose[0])**2 + (point[1] - self.pose[1])**2)**0.5
                 self.distance += distance_travelled
                 self.distance_travelled_history.append(distance_travelled)
@@ -103,3 +106,12 @@ class EvalRobot(Robot):
 
         return rwd, info
 
+    def in_vicinity_and_not_yet_seen(self):
+        flag = False
+        for robot in self.robots:
+            if self.id != robot.id and self.world.in_range(self, robot) and robot.id not in self.seen_robots:
+                self.world.record_poses(self, robot)
+                if self.comm_dropout_steps == 0 and robot.comm_dropout_steps == 0:
+                    self.world.communicate(self, robot)
+                flag = True
+        return flag

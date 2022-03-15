@@ -8,7 +8,7 @@ from decentralized_exploration.dme_drl.world import World
 
 class EvalWorld(World):
 
-    def reset(self, test_filename, initial_poses, probability_of_failed_communication, probability_of_failed_scan):
+    def reset(self, test_filename, initial_poses, probability_of_failed_scan, probability_of_failed_communication, failed_communication_interval):
         self.episode += 1
         self.time_step = -1
         self.local_interactions = 0
@@ -22,6 +22,7 @@ class EvalWorld(World):
         self.data_transmitted = 0
         self.probability_of_failed_communication = probability_of_failed_communication
         self.robots = [EvalRobot(i, np.copy(self.maze)) for i in range(self.number)]
+        self.failed_communication_interval = failed_communication_interval
 
         for id, robot in enumerate(self.robots):
             robot.robots = self.robots
@@ -94,4 +95,16 @@ class EvalWorld(World):
         done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) > 0.95
         return obs_n,rwd_n,done,info_n,pose_n, action_n
 
+    def communicate(self, robot1, robot2):
+        if self._can_communicate():
+            robot1.render(robot1.render_path + 'r{}_s{}_pre_merge_with_r{}_former'.format(robot1.id, robot1.counter, robot2.id))
+            robot2.render(robot1.render_path + 'r{}_s{}_pre_merge_with_r{}_latter'.format(robot1.id, robot1.counter, robot2.id))
 
+            self._merge_maps(robot1, robot2)
+            self._merge_frontiers_after_communicate(robot1, robot2)
+
+            robot1.render(robot1.render_path + 'r{}_s{}_pro_merge_with_r{}_former'.format(robot1.id, robot1.counter, robot2.id))
+            robot2.render(robot1.render_path + 'r{}_s{}_pro_merge_with_r{}_latter'.format(robot1.id, robot1.counter, robot2.id))
+        else:
+            robot1.comm_dropout_steps = self.failed_communication_interval
+            robot2.comm_dropout_steps = self.failed_communication_interval
