@@ -15,7 +15,7 @@ class EvalWorld(World):
         self.map_id = TEST_PATH + test_filename
         print('map id： ',self.map_id)
         self.target_points = []
-        self.maze = np.load(self.map_id).astype('uint8')
+        self.maze = (np.load(self.map_id)*self.config['color']['obstacle']).astype('uint8')
         self.slam_map = np.ones_like(self.maze) * self.config['color']['uncertain']
         self.last_map = np.copy(self.slam_map)
         self.track_map = np.copy(self.maze)

@@ -32,7 +32,7 @@ os.makedirs(STEP_ROBOT_PATH, exist_ok=True)
 
 
 # Setup the render
-render_world = True
+render_world = False
 render_robot_map = False
 
 
