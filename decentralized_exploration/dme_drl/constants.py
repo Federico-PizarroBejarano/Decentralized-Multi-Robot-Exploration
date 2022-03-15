@@ -10,6 +10,7 @@ else:
     PROJECT_PATH = '/Users/richardren/VisualStudioCodeProjects/Decentralized-Multi-Robot-Exploration/decentralized_exploration/dme_drl'
 
 TEST_PATH = PROJECT_PATH.split('dme_drl')[0] + 'maps/'
+RESULTS_PATH = PROJECT_PATH.split('dme_drl')[0] + 'results/trajectories/'
 
 CONFIG_PATH = PROJECT_PATH + '/assets/config.yaml'
 MODEL_DIR = PROJECT_PATH + '/model/'

@@ -59,7 +59,8 @@ class EvalWorld(World):
         for robot in self.robots:
 
             self.slam_map = self._merge_map(self.slam_map)
-            done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) > 0.95
+            # done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) == 1
+            done = np.sum((self.slam_map == self.config['color']['uncertain'])) == 0
 
             if done:
                 return None, None, None, 'done midstep', None, None
@@ -93,7 +94,8 @@ class EvalWorld(World):
         self.slam_map = self._merge_map(self.slam_map)
         self.render(STEP_WORLD_PATH + 'e{}_t{}_pro_step'.format(self.episode, self.time_step))
 
-        done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) > 0.95
+        done = np.sum((self.slam_map == self.config['color']['uncertain'])) == 0
+        # done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) == 1
         return obs_n,rwd_n,done,info_n,pose_n, action_n
 
     def communicate(self, robot1, robot2):

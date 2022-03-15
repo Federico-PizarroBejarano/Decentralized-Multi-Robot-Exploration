@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 np.random.seed(1234)
 np.set_printoptions(linewidth=150)
@@ -11,7 +13,7 @@ from copy import copy, deepcopy
 import yaml
 
 
-from decentralized_exploration.dme_drl.constants import MODEL_DIR, CONFIG_PATH
+from decentralized_exploration.dme_drl.constants import MODEL_DIR, CONFIG_PATH, RESULTS_PATH
 from decentralized_exploration.dme_drl.eval_world import EvalWorld
 from decentralized_exploration.dme_drl.maddpg.MADDPG import MADDPG
 
@@ -40,23 +42,25 @@ maddpg = MADDPG(n_agents, n_agents, n_actions, dim_pose, 0, 0, -1)
 load_model(maddpg)
 
 all_starting_poses = {
-                            'top_left':[(0, 0), (1, 0), (0, 1)],
-                            'top_right':[(0, 19), (1, 19), (0, 18)],
-                            'bottom_left':[(19, 0), (18, 0), (19, 1)],
-                            'bottom_right':[(19, 19), (18, 19), (19, 18)]
+                            # 'TL':[(0, 0), (1, 0), (0, 1)],
+                            # 'TR':[(0, 19), (1, 19), (0, 18)],
+                            'BL':[(19, 0), (18, 0), (19, 1)],
+                            # 'BR':[(19, 19), (18, 19), (19, 18)]
                         }
-runs = 5
+runs = 1
 
 
 
-for map_id in range(map_ids):
+for map_id in range(2, 3):
     for starting_poses_key in all_starting_poses.keys():
-        for probability_of_failed_communication in [0, 50, 80, 100]:
+        for probability_of_communication_success in [0, 50, 80, 100]:
+            run_result_path = RESULTS_PATH + '{}/{}/{}/'.format(probability_of_communication_success, 'dme-drl', '{}-{}'.format(map_id, starting_poses_key))
+            os.makedirs(run_result_path, exist_ok=True)
             for probability_of_failed_scan in [10]:
                for failed_communication_interval in [7]:
                     for run in range(runs):
                         try:
-                            obs,pose = eval_world.reset('test_{}.npy'.format(map_id), all_starting_poses[starting_poses_key], probability_of_failed_scan, probability_of_failed_communication, failed_communication_interval)
+                            obs,pose = eval_world.reset('test_{}.npy'.format(map_id), all_starting_poses[starting_poses_key], probability_of_failed_scan, 100 - probability_of_communication_success - 1, failed_communication_interval)
                             pose = th.tensor(pose)
                         except Exception as e:
                             print(e)
@@ -112,16 +116,20 @@ for map_id in range(map_ids):
                         for robot in eval_world.robots:
                             robot.pose_history = np.array(robot.pose_history)
                             robot.map_history = np.array(robot.map_history)
-                            most_steps = max(most_steps, len(robot.pose_history))
+                            most_steps = max(most_steps, len(robot.map_history))
 
                         bitmap_history = np.zeros((most_steps, 20, 20)).astype('uint8')
-                        map_history = (np.ones((most_steps, 20, 20))*eval_world.config['color']['uncertain']).astype('uint8')
+                        map_history = (np.ones((most_steps, 20, 20))*eval_world.config['color']['uncertain'])
 
                         for robot in eval_world.robots:
                             steps = len(robot.pose_history)
                             robot.pose_history = np.pad(robot.pose_history, [(0,most_steps-steps),(0,0)], 'edge')
                             robot.map_history = np.pad(robot.map_history, [(0, most_steps-steps), (0,0), (0,0)], 'edge')
                             bitmap_history = np.bitwise_or(bitmap_history, robot.map_history!=eval_world.config['color']['uncertain'])
+                            if robot.id == 0:
+                                pose_history = robot.pose_history[:, np.newaxis, :]
+                            else:
+                                pose_history = np.concatenate((pose_history, robot.pose_history[:, np.newaxis, :]), axis=1)
                         idx = np.where(bitmap_history == 1)
                         maze_history = np.repeat(eval_world.maze[np.newaxis, :, :], most_steps, axis=0)
                         map_history[idx] = maze_history[idx]
@@ -129,4 +137,9 @@ for map_id in range(map_ids):
                         map_history[idx] = -1
                         idx = np.where(map_history == eval_world.config['color']['obstacle'])
                         map_history[idx] = 1
+
+                        np.save(run_result_path+'robot_poses', pose_history)
+                        np.save(run_result_path+'pixel_maps', map_history)
+                        print(np.unique(map_history))
+
                         exit()

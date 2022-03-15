@@ -4,6 +4,7 @@ from matplotlib.patches import Circle
 from matplotlib.lines import Line2D
 import pickle
 
+from decentralized_exploration.dme_drl.constants import RESULTS_PATH
 
 
 def plot_grid(grid, plot, robot_states={}):
@@ -433,24 +434,25 @@ def plot_trajectory(filename, map_file='large_map_4'):
 
 def create_trajectory_video(robot_poses, pixel_maps, world_size=(20, 20)):
     fig = plt.figure()
-    titles = ['MADE-Net', 'MADE-Net-Dt', 'Planning-based Method', 'Utility-based Method', 'Nearest Frontier Method'][::-1]
+    titles = ['DME-DRL', 'MADE-Net', 'MADE-Net-Dt', 'Planning-based Method', 'Utility-based Method', 'Nearest Frontier Method'][::-1]
 
     ax1 = fig.add_subplot(231)
     ax2 = fig.add_subplot(232)
     ax3 = fig.add_subplot(233)
     ax4 = fig.add_subplot(234)
     ax5 = fig.add_subplot(235)
+    ax6 = fig.add_subplot(236)
 
-    axes = [ax1, ax2, ax3, ax4, ax5]
+    axes = [ax1, ax2, ax3, ax4, ax5, ax6]
 
-    legend_elements = [Line2D([0], [0], marker='s', markerfacecolor='r', alpha=1, color='k', markersize=20, linewidth=0, label='Robot 1'),
-                        Line2D([0], [0], marker='s', markerfacecolor='g', alpha=1, color='k', markersize=20, linewidth=0, label='Robot 2'),
-                        Line2D([0], [0], marker='s', markerfacecolor='b', alpha=1, color='k', markersize=20, linewidth=0, label='Robot 3'),
-                        Line2D([0], [0], marker='s', markerfacecolor='w', alpha=1, color='k', markersize=20, linewidth=0, label='Free Space'),
-                        Line2D([0], [0], marker='s', markerfacecolor='k', alpha=1, color='k', markersize=20, linewidth=0, label='Obstacle'),
-                        Line2D([0], [0], marker='s', markerfacecolor='gray', alpha=1, color='k', markersize=20, linewidth=0, label='Unknown')]
+    legend_elements = [Line2D([0], [0], marker='s', markerfacecolor='r', alpha=1, color='k', markersize=15, linewidth=0, label='Robot 1'),
+                        Line2D([0], [0], marker='s', markerfacecolor='g', alpha=1, color='k', markersize=15, linewidth=0, label='Robot 2'),
+                        Line2D([0], [0], marker='s', markerfacecolor='b', alpha=1, color='k', markersize=15, linewidth=0, label='Robot 3'),
+                        Line2D([0], [0], marker='s', markerfacecolor='w', alpha=1, color='k', markersize=15, linewidth=0, label='Free Space'),
+                        Line2D([0], [0], marker='s', markerfacecolor='k', alpha=1, color='k', markersize=15, linewidth=0, label='Obstacle'),
+                        Line2D([0], [0], marker='s', markerfacecolor='gray', alpha=1, color='k', markersize=15, linewidth=0, label='Unknown')]
 
-    fig.legend(handles=legend_elements, fontsize=14, framealpha=1, loc=(0.7, 0.20))
+    fig.legend(handles=legend_elements, fontsize=10, framealpha=1)
 
     max_len = max([len(robot_poses[i]) for i in range(len(robot_poses))])
 
@@ -467,6 +469,7 @@ def create_trajectory_video(robot_poses, pixel_maps, world_size=(20, 20)):
                 j = i
             plot_grid_simple(pixel_maps[algo][j], axes[algo], robot_poses[algo][j], s=85)
             axes[algo].set_title(titles[algo])
+        # plt.waitforbuttonpress()
         plt.pause(0.5)
 
     for algo in range(len(robot_poses)):
@@ -482,8 +485,8 @@ if __name__ == '__main__':
     all_robot_poses = []
     all_pixel_maps = []
 
-    for algo in ['greedy', 'utility', 'mdp', 'made-net-dt', 'made-net']:
-        all_robot_poses.append(np.load('./decentralized_exploration/results/trajectories/{}/{}/{}/robot_poses.npy'.format(comm_success, algo, trial)))
-        all_pixel_maps.append(np.load('./decentralized_exploration/results/trajectories/{}/{}/{}/pixel_maps.npy'.format(comm_success, algo, trial)))
+    for algo in ['greedy', 'utility', 'mdp', 'made-net-dt', 'made-net', 'dme-drl']:
+        all_robot_poses.append(np.load(RESULTS_PATH + '{}/{}/{}/robot_poses.npy'.format(comm_success, algo, trial)))
+        all_pixel_maps.append(np.load(RESULTS_PATH + '{}/{}/{}/pixel_maps.npy'.format(comm_success, algo, trial)))
 
     create_trajectory_video(all_robot_poses, all_pixel_maps)

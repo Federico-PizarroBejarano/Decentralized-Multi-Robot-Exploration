@@ -32,13 +32,14 @@ class EvalRobot(Robot):
         self.comm_dropout_steps = 0
 
         self.render(RESET_ROBOT_PATH + 'r{}_e{}_t{}_pre_reset'.format(self.id, self.episode, self.time_step))
+        self.map_history = [self.get_obs()]
 
         occupied_points, free_points = self._scan()
         self._update_map(occupied_points, free_points)
         self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
 
-        self.map_history = [self.get_obs()]
-
+        self.map_history.append(self.get_obs())
+        self.pose_history.append(self.get_pose())
         self.render(RESET_ROBOT_PATH + 'r{}_e{}_t{}_pro_reset'.format(self.id, self.episode, self.time_step))
 
         self.last_map = self.slam_map.copy()
