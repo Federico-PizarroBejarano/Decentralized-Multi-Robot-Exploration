@@ -77,7 +77,7 @@ class EvalRobot(Robot):
         else:
             increment_his = []  # map increment list, record the history of it
             for i, point in enumerate(self.path):
-                if self.in_vicinity_and_not_yet_seen() or self.sub_time_step == 300: # enforce sub_time_step limit
+                if self.in_vicinity_and_not_yet_seen() or self.sub_time_step == 300 or not self._is_legal(point): # enforce sub_time_step limit
                     break
 
                 self.sub_time_step += 1
@@ -88,10 +88,15 @@ class EvalRobot(Robot):
                 self.distance += distance_travelled
                 self.distance_travelled_history.append(distance_travelled)
 
+                prev_world_map = self.world.slam_map.copy()
                 map_increment = self._move_one_step(point, action)
+                self.world.slam_map = self.world._merge_map(self.world.slam_map)
+                new_world_map = self.world.slam_map.copy()
+                area_explored = np.count_nonzero(new_world_map-prev_world_map)
+
                 self.pose_history.append(self.get_pose())
                 self.map_history.append(self.get_obs())
-                self.area_explored_history.append(map_increment if map_increment != -1 else 0)
+                self.area_explored_history.append(area_explored)
                 increment_his.append(map_increment)
 
         self.destination = None

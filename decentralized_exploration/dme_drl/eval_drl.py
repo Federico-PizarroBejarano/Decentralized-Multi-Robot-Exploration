@@ -171,8 +171,9 @@ for map_id in range(2, 3):
                                     if robot1.id < robot2.id:
                                         if eval_world.is_local(robot1.pose_history[step], robot2.pose_history[step]):
                                             interactions += 1
-                            if interactions == 3:
-                                interactions = 1
+                                            break
+                                    if interactions == 1:
+                                        break
                             total_interactions += interactions
 
                         # find objective function
@@ -187,6 +188,7 @@ for map_id in range(2, 3):
                         results['local_interactions'].append(total_interactions)
                         results['objective_function'].append(objective_function_value)
 
-
-
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', None)
+print(pd.DataFrame(results))
 pd.DataFrame(results).to_csv(RESULTS_PATH+'results.csv')
