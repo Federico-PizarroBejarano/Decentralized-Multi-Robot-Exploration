@@ -77,7 +77,11 @@ class EvalRobot(Robot):
         else:
             increment_his = []  # map increment list, record the history of it
             for i, point in enumerate(self.path):
-                if self.in_vicinity_and_not_yet_seen() or self.sub_time_step == 300 or not self._is_legal(point): # enforce sub_time_step limit
+                done = np.sum((self.world.slam_map == self.config['color']['uncertain'])) == 0
+                if self.in_vicinity_and_not_yet_seen() or\
+                        self.sub_time_step == 300 or\
+                        not self._is_legal(point) or \
+                        done: # enforce sub_time_step limit
                     break
 
                 self.sub_time_step += 1

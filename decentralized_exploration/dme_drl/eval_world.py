@@ -61,7 +61,6 @@ class EvalWorld(World):
         for robot in self.robots:
 
             self.slam_map = self._merge_map(self.slam_map)
-            # done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) == 1
             done = np.sum((self.slam_map == self.config['color']['uncertain'])) == 0
 
             if done:
