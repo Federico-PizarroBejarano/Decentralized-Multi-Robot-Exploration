@@ -50,6 +50,14 @@ all_starting_poses = {
                         }
 runs = 1
 
+results = {'map_id':[],
+           'starting_pose': [],
+           'probability_of_communication_success': [],
+           'run': [],
+           'total_steps': [],
+           'distance_travelled':[],
+           'local_interactions': [],
+           'objective_function': []}
 
 
 for map_id in range(2, 3):
@@ -168,11 +176,17 @@ for map_id in range(2, 3):
                             total_interactions += interactions
 
                         # find objective function
-                        total_h = np.sum(total_explored_area_per_step / joint_distance_travelled_per_step)
-                        print(total_explored_area_per_step)
-                        print(joint_distance_travelled_per_step)
-                        print(total_h)
+                        objective_function_value = np.sum(total_explored_area_per_step / joint_distance_travelled_per_step)
+
+                        results['map_id'].append(map_id)
+                        results['starting_pose'].append(starting_poses_key)
+                        results['probability_of_communication_success'].append(probability_of_communication_success)
+                        results['run'].append(run)
+                        results['total_steps'].append(max([robot.sub_time_step+1 for robot in eval_world.robots]))
+                        results['distance_travelled'].append(sum([robot.distance for robot in eval_world.robots]))
+                        results['local_interactions'].append(total_interactions)
+                        results['objective_function'].append(objective_function_value)
 
 
 
-                        exit()
+pd.DataFrame(results).to_csv(RESULTS_PATH+'results.csv')
