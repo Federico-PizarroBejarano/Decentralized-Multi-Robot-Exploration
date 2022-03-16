@@ -117,13 +117,25 @@ for map_id in range(2, 3):
                         for robot in eval_world.robots:
                             robot.pose_history = np.array(robot.pose_history)
                             robot.map_history = np.array(robot.map_history)
+                            robot.area_explored_history = np.array(robot.area_explored_history)
                             most_steps = max(most_steps, len(robot.map_history))
 
                         bitmap_history = np.zeros((most_steps, 20, 20)).astype('uint8')
                         map_history = (np.ones((most_steps, 20, 20))*eval_world.config['color']['uncertain'])
 
+                        total_explored_area_per_step = np.zeros(most_steps-2)
+                        joint_distance_travelled_per_step = np.zeros_like(total_explored_area_per_step)
+
                         for robot in eval_world.robots:
                             steps = len(robot.pose_history)
+
+                            # objective function
+                            robot.area_explored_history = np.pad(robot.area_explored_history, [(0,most_steps-steps)])
+                            robot.distance_travelled_history = np.pad(robot.distance_travelled_history, [(0,most_steps-steps)])
+                            total_explored_area_per_step += robot.area_explored_history
+                            joint_distance_travelled_per_step += robot.distance_travelled_history
+
+                            # map and pose history
                             robot.pose_history = np.pad(robot.pose_history, [(0,most_steps-steps),(0,0)], 'edge')
                             robot.map_history = np.pad(robot.map_history, [(0, most_steps-steps), (0,0), (0,0)], 'edge')
                             bitmap_history = np.bitwise_or(bitmap_history, robot.map_history!=eval_world.config['color']['uncertain'])
@@ -142,6 +154,7 @@ for map_id in range(2, 3):
                         np.save(run_result_path+'robot_poses', pose_history)
                         np.save(run_result_path+'pixel_maps', map_history)
 
+                        # find total interactions
                         total_interactions = 0
                         for step in range(1, most_steps):
                             interactions = 0
@@ -153,6 +166,13 @@ for map_id in range(2, 3):
                             if interactions == 3:
                                 interactions = 1
                             total_interactions += interactions
+
+                        # find objective function
+                        total_h = np.sum(total_explored_area_per_step / joint_distance_travelled_per_step)
+                        print(total_explored_area_per_step)
+                        print(joint_distance_travelled_per_step)
+                        print(total_h)
+
 
 
                         exit()
