@@ -133,16 +133,15 @@ for map_id in range(2, 3):
 
                         total_explored_area_per_step = np.zeros(most_steps-2)
                         joint_distance_travelled_per_step = np.zeros_like(total_explored_area_per_step)
-                        max_distance_per_step = np.zeros_like(total_explored_area_per_step)
 
                         for robot in eval_world.robots:
                             steps = len(robot.pose_history)
 
                             # objective function
                             robot.area_explored_history = np.pad(robot.area_explored_history, [(0,most_steps-steps)])
+                            robot.distance_travelled_history = np.pad(robot.distance_travelled_history, [(0,most_steps-steps)])
                             total_explored_area_per_step += robot.area_explored_history
-                            # find max robot distance per step for padding in next loop
-                            max_distance_per_step = np.maximum(max_distance_per_step, np.pad(robot.distance_travelled_history, [(0,most_steps-steps)]))
+                            joint_distance_travelled_per_step += robot.distance_travelled_history
 
                             # map and pose history
                             robot.pose_history = np.pad(robot.pose_history, [(0,most_steps-steps),(0,0)], 'edge')
@@ -152,13 +151,6 @@ for map_id in range(2, 3):
                                 pose_history = robot.pose_history[:, np.newaxis, :]
                             else:
                                 pose_history = np.concatenate((pose_history, robot.pose_history[:, np.newaxis, :]), axis=1)
-
-                        for robot in eval_world.robots:
-                            steps = len(robot.distance_travelled_history)
-                            robot.distance_travelled_history = np.pad(robot.distance_travelled_history, [(0,most_steps-(steps+2))])
-                            robot.distance_travelled_history[steps:] = max_distance_per_step[steps:]
-                            joint_distance_travelled_per_step += robot.distance_travelled_history
-
                         idx = np.where(bitmap_history == 1)
                         maze_history = np.repeat(eval_world.maze[np.newaxis, :, :], most_steps, axis=0)
                         map_history[idx] = maze_history[idx]
@@ -192,7 +184,7 @@ for map_id in range(2, 3):
                         results['probability_of_communication_success'].append(probability_of_communication_success)
                         results['run'].append(run)
                         results['total_steps'].append(max([robot.sub_time_step+1 for robot in eval_world.robots]))
-                        results['distance_travelled'].append(np.sum(joint_distance_travelled_per_step))
+                        results['distance_travelled'].append(sum([robot.distance for robot in eval_world.robots]))
                         results['local_interactions'].append(total_interactions)
                         results['objective_function'].append(objective_function_value)
 
