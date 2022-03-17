@@ -48,12 +48,10 @@ all_starting_poses = {
                             'BL':[(19, 0), (18, 0), (19, 1)],
                             # 'BR':[(19, 19), (18, 19), (19, 18)]
                         }
-runs = 1
 
 results = {'map_id':[],
            'starting_pose': [],
            'probability_of_communication_success': [],
-           'run': [],
            'total_steps': [],
            'distance_travelled':[],
            'local_interactions': [],
@@ -67,131 +65,129 @@ for map_id in range(2, 3):
             os.makedirs(run_result_path, exist_ok=True)
             for probability_of_failed_scan in [10]:
                for failed_communication_interval in [7]:
-                    for run in range(runs):
-                        try:
-                            obs,pose = eval_world.reset('test_{}.npy'.format(map_id), all_starting_poses[starting_poses_key], probability_of_failed_scan, 100 - probability_of_communication_success - 1, failed_communication_interval)
-                            pose = th.tensor(pose)
-                        except Exception as e:
-                            print(e)
-                        obs = np.stack(obs)
-                        # history initialization
-                        obs_t_minus_0 = copy(obs)
-                        obs_t_minus_1 = copy(obs)
-                        obs_t_minus_2 = copy(obs)
-                        obs_t_minus_3 = copy(obs)
-                        obs_t_minus_4 = copy(obs)
-                        obs_t_minus_5 = copy(obs)
-                        obs = th.from_numpy(obs)
-                        obs_history = np.zeros((n_agents, obs.shape[1] * 6, obs.shape[2]))
+                    try:
+                        obs,pose = eval_world.reset('test_{}.npy'.format(map_id), all_starting_poses[starting_poses_key], probability_of_failed_scan, 100 - probability_of_communication_success - 1, failed_communication_interval)
+                        pose = th.tensor(pose)
+                    except Exception as e:
+                        print(e)
+                    obs = np.stack(obs)
+                    # history initialization
+                    obs_t_minus_0 = copy(obs)
+                    obs_t_minus_1 = copy(obs)
+                    obs_t_minus_2 = copy(obs)
+                    obs_t_minus_3 = copy(obs)
+                    obs_t_minus_4 = copy(obs)
+                    obs_t_minus_5 = copy(obs)
+                    obs = th.from_numpy(obs)
+                    obs_history = np.zeros((n_agents, obs.shape[1] * 6, obs.shape[2]))
+                    for i in range(n_agents):
+                        obs_history[i] = np.vstack((obs_t_minus_0[i], obs_t_minus_1[i], obs_t_minus_2[i],
+                                                    obs_t_minus_3[i], obs_t_minus_4[i], obs_t_minus_5[i]))
+                    if isinstance(obs_history, np.ndarray):
+                        obs_history = th.from_numpy(obs_history).float()
+
+                    for t in range(max_steps):
+                        obs_history = obs_history.type(FloatTensor)
+                        obs_, reward, done, info, next_pose, action = eval_world.step(maddpg, obs_history.clone().detach(), pose.clone().detach())
+
+                        if info == 'done midstep':
+                            break
+
+                        next_pose = th.tensor(next_pose)
+                        reward = th.FloatTensor(reward).type(FloatTensor)
+                        obs_ = np.stack(obs_)
+                        obs_ = th.from_numpy(obs_).float()
+
+                        obs_t_minus_5 = copy(obs_t_minus_4)
+                        obs_t_minus_4 = copy(obs_t_minus_3)
+                        obs_t_minus_3 = copy(obs_t_minus_2)
+                        obs_t_minus_2 = copy(obs_t_minus_1)
+                        obs_t_minus_1 = copy(obs_t_minus_0)
+                        obs_t_minus_0 = copy(obs_)
+                        obs_history_ = np.zeros((n_agents, obs.shape[1] * 6, obs.shape[2]))
                         for i in range(n_agents):
-                            obs_history[i] = np.vstack((obs_t_minus_0[i], obs_t_minus_1[i], obs_t_minus_2[i],
-                                                        obs_t_minus_3[i], obs_t_minus_4[i], obs_t_minus_5[i]))
-                        if isinstance(obs_history, np.ndarray):
-                            obs_history = th.from_numpy(obs_history).float()
+                            obs_history_[i] = np.vstack((obs_t_minus_0[i], obs_t_minus_1[i], obs_t_minus_2[i],
+                                                         obs_t_minus_3[i], obs_t_minus_4[i], obs_t_minus_5[i]))
+                        if not t == max_steps - 1:
+                            next_obs_history = th.tensor(obs_history_)
+                        elif done:
+                            next_obs_history = None
+                        else:
+                            next_obs_history = None
+                        obs_history=next_obs_history
+                        pose = next_pose
 
-                        for t in range(max_steps):
-                            obs_history = obs_history.type(FloatTensor)
-                            obs_, reward, done, info, next_pose, action = eval_world.step(maddpg, obs_history.clone().detach(), pose.clone().detach())
+                    most_steps = 0
 
-                            if info == 'done midstep':
-                                break
+                    for robot in eval_world.robots:
+                        robot.pose_history = np.array(robot.pose_history)
+                        robot.map_history = np.array(robot.map_history)
+                        robot.area_explored_history = np.array(robot.area_explored_history)
+                        most_steps = max(most_steps, len(robot.map_history))
 
-                            next_pose = th.tensor(next_pose)
-                            reward = th.FloatTensor(reward).type(FloatTensor)
-                            obs_ = np.stack(obs_)
-                            obs_ = th.from_numpy(obs_).float()
+                    bitmap_history = np.zeros((most_steps, 20, 20)).astype('uint8')
+                    map_history = (np.ones((most_steps, 20, 20))*eval_world.config['color']['uncertain'])
 
-                            obs_t_minus_5 = copy(obs_t_minus_4)
-                            obs_t_minus_4 = copy(obs_t_minus_3)
-                            obs_t_minus_3 = copy(obs_t_minus_2)
-                            obs_t_minus_2 = copy(obs_t_minus_1)
-                            obs_t_minus_1 = copy(obs_t_minus_0)
-                            obs_t_minus_0 = copy(obs_)
-                            obs_history_ = np.zeros((n_agents, obs.shape[1] * 6, obs.shape[2]))
-                            for i in range(n_agents):
-                                obs_history_[i] = np.vstack((obs_t_minus_0[i], obs_t_minus_1[i], obs_t_minus_2[i],
-                                                             obs_t_minus_3[i], obs_t_minus_4[i], obs_t_minus_5[i]))
-                            if not t == max_steps - 1:
-                                next_obs_history = th.tensor(obs_history_)
-                            elif done:
-                                next_obs_history = None
-                            else:
-                                next_obs_history = None
-                            obs_history=next_obs_history
-                            pose = next_pose
+                    total_explored_area_per_step = np.zeros(most_steps-2)
 
-                        most_steps = 0
-
-                        for robot in eval_world.robots:
-                            robot.pose_history = np.array(robot.pose_history)
-                            robot.map_history = np.array(robot.map_history)
-                            robot.area_explored_history = np.array(robot.area_explored_history)
-                            most_steps = max(most_steps, len(robot.map_history))
-
-                        bitmap_history = np.zeros((most_steps, 20, 20)).astype('uint8')
-                        map_history = (np.ones((most_steps, 20, 20))*eval_world.config['color']['uncertain'])
-
-                        total_explored_area_per_step = np.zeros(most_steps-2)
-
-                        for robot in eval_world.robots:
-                            steps = len(robot.pose_history)
-
-                            # objective function
-                            robot.area_explored_history = np.pad(robot.area_explored_history, [(0,most_steps-steps)])
-                            robot.distance_travelled_history = np.pad(robot.distance_travelled_history, [(0,most_steps-steps)])
-                            total_explored_area_per_step += robot.area_explored_history
-
-                            # map and pose history
-                            robot.pose_history = np.pad(robot.pose_history, [(0,most_steps-steps),(0,0)], 'edge')
-                            robot.map_history = np.pad(robot.map_history, [(0, most_steps-steps), (0,0), (0,0)], 'edge')
-                            bitmap_history = np.bitwise_or(bitmap_history, robot.map_history!=eval_world.config['color']['uncertain'])
-                            if robot.id == 0:
-                                pose_history = robot.pose_history[:, np.newaxis, :]
-                            else:
-                                pose_history = np.concatenate((pose_history, robot.pose_history[:, np.newaxis, :]), axis=1)
+                    for robot in eval_world.robots:
+                        steps = len(robot.pose_history)
 
                         # objective function
-                        cumulative_explored_percentage_per_step = np.cumsum(total_explored_area_per_step) / 400
+                        robot.area_explored_history = np.pad(robot.area_explored_history, [(0,most_steps-steps)])
+                        robot.distance_travelled_history = np.pad(robot.distance_travelled_history, [(0,most_steps-steps)])
+                        total_explored_area_per_step += robot.area_explored_history
 
                         # map and pose history
-                        idx = np.where(bitmap_history == 1)
-                        maze_history = np.repeat(eval_world.maze[np.newaxis, :, :], most_steps, axis=0)
-                        map_history[idx] = maze_history[idx]
-                        idx = np.where(map_history == eval_world.config['color']['uncertain'])
-                        map_history[idx] = -1
-                        idx = np.where(map_history == eval_world.config['color']['obstacle'])
-                        map_history[idx] = 1
+                        robot.pose_history = np.pad(robot.pose_history, [(0,most_steps-steps),(0,0)], 'edge')
+                        robot.map_history = np.pad(robot.map_history, [(0, most_steps-steps), (0,0), (0,0)], 'edge')
+                        bitmap_history = np.bitwise_or(bitmap_history, robot.map_history!=eval_world.config['color']['uncertain'])
+                        if robot.id == 0:
+                            pose_history = robot.pose_history[:, np.newaxis, :]
+                        else:
+                            pose_history = np.concatenate((pose_history, robot.pose_history[:, np.newaxis, :]), axis=1)
 
-                        np.save(run_result_path+'robot_poses', pose_history)
-                        np.save(run_result_path+'pixel_maps', map_history)
+                    # objective function
+                    cumulative_explored_percentage_per_step = np.cumsum(total_explored_area_per_step) / 400
 
-                        # find total interactions
-                        total_interactions = 0
-                        for step in range(1, most_steps):
-                            interactions = 0
-                            for robot1 in eval_world.robots:
-                                for robot2 in eval_world.robots:
-                                    if robot1.id < robot2.id:
-                                        if eval_world.is_local(robot1.pose_history[step], robot2.pose_history[step]):
-                                            interactions += 1
-                                            break
-                                    if interactions == 1:
+                    # map and pose history
+                    idx = np.where(bitmap_history == 1)
+                    maze_history = np.repeat(eval_world.maze[np.newaxis, :, :], most_steps, axis=0)
+                    map_history[idx] = maze_history[idx]
+                    idx = np.where(map_history == eval_world.config['color']['uncertain'])
+                    map_history[idx] = -1
+                    idx = np.where(map_history == eval_world.config['color']['obstacle'])
+                    map_history[idx] = 1
+
+                    np.save(run_result_path+'robot_poses', pose_history)
+                    np.save(run_result_path+'pixel_maps', map_history)
+
+                    # find total interactions
+                    total_interactions = 0
+                    for step in range(1, most_steps):
+                        interactions = 0
+                        for robot1 in eval_world.robots:
+                            for robot2 in eval_world.robots:
+                                if robot1.id < robot2.id:
+                                    if eval_world.is_local(robot1.pose_history[step], robot2.pose_history[step]):
+                                        interactions += 1
                                         break
-                            total_interactions += interactions
+                                if interactions == 1:
+                                    break
+                        total_interactions += interactions
 
-                        # find objective function
-                        time_steps = np.arange(1, len(cumulative_explored_percentage_per_step)+1)
+                    # find objective function
+                    time_steps = np.arange(1, len(cumulative_explored_percentage_per_step)+1)
 
-                        objective_function_value = np.sum(cumulative_explored_percentage_per_step / time_steps)
+                    objective_function_value = np.sum(cumulative_explored_percentage_per_step / time_steps)
 
-                        results['map_id'].append(map_id)
-                        results['starting_pose'].append(starting_poses_key)
-                        results['probability_of_communication_success'].append(probability_of_communication_success)
-                        results['run'].append(run)
-                        results['total_steps'].append(max([robot.sub_time_step+1 for robot in eval_world.robots]))
-                        results['distance_travelled'].append(sum([robot.distance for robot in eval_world.robots]))
-                        results['local_interactions'].append(total_interactions)
-                        results['objective_function'].append(objective_function_value)
+                    results['map_id'].append(map_id)
+                    results['starting_pose'].append(starting_poses_key)
+                    results['probability_of_communication_success'].append(probability_of_communication_success)
+                    results['total_steps'].append(max([robot.sub_time_step+1 for robot in eval_world.robots]))
+                    results['distance_travelled'].append(sum([robot.distance for robot in eval_world.robots]))
+                    results['local_interactions'].append(total_interactions)
+                    results['objective_function'].append(objective_function_value)
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
