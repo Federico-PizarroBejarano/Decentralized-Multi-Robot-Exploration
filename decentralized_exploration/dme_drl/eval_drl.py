@@ -132,7 +132,6 @@ for map_id in range(2, 3):
                         map_history = (np.ones((most_steps, 20, 20))*eval_world.config['color']['uncertain'])
 
                         total_explored_area_per_step = np.zeros(most_steps-2)
-                        joint_distance_travelled_per_step = np.zeros_like(total_explored_area_per_step)
 
                         for robot in eval_world.robots:
                             steps = len(robot.pose_history)
@@ -141,7 +140,6 @@ for map_id in range(2, 3):
                             robot.area_explored_history = np.pad(robot.area_explored_history, [(0,most_steps-steps)])
                             robot.distance_travelled_history = np.pad(robot.distance_travelled_history, [(0,most_steps-steps)])
                             total_explored_area_per_step += robot.area_explored_history
-                            joint_distance_travelled_per_step += robot.distance_travelled_history
 
                             # map and pose history
                             robot.pose_history = np.pad(robot.pose_history, [(0,most_steps-steps),(0,0)], 'edge')
@@ -151,6 +149,11 @@ for map_id in range(2, 3):
                                 pose_history = robot.pose_history[:, np.newaxis, :]
                             else:
                                 pose_history = np.concatenate((pose_history, robot.pose_history[:, np.newaxis, :]), axis=1)
+
+                        # objective function
+                        cumulative_explored_percentage_per_step = np.cumsum(total_explored_area_per_step) / 400
+
+                        # map and pose history
                         idx = np.where(bitmap_history == 1)
                         maze_history = np.repeat(eval_world.maze[np.newaxis, :, :], most_steps, axis=0)
                         map_history[idx] = maze_history[idx]
@@ -177,7 +180,9 @@ for map_id in range(2, 3):
                             total_interactions += interactions
 
                         # find objective function
-                        objective_function_value = np.sum(total_explored_area_per_step / joint_distance_travelled_per_step)
+                        time_steps = np.arange(1, len(cumulative_explored_percentage_per_step)+1)
+
+                        objective_function_value = np.sum(cumulative_explored_percentage_per_step / time_steps)
 
                         results['map_id'].append(map_id)
                         results['starting_pose'].append(starting_poses_key)

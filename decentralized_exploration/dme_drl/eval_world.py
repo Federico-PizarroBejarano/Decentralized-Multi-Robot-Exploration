@@ -96,7 +96,6 @@ class EvalWorld(World):
         self.render(STEP_WORLD_PATH + 'e{}_t{}_pro_step'.format(self.episode, self.time_step))
 
         done = np.sum((self.slam_map == self.config['color']['uncertain'])) == 0
-        # done = np.sum(self.slam_map == self.config['color']['free']) / np.sum(self.maze == self.config['color']['free']) == 1
         return obs_n,rwd_n,done,info_n,pose_n, action_n
 
     def communicate(self, robot1, robot2):

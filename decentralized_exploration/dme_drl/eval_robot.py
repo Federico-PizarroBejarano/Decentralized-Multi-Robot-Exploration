@@ -25,7 +25,6 @@ class EvalRobot(Robot):
         self.time_step = -1
         self.sub_time_step = -1
         self.distance = 0
-        self.area_explored_history = []
         self.distance_travelled_history = []
         self.pose_history = [self.get_pose()]
         self.probability_of_failed_scan = probability_of_failed_scan
@@ -34,9 +33,16 @@ class EvalRobot(Robot):
         self.render(RESET_ROBOT_PATH + 'r{}_e{}_t{}_pre_reset'.format(self.id, self.episode, self.time_step))
         self.map_history = [self.get_obs()]
 
+        prev_world_map = self.world.slam_map.copy()
+
         occupied_points, free_points = self._scan()
         self._update_map(occupied_points, free_points)
         self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
+        self.world.slam_map = self.world._merge_map(self.world.slam_map)
+
+        new_world_map = self.world.slam_map.copy()
+        area_explored = np.count_nonzero(new_world_map - prev_world_map)
+        self.area_explored_history = [area_explored]
 
         self.map_history.append(self.get_obs())
         self.pose_history.append(self.get_pose())
@@ -100,7 +106,13 @@ class EvalRobot(Robot):
 
                 self.pose_history.append(self.get_pose())
                 self.map_history.append(self.get_obs())
-                self.area_explored_history.append(area_explored)
+
+                if self.sub_time_step == 0:
+                    self.area_explored_history[0] + area_explored
+                else:
+                    self.area_explored_history.append(area_explored)
+
+
                 increment_his.append(map_increment)
 
         self.destination = None
