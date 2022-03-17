@@ -213,5 +213,7 @@ for probability_of_communication_success in [0, 50, 80, 100]:
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
-print(pd.DataFrame(results))
-pd.DataFrame(results).to_csv(RESULTS_PATH+'results.csv')
+results = pd.DataFrame(results)
+averages = results.groupby(by='probability_of_communication_success').mean().reset_index()
+results.to_csv(RESULTS_PATH+'results.csv')
+averages.to_csv(RESULTS_PATH+'averages.csv')
