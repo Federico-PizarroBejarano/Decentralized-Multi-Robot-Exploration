@@ -28,6 +28,7 @@ class EvalRobot(Robot):
         self.distance_travelled_history = []
         self.pose_history = [self.get_pose()]
         self.probability_of_failed_scan = probability_of_failed_scan
+        self.probability_of_failed_action = 10 - 1
         self.comm_dropout_steps = 0
 
         self.render(RESET_ROBOT_PATH + 'r{}_e{}_t{}_pre_reset'.format(self.id, self.episode, self.time_step))
@@ -50,6 +51,26 @@ class EvalRobot(Robot):
 
         self.last_map = self.slam_map.copy()
 
+    def next_possible_action(self, action):
+        if action == 0:
+            return self.pose[0] + 1, self.pose[1]
+        elif action == 1:
+            return self.pose[0] + 1, self.pose[1] + 1
+        elif action == 2:
+            return self.pose[0], self.pose[1] + 1
+        elif action == 3:
+            return self.pose[0] - 1, self.pose[1] + 1
+        elif action == 4:
+            return self.pose[0] - 1, self.pose[1]
+        elif action == 5:
+            return self.pose[0] - 1, self.pose[1] - 1
+        elif action == 6:
+            return self.pose[0], self.pose[1] - 1
+        elif action == 7:
+            return self.pose[0] + 1, self.pose[1] - 1
+
+    def _can_move(self):
+        return np.random.randint(100) > self.probability_of_failed_action
 
     def step(self, maddpg, obs_history, pose):
         self.time_step += 1
@@ -84,11 +105,24 @@ class EvalRobot(Robot):
             increment_his = []  # map increment list, record the history of it
             for i, point in enumerate(self.path):
                 done = np.sum((self.world.slam_map == self.config['color']['uncertain'])) == 0
+
+                if self._can_move():
+                    next_point = point
+                else:
+                    legal_actions = []
+                    for i in range(8):
+                        next_possible_point = self.next_possible_action(i)
+                        if self._is_legal(next_possible_point):
+                            legal_actions.append(next_possible_point)
+                    next_point = legal_actions[np.random.randint(len(legal_actions))]
+
+
                 if self.in_vicinity_and_not_yet_seen() or\
                         self.sub_time_step == 300 or\
-                        not self._is_legal(point) or \
+                        not self._is_legal(next_point) or \
                         done: # enforce sub_time_step limit
                     break
+
 
                 self.sub_time_step += 1
                 self.counter += 1
@@ -99,7 +133,7 @@ class EvalRobot(Robot):
                 self.distance_travelled_history.append(distance_travelled)
 
                 prev_world_map = self.world.slam_map.copy()
-                map_increment = self._move_one_step(point, action)
+                map_increment = self._move_one_step(next_point, action)
                 self.world.slam_map = self.world._merge_map(self.world.slam_map)
                 new_world_map = self.world.slam_map.copy()
                 area_explored = np.count_nonzero(new_world_map-prev_world_map)
