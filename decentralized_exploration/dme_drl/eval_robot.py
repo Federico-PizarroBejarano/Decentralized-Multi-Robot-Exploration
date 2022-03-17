@@ -77,7 +77,7 @@ class EvalRobot(Robot):
         else:
             increment_his = []  # map increment list, record the history of it
             for i, point in enumerate(self.path):
-                done = np.array_equal(self.world.slam_map == self.config['color']['free'], self.world.maze == self.config['color']['free'])
+                done = np.sum((self.world.slam_map == self.config['color']['uncertain'])) == 0
                 if self.in_vicinity_and_not_yet_seen() or\
                         self.sub_time_step == 300 or\
                         not self._is_legal(point) or \
