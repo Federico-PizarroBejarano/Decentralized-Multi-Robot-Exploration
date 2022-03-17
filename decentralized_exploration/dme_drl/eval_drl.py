@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import pickle
 
 import numpy as np
 np.random.seed(1234)
@@ -58,9 +59,11 @@ results = {'map_id':[],
            'objective_function': []}
 
 
-for map_id in range(2, 3):
+for probability_of_communication_success in [0, 50, 80, 100]:
+    trial = 0
     for starting_poses_key in all_starting_poses.keys():
-        for probability_of_communication_success in [0, 50, 80, 100]:
+        for map_id in range(2, 3):
+            trial += 1
             run_result_path = RESULTS_PATH + '{}/{}/{}/'.format(probability_of_communication_success, 'dme-drl', '{}-{}'.format(map_id, starting_poses_key))
             os.makedirs(run_result_path, exist_ok=True)
             for probability_of_failed_scan in [10]:
@@ -129,6 +132,7 @@ for map_id in range(2, 3):
                     map_history = (np.ones((most_steps, 20, 20))*eval_world.config['color']['uncertain'])
 
                     total_explored_area_per_step = np.zeros(most_steps-2)
+                    joint_distance_travelled_per_step = np.zeros_like(total_explored_area_per_step)
 
                     for robot in eval_world.robots:
                         steps = len(robot.pose_history)
@@ -137,6 +141,7 @@ for map_id in range(2, 3):
                         robot.area_explored_history = np.pad(robot.area_explored_history, [(0,most_steps-steps)])
                         robot.distance_travelled_history = np.pad(robot.distance_travelled_history, [(0,most_steps-steps)])
                         total_explored_area_per_step += robot.area_explored_history
+                        joint_distance_travelled_per_step += robot.distance_travelled_history
 
                         # map and pose history
                         robot.pose_history = np.pad(robot.pose_history, [(0,most_steps-steps),(0,0)], 'edge')
@@ -188,6 +193,23 @@ for map_id in range(2, 3):
                     results['distance_travelled'].append(sum([robot.distance for robot in eval_world.robots]))
                     results['local_interactions'].append(total_interactions)
                     results['objective_function'].append(objective_function_value)
+
+                    plot_path = RESULTS_PATH + '{}/{}/'.format(probability_of_communication_success, 'dme-drl')
+                    distance_by_explored = []
+
+                    cumulative_joint_distance_per_step = np.cumsum(joint_distance_travelled_per_step)
+                    assert(len(cumulative_explored_percentage_per_step) == len(cumulative_joint_distance_per_step))
+
+                    for i in range(len(cumulative_explored_percentage_per_step)):
+                        distance_by_explored.append((cumulative_joint_distance_per_step[i], cumulative_explored_percentage_per_step[i]))
+
+                    with open(plot_path + 'trial_{}.pickle'.format(trial), 'wb') as f:
+                        pickle.dump(distance_by_explored, f)
+
+
+
+
+            # '{}-{}'.format(map_id, starting_poses_key))
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
