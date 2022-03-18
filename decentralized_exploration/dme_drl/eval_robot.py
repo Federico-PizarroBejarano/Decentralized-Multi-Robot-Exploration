@@ -4,7 +4,7 @@ import numpy as np
 
 from decentralized_exploration.dme_drl.constants import RESET_ROBOT_PATH, manual_check, \
     STEP_ROBOT_PATH
-from decentralized_exploration.dme_drl.frontier_utils import update_frontier_and_remove_pose
+from decentralized_exploration.dme_drl.frontier_utils import update_frontier_and_remove_poses, remove_pose_from_frontier
 from decentralized_exploration.dme_drl.robot import Robot
 
 ID = 0
@@ -39,7 +39,7 @@ class EvalRobot(Robot):
 
         occupied_points, free_points = self._scan()
         self._update_map(occupied_points, free_points)
-        self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
+        self.frontier = update_frontier_and_remove_poses(self.slam_map, self.frontier, self.poses, self.config)
         self.world.slam_map = self.world._merge_map(self.world.slam_map)
 
         new_world_map = self.world.slam_map.copy()
@@ -81,7 +81,11 @@ class EvalRobot(Robot):
 
         y, x = self.pose
 
+        self.frontier = update_frontier_and_remove_poses(self.slam_map, self.frontier, self.poses, self.config)
+        self.frontier_by_direction = self.get_and_update_frontier_by_direction()
+
         action = self.select_action(maddpg, obs_history, pose)
+
 
         if action is None: # empty frontier
             return None, 'empty frontier'
@@ -96,14 +100,13 @@ class EvalRobot(Robot):
                 y_dsti, x_dsti = y_, x_
                 distance_min = distance
         self.destination = (y_dsti, x_dsti)
-        self.path = self.navigator.navigate(self.maze, self.pose, self.destination)
+        self.path = self.navigator.navigate(self.maze, self.pose, self.destination, self.poses)
         self.counter = 0
 
         moved = False
-        if self.path is None:
-            raise Exception('The target point is not accessible')
-        else:
-            increment_his = []  # map increment list, record the history of it
+        vicinity = False
+        increment_his = []  # map increment list, record the history of it
+        if self.path is not None:
             for i, point in enumerate(self.path):
                 done = np.array_equal(self.world.slam_map == self.config['color']['free'],
                                       self.world.maze == self.config['color']['free'])
@@ -116,12 +119,16 @@ class EvalRobot(Robot):
                         next_possible_point = self.next_possible_action(i)
                         if self._is_legal(next_possible_point):
                             legal_actions.append(next_possible_point)
-                    next_point = legal_actions[np.random.randint(len(legal_actions))]
+                    if len(legal_actions) == 0:
+                        next_point = point
+                    else:
+                        next_point = legal_actions[np.random.randint(len(legal_actions))]
 
-                if self.in_vicinity_and_not_yet_seen() or\
-                        self.sub_time_step == 300 or\
-                        not self._is_legal(next_point) or \
-                        done: # enforce sub_time_step limit
+                if self.in_vicinity_and_not_yet_seen():
+                    vicinity = True
+                    break
+
+                if self.sub_time_step == 300 or not self._is_legal(next_point) or done: # enforce sub_time_step limit
                     break
 
                 moved = True
@@ -156,6 +163,9 @@ class EvalRobot(Robot):
                 self.distance_travelled_history.append(0)
                 self.area_explored_history.append(0)
                 self.pose_history.append(self.get_pose())
+
+            if not vicinity:
+                self.in_vicinity_and_not_yet_seen()
 
             self.sub_time_step += 1
             self.comm_dropout_steps = max(0, self.comm_dropout_steps - 1)

@@ -42,9 +42,12 @@ def update_frontier(_map, frontier, config):
 			frontier.add((free_point[0], free_point[1]))
 	return cleanup_frontier(_map, frontier, config)
 
-def update_frontier_and_remove_pose(_map, frontier, pose, config):
+def update_frontier_and_remove_poses(_map, frontier, poses, config):
 	updated_frontier = update_frontier(_map, frontier, config)
-	return remove_pose_from_frontier(updated_frontier, pose)
+	for x, y in poses[0].reshape(3, 2).astype('int'):
+		if x > -1 and y > -1:
+			updated_frontier = remove_pose_from_frontier(updated_frontier, (x, y))
+	return updated_frontier
 
 def merge_frontiers(_map, frontier1, frontier2, config):
 	union_of_frontiers = frontier1 | frontier2

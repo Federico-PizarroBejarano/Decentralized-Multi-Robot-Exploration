@@ -65,7 +65,7 @@ results = {'map_id':[],
 for probability_of_communication_success in [0, 50, 80, 100]:
     trial = 0
     for starting_poses_key in all_starting_poses.keys():
-        for map_id in range(2, 3):
+        for map_id in range(1,11):
             trial += 1
             run_result_path = RESULTS_PATH + '{}/{}/{}/'.format(probability_of_communication_success, 'dme-drl', '{}-{}'.format(map_id, starting_poses_key))
             os.makedirs(run_result_path, exist_ok=True)

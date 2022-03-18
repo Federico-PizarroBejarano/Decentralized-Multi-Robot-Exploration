@@ -9,7 +9,7 @@ from torch.distributions import categorical
 from decentralized_exploration.dme_drl.sim_utils import onehot_from_action
 
 from decentralized_exploration.core.robots.utils.field_of_view import bresenham
-from decentralized_exploration.dme_drl.frontier_utils import update_frontier_and_remove_pose
+from decentralized_exploration.dme_drl.frontier_utils import update_frontier_and_remove_poses
 from decentralized_exploration.dme_drl.constants import CONFIG_PATH, render_robot_map, RESET_ROBOT_PATH, manual_check, \
     ID_TO_COLOR, STEP_ROBOT_PATH, ACTION_TO_NAME
 from decentralized_exploration.dme_drl.navigate import AStar
@@ -78,7 +78,7 @@ class Robot():
 
         occupied_points, free_points = self._scan()
         self._update_map(occupied_points, free_points)
-        self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
+        self.frontier = update_frontier_and_remove_poses(self.slam_map, self.frontier, self.poses, self.config)
 
         self.render(RESET_ROBOT_PATH + 'r{}_e{}_t{}_pro_reset'.format(self.id, self.episode, self.time_step))
 
@@ -200,7 +200,7 @@ class Robot():
 
             occupied_points, free_points = self._scan()
             self._update_map(occupied_points, free_points)
-            self.frontier = update_frontier_and_remove_pose(self.slam_map, self.frontier, self.pose, self.config)
+            self.frontier = update_frontier_and_remove_poses(self.slam_map, self.frontier, self.poses, self.config)
 
             map_increment = np.count_nonzero(map_temp - self.slam_map)  # map increment
             self.render(self.render_path + 'r{}_s{}_pro_step_{}'.format(self.id, self.counter, ACTION_TO_NAME[action]))
@@ -255,6 +255,8 @@ class Robot():
 
         y, x = self.pose
 
+        self.frontier = update_frontier_and_remove_poses(self.slam_map, self.frontier, self.poses, self.config)
+        self.frontier_by_direction = self.get_and_update_frontier_by_direction()
         action = self.select_action(maddpg, obs_history, pose)
 
         if action is None: # empty frontier
