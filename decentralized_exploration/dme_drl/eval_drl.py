@@ -25,8 +25,11 @@ dim_pose = 2
 max_steps = 100
 map_ids = 10
 
+best = '0315_000105/'
+normal = '0311_204638/'
+
 def load_model(maddpg):
-        checkpoints = th.load(MODEL_DIR + 'model-%d-1.pth' % (config['robots']['number']))
+        checkpoints = th.load(MODEL_DIR  + 'model-%d-1.pth' % (config['robots']['number']))
         for i, actor in enumerate(maddpg.actors):
             actor.load_state_dict(checkpoints['actor_%d' % (i)])
             maddpg.actors_target[i] = deepcopy(actor)
@@ -123,49 +126,25 @@ for probability_of_communication_success in [0, 50, 80, 100]:
                     most_steps = 0
 
                     for robot in eval_world.robots:
-                        robot.pose_history = np.array(robot.pose_history)
-                        robot.map_history = np.array(robot.map_history)
                         robot.area_explored_history = np.array(robot.area_explored_history)
-                        most_steps = max(most_steps, len(robot.map_history))
+                        most_steps = max(most_steps, robot.sub_time_step + 1)
 
-                    bitmap_history = np.zeros((most_steps, 20, 20)).astype('uint8')
-                    map_history = (np.ones((most_steps, 20, 20))*eval_world.config['color']['uncertain'])
 
                     total_explored_area_per_step = np.zeros(most_steps-2)
                     joint_distance_travelled_per_step = np.zeros_like(total_explored_area_per_step)
 
                     for robot in eval_world.robots:
-                        steps = len(robot.pose_history)
+                        steps = robot.sub_time_step + 1
 
                         # objective function
+                        print(len(robot.area_explored_history), max_steps, steps)
                         robot.area_explored_history = np.pad(robot.area_explored_history, [(0,most_steps-steps)])
                         robot.distance_travelled_history = np.pad(robot.distance_travelled_history, [(0,most_steps-steps)])
                         total_explored_area_per_step += robot.area_explored_history
                         joint_distance_travelled_per_step += robot.distance_travelled_history
 
-                        # map and pose history
-                        robot.pose_history = np.pad(robot.pose_history, [(0,most_steps-steps),(0,0)], 'edge')
-                        robot.map_history = np.pad(robot.map_history, [(0, most_steps-steps), (0,0), (0,0)], 'edge')
-                        bitmap_history = np.bitwise_or(bitmap_history, robot.map_history!=eval_world.config['color']['uncertain'])
-                        if robot.id == 0:
-                            pose_history = robot.pose_history[:, np.newaxis, :]
-                        else:
-                            pose_history = np.concatenate((pose_history, robot.pose_history[:, np.newaxis, :]), axis=1)
-
                     # objective function
                     cumulative_explored_percentage = np.cumsum(total_explored_area_per_step) / 400
-
-                    # map and pose history
-                    idx = np.where(bitmap_history == 1)
-                    maze_history = np.repeat(eval_world.maze[np.newaxis, :, :], most_steps, axis=0)
-                    map_history[idx] = maze_history[idx]
-                    idx = np.where(map_history == eval_world.config['color']['uncertain'])
-                    map_history[idx] = -1
-                    idx = np.where(map_history == eval_world.config['color']['obstacle'])
-                    map_history[idx] = 1
-
-                    np.save(run_result_path+'robot_poses', pose_history)
-                    np.save(run_result_path+'pixel_maps', map_history)
 
                     # find total interactions
                     total_interactions = 0
@@ -208,10 +187,6 @@ for probability_of_communication_success in [0, 50, 80, 100]:
                     with open(plot_path + 'trial_{}.pickle'.format(trial), 'wb') as f:
                         pickle.dump(distance_by_explored, f)
 
-
-
-
-            # '{}-{}'.format(map_id, starting_poses_key))
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
