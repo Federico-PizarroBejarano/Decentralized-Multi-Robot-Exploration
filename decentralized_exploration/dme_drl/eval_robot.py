@@ -104,7 +104,8 @@ class EvalRobot(Robot):
         else:
             increment_his = []  # map increment list, record the history of it
             for i, point in enumerate(self.path):
-                done = np.sum((self.world.slam_map == self.config['color']['uncertain'])) == 0
+                done = np.array_equal(self.world.slam_map == self.config['color']['free'],
+                                      self.world.maze == self.config['color']['free'])
 
                 if self._can_move():
                     next_point = point
