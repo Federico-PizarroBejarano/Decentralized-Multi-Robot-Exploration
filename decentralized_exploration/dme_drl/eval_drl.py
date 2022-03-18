@@ -153,7 +153,7 @@ for probability_of_communication_success in [0, 50, 80, 100]:
                             pose_history = np.concatenate((pose_history, robot.pose_history[:, np.newaxis, :]), axis=1)
 
                     # objective function
-                    cumulative_explored_percentage_per_step = np.cumsum(total_explored_area_per_step) / 400
+                    cumulative_explored_percentage = np.cumsum(total_explored_area_per_step) / 400
 
                     # map and pose history
                     idx = np.where(bitmap_history == 1)
@@ -182,9 +182,12 @@ for probability_of_communication_success in [0, 50, 80, 100]:
                         total_interactions += interactions
 
                     # find objective function
-                    time_steps = np.arange(1, len(cumulative_explored_percentage_per_step)+1)
+                    cumulative_joint_distance = np.cumsum(joint_distance_travelled_per_step)
+                    cumulative_explored_percentage_range = np.linspace(0.1,1,num=9001)
 
-                    objective_function_value = np.sum(cumulative_explored_percentage_per_step / time_steps)
+                    cumulative_joint_distance_interp = np.interp(x=cumulative_explored_percentage_range, xp=cumulative_explored_percentage, fp=cumulative_joint_distance)
+
+                    objective_function_value = np.sum(cumulative_explored_percentage_range / cumulative_joint_distance_interp)
 
                     results['map_id'].append(map_id)
                     results['starting_pose'].append(starting_poses_key)
@@ -197,11 +200,10 @@ for probability_of_communication_success in [0, 50, 80, 100]:
                     plot_path = RESULTS_PATH + '{}/{}/'.format(probability_of_communication_success, 'dme-drl')
                     distance_by_explored = []
 
-                    cumulative_joint_distance_per_step = np.cumsum(joint_distance_travelled_per_step)
-                    assert(len(cumulative_explored_percentage_per_step) == len(cumulative_joint_distance_per_step))
+                    assert(len(cumulative_explored_percentage) == len(cumulative_joint_distance))
 
-                    for i in range(len(cumulative_explored_percentage_per_step)):
-                        distance_by_explored.append((cumulative_joint_distance_per_step[i], cumulative_explored_percentage_per_step[i]))
+                    for i in range(len(cumulative_explored_percentage)):
+                        distance_by_explored.append((cumulative_joint_distance[i], cumulative_explored_percentage[i]))
 
                     with open(plot_path + 'trial_{}.pickle'.format(trial), 'wb') as f:
                         pickle.dump(distance_by_explored, f)
@@ -217,3 +219,4 @@ results = pd.DataFrame(results)
 averages = results.groupby(by='probability_of_communication_success').mean().reset_index()
 results.to_csv(RESULTS_PATH+'results.csv')
 averages.to_csv(RESULTS_PATH+'averages.csv')
+print(results)
