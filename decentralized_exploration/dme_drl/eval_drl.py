@@ -29,7 +29,7 @@ best = '0315_000105/'
 normal = '0311_204638/'
 
 def load_model(maddpg):
-        checkpoints = th.load(MODEL_DIR  + 'model-%d-1.pth' % (config['robots']['number']))
+        checkpoints = th.load(MODEL_DIR + best + 'model-%d-1.pth' % (config['robots']['number']))
         for i, actor in enumerate(maddpg.actors):
             actor.load_state_dict(checkpoints['actor_%d' % (i)])
             maddpg.actors_target[i] = deepcopy(actor)
@@ -47,10 +47,10 @@ maddpg = MADDPG(n_agents, n_agents, n_actions, dim_pose, 0, 0, -1)
 load_model(maddpg)
 
 all_starting_poses = {
-                            # 'TL':[(0, 0), (1, 0), (0, 1)],
-                            # 'TR':[(0, 19), (1, 19), (0, 18)],
+                            'TL':[(0, 0), (1, 0), (0, 1)],
+                            'TR':[(0, 19), (1, 19), (0, 18)],
                             'BL':[(19, 0), (18, 0), (19, 1)],
-                            # 'BR':[(19, 19), (18, 19), (19, 18)]
+                            'BR':[(19, 19), (18, 19), (19, 18)]
                         }
 
 results = {'map_id':[],
@@ -58,7 +58,8 @@ results = {'map_id':[],
            'probability_of_communication_success': [],
            'total_steps': [],
            'distance_travelled':[],
-           'local_interactions': [],
+           'local_interactions_parallel': [],
+           'local_interactions_sequential': [],
            'objective_function': []}
 
 
@@ -171,9 +172,10 @@ for probability_of_communication_success in [0, 50, 80, 100]:
                     results['map_id'].append(map_id)
                     results['starting_pose'].append(starting_poses_key)
                     results['probability_of_communication_success'].append(probability_of_communication_success)
-                    results['total_steps'].append(max([robot.sub_time_step for robot in eval_world.robots]))
+                    results['total_steps'].append(sum([robot.sub_time_step for robot in eval_world.robots]) / len(eval_world.robots))
                     results['distance_travelled'].append(sum([robot.distance for robot in eval_world.robots]))
-                    results['local_interactions'].append(total_interactions)
+                    results['local_interactions_parallel'].append(total_interactions)
+                    results['local_interactions_sequential'].append(eval_world.local_interactions)
                     results['objective_function'].append(objective_function_value)
 
                     plot_path = RESULTS_PATH + '{}/{}/'.format(probability_of_communication_success, 'dme-drl')
