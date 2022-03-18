@@ -75,10 +75,10 @@ class EvalWorld(World):
             rwd_n.append(rwd)
             info_n.append(info)
             obs_n.append(robot.get_obs())
-            if robot.id == 0:
-                action_n = robot.get_action()
-            else:
-                action_n = th.cat((action_n,robot.get_action()))
+            # if robot.id == 0:
+            #     action_n = robot.get_action()
+            # else:
+            #     action_n = th.cat((action_n,robot.get_action()))
 
         # get accurate poses
         for id1, robot1 in enumerate(self.robots):
@@ -87,7 +87,9 @@ class EvalWorld(World):
                     if self.in_range(robot1, robot2):
                         self.record_poses(robot1, robot2)
                         self.local_interactions -= 1 # don't double count local interactions in step 0
-            robot1.seen_robots.clear()
+                    else:
+                        robot1.seen_robots.clear()
+                        robot2.seen_robots.clear()
             pose_n.append(robot1.get_poses())
 
 

@@ -257,6 +257,7 @@ class Robot():
 
         self.frontier = update_frontier_and_remove_poses(self.slam_map, self.frontier, self.poses, self.config)
         self.frontier_by_direction = self.get_and_update_frontier_by_direction()
+
         action = self.select_action(maddpg, obs_history, pose)
 
         if action is None: # empty frontier
@@ -272,24 +273,34 @@ class Robot():
                 y_dsti, x_dsti = y_, x_
                 distance_min = distance
         self.destination = (y_dsti, x_dsti)
-        self.path = self.navigator.navigate(self.maze, self.pose, self.destination)
+        self.path = self.navigator.navigate(self.maze, self.pose, self.destination, self.poses)
         self.counter = 0
 
-        if self.path is None:
-            raise Exception('The target point is not accessible')
-        else:
-            increment_his = []  # map increment list, record the history of it
+        moved = False
+        vicinity = False
+        increment_his = []  # map increment list, record the history of it
+
+        if self.path is not None:
             for i, point in enumerate(self.path):
+                done = np.array_equal(self.world.slam_map == self.config['color']['free'],
+                                      self.world.maze == self.config['color']['free'])
                 if self.in_vicinity_and_not_yet_seen():
+                    vicinity = True
                     break
 
+                moved = True
+
                 self.counter += 1
+                self.sub_time_step += 1
                 self.distance += ((point[0] - self.pose[0])**2 + (point[1] - self.pose[1])**2)**0.5
 
                 map_increment = self._move_one_step(point, action)
                 increment_his.append(map_increment)
 
-        self.sub_time_step += self.counter
+        if not moved:
+            if not vicinity:
+                self.in_vicinity_and_not_yet_seen()
+            self.sub_time_step += 1
 
         self.destination = None
         self.last_map = self.slam_map.copy()

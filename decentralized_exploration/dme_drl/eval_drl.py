@@ -29,7 +29,7 @@ best = '0315_000105/'
 normal = '0311_204638/'
 
 def load_model(maddpg):
-        checkpoints = th.load(MODEL_DIR + best + 'model-%d-1.pth' % (config['robots']['number']))
+        checkpoints = th.load(MODEL_DIR + 'model-%d-1.pth' % (config['robots']['number']))
         for i, actor in enumerate(maddpg.actors):
             actor.load_state_dict(checkpoints['actor_%d' % (i)])
             maddpg.actors_target[i] = deepcopy(actor)
@@ -63,10 +63,10 @@ results = {'map_id':[],
            'objective_function': []}
 
 
-for probability_of_communication_success in [0, 50, 80, 100]:
+for probability_of_communication_success in [0]:#, 50, 80, 100]:
     trial = 0
     for starting_poses_key in all_starting_poses.keys():
-        for map_id in range(1,11):
+        for map_id in range(10,11):
             trial += 1
             run_result_path = RESULTS_PATH + '{}/{}/{}/'.format(probability_of_communication_success, 'dme-drl', '{}-{}'.format(map_id, starting_poses_key))
             os.makedirs(run_result_path, exist_ok=True)
@@ -95,7 +95,7 @@ for probability_of_communication_success in [0, 50, 80, 100]:
 
                     for t in range(max_steps):
                         obs_history = obs_history.type(FloatTensor)
-                        obs_, reward, done, info, next_pose, action = eval_world.step(maddpg, obs_history.clone().detach(), pose.clone().detach())
+                        obs_, reward, done, info, next_pose, _ = eval_world.step(maddpg, obs_history.clone().detach(), pose.clone().detach())
 
                         if info == 'done midstep':
                             break

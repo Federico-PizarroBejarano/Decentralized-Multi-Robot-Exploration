@@ -87,20 +87,18 @@ class EvalRobot(Robot):
         action = self.select_action(maddpg, obs_history, pose)
 
 
-        if action is None: # empty frontier
-            return None, 'empty frontier'
-        elif action == -1:
-            return -2, None
-
-        y_dsti, x_dsti = self.frontier_by_direction[action][0]
-        distance_min = np.sqrt((y - y_dsti) ** 2 + (x - x_dsti) ** 2)
-        for (y_, x_) in self.frontier_by_direction[action]:
-            distance = np.sqrt((y - y_) ** 2 + (x - x_) ** 2)
-            if distance < distance_min:
-                y_dsti, x_dsti = y_, x_
-                distance_min = distance
-        self.destination = (y_dsti, x_dsti)
-        self.path = self.navigator.navigate(self.maze, self.pose, self.destination, self.poses)
+        if action is None or action == -1: # empty frontier
+            self.path = None
+        else:
+            y_dsti, x_dsti = self.frontier_by_direction[action][0]
+            distance_min = np.sqrt((y - y_dsti) ** 2 + (x - x_dsti) ** 2)
+            for (y_, x_) in self.frontier_by_direction[action]:
+                distance = np.sqrt((y - y_) ** 2 + (x - x_) ** 2)
+                if distance < distance_min:
+                    y_dsti, x_dsti = y_, x_
+                    distance_min = distance
+            self.destination = (y_dsti, x_dsti)
+            self.path = self.navigator.navigate(self.maze, self.pose, self.destination, self.poses)
         self.counter = 0
 
         moved = False
