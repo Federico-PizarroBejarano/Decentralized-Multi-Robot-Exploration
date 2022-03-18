@@ -111,8 +111,8 @@ class EvalWorld(World):
             robot1.render(robot1.render_path + 'r{}_s{}_pro_merge_with_r{}_former'.format(robot1.id, robot1.counter, robot2.id))
             robot2.render(robot1.render_path + 'r{}_s{}_pro_merge_with_r{}_latter'.format(robot1.id, robot1.counter, robot2.id))
         else:
-            robot1.comm_dropout_steps = self.failed_communication_interval
-            robot2.comm_dropout_steps = self.failed_communication_interval
+            robot1.comm_dropout_steps = self.failed_communication_interval + 1
+            robot2.comm_dropout_steps = self.failed_communication_interval + 1
 
 
     def is_local(self, pose1, pose2):

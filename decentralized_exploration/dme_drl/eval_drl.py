@@ -126,18 +126,18 @@ for probability_of_communication_success in [0, 50, 80, 100]:
                     most_steps = 0
 
                     for robot in eval_world.robots:
+                        robot.pose_history = np.array(robot.pose_history)
                         robot.area_explored_history = np.array(robot.area_explored_history)
-                        most_steps = max(most_steps, robot.sub_time_step + 1)
+                        most_steps = max(most_steps, robot.sub_time_step)
 
 
-                    total_explored_area_per_step = np.zeros(most_steps-2)
+                    total_explored_area_per_step = np.zeros(most_steps)
                     joint_distance_travelled_per_step = np.zeros_like(total_explored_area_per_step)
 
                     for robot in eval_world.robots:
-                        steps = robot.sub_time_step + 1
-
+                        steps = robot.sub_time_step
                         # objective function
-                        print(len(robot.area_explored_history), max_steps, steps)
+                        robot.pose_history = np.pad(robot.pose_history, [(0, most_steps - steps), (0, 0)], 'edge')
                         robot.area_explored_history = np.pad(robot.area_explored_history, [(0,most_steps-steps)])
                         robot.distance_travelled_history = np.pad(robot.distance_travelled_history, [(0,most_steps-steps)])
                         total_explored_area_per_step += robot.area_explored_history
@@ -148,7 +148,7 @@ for probability_of_communication_success in [0, 50, 80, 100]:
 
                     # find total interactions
                     total_interactions = 0
-                    for step in range(1, most_steps):
+                    for step in range(most_steps):
                         interactions = 0
                         for robot1 in eval_world.robots:
                             for robot2 in eval_world.robots:
@@ -171,7 +171,7 @@ for probability_of_communication_success in [0, 50, 80, 100]:
                     results['map_id'].append(map_id)
                     results['starting_pose'].append(starting_poses_key)
                     results['probability_of_communication_success'].append(probability_of_communication_success)
-                    results['total_steps'].append(max([robot.sub_time_step+1 for robot in eval_world.robots]))
+                    results['total_steps'].append(max([robot.sub_time_step for robot in eval_world.robots]))
                     results['distance_travelled'].append(sum([robot.distance for robot in eval_world.robots]))
                     results['local_interactions'].append(total_interactions)
                     results['objective_function'].append(objective_function_value)

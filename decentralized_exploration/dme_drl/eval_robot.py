@@ -23,16 +23,17 @@ class EvalRobot(Robot):
         self.poses[:, 2 * self.id + 1] = self.pose[1]
         self.episode += 1
         self.time_step = -1
-        self.sub_time_step = -1
+        self.sub_time_step = 0
+        self.is_first_step = True
         self.distance = 0
-        self.distance_travelled_history = []
+        self.distance_travelled_history = [0]
         self.pose_history = [self.get_pose()]
         self.probability_of_failed_scan = probability_of_failed_scan
         self.probability_of_failed_action = 10 - 1
         self.comm_dropout_steps = 0
 
         self.render(RESET_ROBOT_PATH + 'r{}_e{}_t{}_pre_reset'.format(self.id, self.episode, self.time_step))
-        self.map_history = [self.get_obs()]
+        # self.map_history = [self.get_obs()]
 
         prev_world_map = self.world.slam_map.copy()
 
@@ -45,8 +46,7 @@ class EvalRobot(Robot):
         area_explored = np.count_nonzero(new_world_map - prev_world_map)
         self.area_explored_history = [area_explored]
 
-        self.map_history.append(self.get_obs())
-        self.pose_history.append(self.get_pose())
+        # self.map_history.append(self.get_obs())
         self.render(RESET_ROBOT_PATH + 'r{}_e{}_t{}_pro_reset'.format(self.id, self.episode, self.time_step))
 
         self.last_map = self.slam_map.copy()
@@ -99,6 +99,7 @@ class EvalRobot(Robot):
         self.path = self.navigator.navigate(self.maze, self.pose, self.destination)
         self.counter = 0
 
+        moved = False
         if self.path is None:
             raise Exception('The target point is not accessible')
         else:
@@ -117,38 +118,47 @@ class EvalRobot(Robot):
                             legal_actions.append(next_possible_point)
                     next_point = legal_actions[np.random.randint(len(legal_actions))]
 
-
                 if self.in_vicinity_and_not_yet_seen() or\
                         self.sub_time_step == 300 or\
                         not self._is_legal(next_point) or \
                         done: # enforce sub_time_step limit
                     break
 
+                moved = True
 
-                self.sub_time_step += 1
-                self.counter += 1
-                self.comm_dropout_steps = max(0, self.comm_dropout_steps - 1)
-
-                distance_travelled = ((point[0] - self.pose[0])**2 + (point[1] - self.pose[1])**2)**0.5
+                distance_travelled = ((next_point[0] - self.pose[0]) ** 2 + (next_point[1] - self.pose[1]) ** 2) ** 0.5
                 self.distance += distance_travelled
-                self.distance_travelled_history.append(distance_travelled)
 
                 prev_world_map = self.world.slam_map.copy()
                 map_increment = self._move_one_step(next_point, action)
                 self.world.slam_map = self.world._merge_map(self.world.slam_map)
                 new_world_map = self.world.slam_map.copy()
-                area_explored = np.count_nonzero(new_world_map-prev_world_map)
+                area_explored = np.count_nonzero(new_world_map - prev_world_map)
 
                 self.pose_history.append(self.get_pose())
-                self.map_history.append(self.get_obs())
-
-                if self.sub_time_step == 0:
-                    self.area_explored_history[0] + area_explored
-                else:
-                    self.area_explored_history.append(area_explored)
-
+                # self.map_history.append(self.get_obs())
 
                 increment_his.append(map_increment)
+
+                if self.sub_time_step == 0:
+                    self.area_explored_history[0] += area_explored
+                    self.distance_travelled_history[0] += distance_travelled
+                else:
+                    self.area_explored_history.append(area_explored)
+                    self.distance_travelled_history.append(distance_travelled)
+
+                self.sub_time_step += 1
+                self.counter += 1
+                self.comm_dropout_steps = max(0, self.comm_dropout_steps - 1)
+
+        if not moved:
+            if self.sub_time_step > 0:
+                self.distance_travelled_history.append(0)
+                self.area_explored_history.append(0)
+                self.pose_history.append(self.get_pose())
+
+            self.sub_time_step += 1
+            self.comm_dropout_steps = max(0, self.comm_dropout_steps - 1)
 
         self.destination = None
         self.last_map = self.slam_map.copy()
