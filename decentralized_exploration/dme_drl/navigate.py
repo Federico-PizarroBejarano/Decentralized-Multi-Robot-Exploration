@@ -172,7 +172,7 @@ class AStar:
         (h,w) = self._maze.shape
         for i, row in enumerate(self._maze):
             for j,ele in enumerate(row):
-                if ele==self.config['color']['obstacle']:
+                if ele==self.config['color']['obstacle'] or ele==self.config['color']['uncertain']:
                     block_node=Node(None,i,j,self._end.i,self._end.j)
                     self._close_list[(block_node.i,block_node.j)]=block_node
 

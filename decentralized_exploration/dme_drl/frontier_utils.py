@@ -12,7 +12,7 @@ def get_neighbours(_map, coords, radius=1):
 		for dx in range(-radius, radius + 1):
 			neighbour_y = y + dy
 			neighbour_x = x + dx
-			if is_in_map(_map, neighbour_y, neighbour_x):
+			if is_in_map(_map, neighbour_y, neighbour_x) and (dy != 0 or dx != 0):
 				neighbours.append((neighbour_y, neighbour_x))
 	return neighbours
 
