@@ -25,11 +25,10 @@ dim_pose = 2
 max_steps = 100
 map_ids = 10
 
-best = '0315_000105/'
-normal = '0311_204638/'
+dir_name = '0318_232246/'
 
 def load_model(maddpg):
-        checkpoints = th.load(MODEL_DIR + best + 'model-%d-1.pth' % (config['robots']['number']))
+        checkpoints = th.load(MODEL_DIR + dir_name + 'model-%d-1.pth' % (config['robots']['number']))
         for i, actor in enumerate(maddpg.actors):
             actor.load_state_dict(checkpoints['actor_%d' % (i)])
             maddpg.actors_target[i] = deepcopy(actor)
