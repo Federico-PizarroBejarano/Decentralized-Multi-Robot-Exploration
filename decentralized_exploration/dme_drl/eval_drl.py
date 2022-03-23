@@ -59,6 +59,7 @@ results = {'map_id':[],
            'distance_travelled':[],
            'local_interactions_parallel': [],
            'local_interactions_sequential': [],
+           'local_interactions_avg': [],
            'objective_function': []}
 
 
@@ -72,7 +73,7 @@ for probability_of_communication_success in [0, 50, 80, 100]:
             for probability_of_failed_scan in [10]:
                for failed_communication_interval in [7]:
                     try:
-                        obs,pose = eval_world.reset('test_{}.npy'.format(map_id), all_starting_poses[starting_poses_key], probability_of_failed_scan, 100 - probability_of_communication_success - 1, failed_communication_interval)
+                        obs,pose = eval_world.reset('test_{}.npy'.format(map_id), all_starting_poses[starting_poses_key], probability_of_failed_scan - 1, 100 - probability_of_communication_success - 1, failed_communication_interval)
                         pose = th.tensor(pose)
                     except Exception as e:
                         print(e)
@@ -175,6 +176,7 @@ for probability_of_communication_success in [0, 50, 80, 100]:
                     results['distance_travelled'].append(sum([robot.distance for robot in eval_world.robots]))
                     results['local_interactions_parallel'].append(total_interactions)
                     results['local_interactions_sequential'].append(eval_world.local_interactions)
+                    results['local_interactions_avg'].append((results['local_interactions_sequential'] + results['local_interactions_parallel'])/2)
                     results['objective_function'].append(objective_function_value)
 
                     plot_path = RESULTS_PATH + '{}/{}/'.format(probability_of_communication_success, 'dme-drl')
@@ -191,8 +193,17 @@ for probability_of_communication_success in [0, 50, 80, 100]:
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
+
 results = pd.DataFrame(results)
 averages = results.groupby(by='probability_of_communication_success').mean().reset_index()
+
+trunc_results = results[results['distance_travelled'] > 100]
+trunc_averages = trunc_results.groupby(by='probability_of_communication_success').mean().reset_index()
+
+
 results.to_csv(RESULTS_PATH+'results.csv')
 averages.to_csv(RESULTS_PATH+'averages.csv')
-print(results)
+
+trunc_results.to_csv(RESULTS_PATH+'trunc_results.csv')
+trunc_averages.to_csv(RESULTS_PATH+'trunc_averages.csv')
+
