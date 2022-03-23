@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import numpy as np
@@ -326,7 +327,14 @@ class Robot():
 
     def get_obs(self):
         """每一个机器人都获取自己观察视野内的本地地图"""
-        return self.slam_map.copy()
+        return self.get_state()
+
+    def get_state(self):
+        state = self.slam_map.copy()
+        cv2.rectangle(state, (self.pose[1] - self.robot_radius, self.pose[0] - self.robot_radius),
+                      (self.pose[1] + self.robot_radius, self.pose[0] + self.robot_radius),
+                      color=self.config['color']['self'], thickness=-1)
+        return state.copy()
 
     def get_poses(self):
         return self.poses.copy()
