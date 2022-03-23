@@ -40,7 +40,7 @@ class MADDPG:
         # self.var = [1.0 for i in range(n_agents)]
         self.var = [0.01 for i in range(n_agents)]
 
-        self.lr = 0.001
+        self.lr = 0.0001
 
         self.actors = [Actor(n_agents, dim_pose) for i in range(n_agents)]
         self.critics = [Critic(n_agents, dim_obs,
