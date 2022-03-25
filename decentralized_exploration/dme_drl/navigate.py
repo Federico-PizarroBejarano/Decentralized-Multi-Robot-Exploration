@@ -191,11 +191,6 @@ class AStar:
         self._start = Node(None, start_i, start_j, end_i, end_j)
         self._end = Node(None, end_i, end_j, end_i, end_j)
 
-        for i,j in poses[0].reshape(3,2).astype('int'):
-            if i > -1 and j > -1 and (i,j) != start_pose:
-                other_robot_node = Node(None, i, j, self._end.i, self._end.j)
-                self._close_list[(other_robot_node.i, other_robot_node.j)] = other_robot_node
-
         self._preset_maze()
         if (self._start.i,self._start.j) in self._close_list:
             return None

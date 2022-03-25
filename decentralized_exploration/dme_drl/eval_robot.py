@@ -98,7 +98,7 @@ class EvalRobot(Robot):
                     y_dsti, x_dsti = y_, x_
                     distance_min = distance
             self.destination = (y_dsti, x_dsti)
-            self.path = self.navigator.navigate(self.slam_map, self.pose, self.destination, self.poses)
+            self.path = self.navigator.navigate(self.maze, self.pose, self.destination, self.poses)
         self.counter = 0
 
         moved = False
