@@ -44,9 +44,9 @@ def update_frontier(_map, frontier, config):
 
 def update_frontier_and_remove_poses(_map, frontier, poses, config):
 	updated_frontier = update_frontier(_map, frontier, config)
-	for x, y in poses[0].reshape(3, 2).astype('int'):
-		if x > -1 and y > -1:
-			updated_frontier = remove_pose_from_frontier(updated_frontier, (x, y))
+	# for x, y in poses[0].reshape(3, 2).astype('int'):
+	# 	if x > -1 and y > -1:
+	# 		updated_frontier = remove_pose_from_frontier(updated_frontier, (x, y))
 	return updated_frontier
 
 def merge_frontiers(_map, frontier1, frontier2, config):

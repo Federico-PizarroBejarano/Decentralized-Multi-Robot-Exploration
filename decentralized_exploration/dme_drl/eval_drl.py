@@ -13,6 +13,7 @@ random.seed(1234)
 
 from copy import copy, deepcopy
 import yaml
+from time import time
 
 
 from decentralized_exploration.dme_drl.constants import MODEL_DIR, CONFIG_PATH, RESULTS_PATH
@@ -56,11 +57,18 @@ results = {'map_id':[],
            'starting_pose': [],
            'probability_of_communication_success': [],
            'total_steps': [],
+           'r1_steps': [],
+           'r2_steps': [],
+           'r3_steps': [],
            'distance_travelled':[],
+           'r1_distance': [],
+           'r2_distance': [],
+           'r3_distance': [],
            'local_interactions_parallel': [],
            'local_interactions_sequential': [],
            'local_interactions_avg': [],
-           'objective_function': []}
+           'objective_function': [],
+           'times': []}
 
 
 for probability_of_communication_success in [0, 50, 80, 100]:
@@ -74,6 +82,7 @@ for probability_of_communication_success in [0, 50, 80, 100]:
                 for failed_communication_interval in [7]:
                     total_cumulative_distance = -1
                     while total_cumulative_distance < 100:
+                        start = time()
                         try:
                             obs,pose = eval_world.reset('test_{}.npy'.format(map_id), all_starting_poses[starting_poses_key], probability_of_failed_scan - 1, 100 - probability_of_communication_success - 1, failed_communication_interval)
                             pose = th.tensor(pose)
@@ -125,6 +134,8 @@ for probability_of_communication_success in [0, 50, 80, 100]:
                                 next_obs_history = None
                             obs_history=next_obs_history
                             pose = next_pose
+
+                        end = time()
 
                         most_steps = 0
 
@@ -178,11 +189,21 @@ for probability_of_communication_success in [0, 50, 80, 100]:
                             results['starting_pose'].append(starting_poses_key)
                             results['probability_of_communication_success'].append(probability_of_communication_success)
                             results['total_steps'].append(sum([robot.sub_time_step for robot in eval_world.robots]) / len(eval_world.robots))
+
+                            results['r1_steps'].append(eval_world.robots[0].sub_time_step)
+                            results['r2_steps'].append(eval_world.robots[1].sub_time_step)
+                            results['r3_steps'].append(eval_world.robots[2].sub_time_step)
+
                             results['distance_travelled'].append(sum([robot.distance for robot in eval_world.robots]))
+                            results['r1_distance'].append(eval_world.robots[0].distance)
+                            results['r2_distance'].append(eval_world.robots[1].distance)
+                            results['r3_distance'].append(eval_world.robots[2].distance)
+
                             results['local_interactions_parallel'].append(total_interactions)
                             results['local_interactions_sequential'].append(eval_world.local_interactions)
                             results['local_interactions_avg'].append((total_interactions + eval_world.local_interactions) / 2)
                             results['objective_function'].append(objective_function_value)
+                            results['times'].append(end-start)
 
                             plot_path = RESULTS_PATH + '{}/{}/'.format(probability_of_communication_success, 'dme-drl')
                             distance_by_explored = []
@@ -194,7 +215,6 @@ for probability_of_communication_success in [0, 50, 80, 100]:
 
                             with open(plot_path + 'trial_{}.pickle'.format(trial), 'wb') as f:
                                 pickle.dump(distance_by_explored, f)
-
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
