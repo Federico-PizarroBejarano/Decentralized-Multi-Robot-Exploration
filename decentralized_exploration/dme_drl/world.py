@@ -211,8 +211,8 @@ class World(gym.Env):
         for i, robot1 in enumerate(self.robots):
             for j, robot2 in enumerate(self.robots):
                 if not i == j:
-                    distance = max(abs(robot1.pose[1] - robot1.pose[1]),
-                                   abs(robot1.pose[0] - robot1.pose[0]))
+                    distance = max(abs(robot1.pose[1] - robot2.pose[1]),
+                                   abs(robot1.pose[0] - robot2.pose[0]))
                     # layers communication
                     if self._is_in_range(distance, robot1, robot2):
                         # exchange position information
